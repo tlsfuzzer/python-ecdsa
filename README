@@ -29,8 +29,9 @@ length as the signature, and the signing ("private") key is half that length.
   NIST384p: siglen= 96, keygen=0.801s, sign=0.289s, verify=0.558s
   NIST521p: siglen=132, keygen=1.582s, sign=0.584s, verify=1.152s
 
-(for comparison, a quality C++ implementation of ECDSA typically runs XXX
-faster).
+For comparison, a quality C++ implementation of ECDSA (Crypto++) typically
+computes a NIST256p signature in 2.88ms and a verification in 8.53ms, about
+30-40x faster.
 
 Keys and signature can be serialized in different ways (see Usage, below).
 For a NIST192p key, the three basic representations require strings of the
