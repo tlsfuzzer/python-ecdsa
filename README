@@ -53,7 +53,7 @@ There are four test suites, three for the original Pearson module, and one
 more for the wrapper. To run them all, do this:
 
  python ecdsa/numbertheory.py   # look for "****" and "failed" for problems
- python ecdsa/ellipticcurve.py   # look for "****" and "failed" for problems
+ python ecdsa/ellipticcurve.py   # look for "Bad" for problems
  python ecdsa/ecdsa.py   # look for "****" and "failed" for problems
  python ecdsa/test_pyecdsa.py  # look for "FAILED" for problems
 

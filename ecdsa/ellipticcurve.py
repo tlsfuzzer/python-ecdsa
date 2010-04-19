@@ -201,6 +201,16 @@ if __name__ == "__main__":
     else:
       print " Good."
 
+  def test_double_infinity( c ):
+    """We expect that on curve c, 2*INFINITY = INFINITY."""
+    p1 = INFINITY
+    p3 = p1.double()
+    print "%s doubled = %s" % ( p1, p3 ),
+    if p3.x() != INFINITY.x() or p3.y() != INFINITY.y():
+      print " Failure: should give (%d,%d)." % ( INFINITY.x(), INFINITY.y() )
+    else:
+      print " Good."
+
   def test_multiply( c, x1, y1, m, x3, y3 ):
     """We expect that on curve c, m*(x1,y1) = (x3,y3)."""
     p1 = Point( c, x1, y1 )
@@ -211,6 +221,7 @@ if __name__ == "__main__":
     else:
       print " Good."
 
+
   # A few tests from X9.62 B.3:
 
   c = CurveFp( 23, 1, 1 )
@@ -218,6 +229,8 @@ if __name__ == "__main__":
   test_double( c, 3, 10, 7, 12 )
   test_add( c, 3, 10, 3, 10, 7, 12 )	# (Should just invoke double.)
   test_multiply( c, 3, 10, 2, 7, 12 )
+
+  test_double_infinity(c)
 
   # From X9.62 I.1 (p. 96):
 
