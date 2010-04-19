@@ -1,0 +1,4 @@
+/.coverage
+/coverage-html/
+/t/
+/build/
