@@ -49,13 +49,15 @@ use. You are looking at the README for this wrapper.
 
 == Testing ==
 
-There are two test suites, one for the original Pearson module, and another
-for the wrapper. To run both, do this:
+There are four test suites, three for the original Pearson module, and one
+more for the wrapper. To run them all, do this:
 
- python pyecdsa/ecdsa.py   # look for "****" and "failed" for problems
- python pyecdsa/test_pyecdsa.py  # look for "FAILED" for problems
+ python ecdsa/numbertheory.py   # look for "****" and "failed" for problems
+ python ecdsa/ellipticcurve.py   # look for "****" and "failed" for problems
+ python ecdsa/ecdsa.py   # look for "****" and "failed" for problems
+ python ecdsa/test_pyecdsa.py  # look for "FAILED" for problems
 
-On my 2009 Mac laptop, the combined tests take about 4+26=30 seconds to run.
+On my 2009 Mac laptop, the combined tests take about 34 seconds to run.
 
 == Usage ==
 
@@ -65,7 +67,7 @@ ask a signingKey to give you the corresponding VerifyingKey. The VerifyingKey
 can be used to verify a signature, by passing it both the data string and the
 signature string: it either returns True or raises BadSignatureError.
 
- from pyecdsa import SigningKey
+ from ecdsa import SigningKey
  sk = SigningKey.generate() # uses NIST192p
  vk = sk.get_verifying_key()
  signature = sk.sign("message")
@@ -75,7 +77,7 @@ Each SigningKey/VerifyingKey is associated with a specific curve, like
 NIST192p (the default one). Longer curves are more secure, but take longer to
 use, and result in longer keys and signatures.
 
- from pyecdsa import SigningKey, NIST384p
+ from ecdsa import SigningKey, NIST384p
  sk = SigningKey.generate(curve=NIST384p)
  vk = sk.get_verifying_key()
  signature = sk.sign("message")
@@ -88,7 +90,7 @@ so you must be sure to tell from_string() the same curve you used for the
 original key. The short form of a NIST192p-based signing key is just 24 bytes
 long.
 
- from pyecdsa import SigningKey, NIST384p
+ from ecdsa import SigningKey, NIST384p
  sk = SigningKey.generate(curve=NIST384p)
  sk_string = sk.to_string()
  sk2 = SigningKey.from_string(sk_string, curve=NIST384p)
@@ -101,7 +103,7 @@ a shorter binary form of the same data. SigningKey.from_pem()/.from_der()
 will undo this serialization. These formats include the curve name, so you do
 not need to pass in a curve identifier to the deserializer.
 
- from pyecdsa import SigningKey, NIST384p
+ from ecdsa import SigningKey, NIST384p
  sk = SigningKey.generate(curve=NIST384p)
  sk_pem = sk.to_pem()
  sk2 = SigningKey.from_pem(sk_pem)
@@ -112,14 +114,14 @@ vk.to_string()/VerifyingKey.from_string(), to_pem()/from_pem(), and
 to_der()/from_der(). The same curve= argument is needed for
 VerifyingKey.from_string().
 
- from pyecdsa import SigningKey, VerifyingKey, NIST384p
+ from ecdsa import SigningKey, VerifyingKey, NIST384p
  sk = SigningKey.generate(curve=NIST384p)
  vk = sk.get_verifying_key()
  vk_string = vk.to_string()
  vk2 = VerifyingKey.from_string(vk_string, curve=NIST384p)
  # vk and vk2 are the same key
 
- from pyecdsa import SigningKey, VerifyingKey, NIST384p
+ from ecdsa import SigningKey, VerifyingKey, NIST384p
  sk = SigningKey.generate(curve=NIST384p)
  vk = sk.get_verifying_key()
  vk_pem = vk.to_pem()
@@ -163,10 +165,10 @@ signatures that were produced by those tools, use:
  # openssl dgst -ecdsa-with-SHA1 -sign sk.pem -out data.sig data
  # openssl dgst -ecdsa-with-SHA1 -prverify vk.pem -signature data.sig data
 
- sk.sign(msg, hashfunc=pyecdsa.util.hashfunc_truncate(hashlib.sha1),
-         outfunc=pyecdsa.util.sig_to_der)
- vk.verify(sig, msg, hashfunc=pyecdsa.util.hashfunc_truncate(hashlib.sha1),
-           infunc=pyecdsa.util.infunc_der)
+ sk.sign(msg, hashfunc=ecdsa.util.hashfunc_truncate(hashlib.sha1),
+         outfunc=ecdsa.util.sig_to_der)
+ vk.verify(sig, msg, hashfunc=ecdsa.util.hashfunc_truncate(hashlib.sha1),
+           infunc=ecdsa.util.infunc_der)
 
 The keys that openssl handles can be read and written as follows:
 
@@ -184,11 +186,11 @@ deterministic and do not require an entropy source). The default source is
 os.urandom(), but you can pass any other function that behaves like
 os.urandom as the entropy= argument to do something different. This may be
 useful in unit tests, where you want to achieve repeatable results. The
-pyecdsa.util.PRNG utility is handy here: it takes a seed and produces a
-strong pseudo-random stream from it:
+ecdsa.util.PRNG utility is handy here: it takes a seed and produces a strong
+pseudo-random stream from it:
 
- from pyecdsa.util import PRNG
- from pyecdsa import SigningKey
+ from ecdsa.util import PRNG
+ from ecdsa import SigningKey
  rng1 = PRNG("seed")
  sk1 = SigningKey.generate(entropy=rng1)
  rng2 = PRNG("seed")
@@ -204,7 +206,7 @@ behaves the same as SigningKey.generate(entropy=).
 
 Create a NIST192p keypair and immediately save both to disk:
 
- from pyecdsa import SigningKey
+ from ecdsa import SigningKey
  sk = SigningKey.generate()
  vk = sk.get_verifying_key()
  open("private.pem","w").write(sk.to_pem())
@@ -213,7 +215,7 @@ Create a NIST192p keypair and immediately save both to disk:
 Load a signing key from disk, use it to sign a message, and write the
 signature to disk:
 
- from pyecdsa import SigningKey
+ from ecdsa import SigningKey
  sk = SigningKey.from_pem(open("private.pem").read())
  message = open("message","rb").read()
  sig = sk.sign(message)
@@ -222,7 +224,7 @@ signature to disk:
 Load the verifying key, message, and signature from disk, and verify the
 signature:
 
- from pyecdsa import VerifyingKey, BadSignatureError
+ from ecdsa import VerifyingKey, BadSignatureError
  vk = VerifyingKey.from_pem(open("public.pem").read())
  message = open("message","rb").read()
  sig = open("signature","rb").read()
@@ -234,13 +236,13 @@ signature:
 
 Create a NIST521p keypair
 
- from pyecdsa import SigningKey, NIST521p
+ from ecdsa import SigningKey, NIST521p
  sk = SigningKey.generate(curve=NIST521p)
  vk = sk.get_verifying_key()
 
 Create three independent signing keys from a master seed:
 
- from pyecdsa import SigningKey
+ from ecdsa import SigningKey
  sk1 = SigningKey.from_seed("1:%s" % seed)
  sk2 = SigningKey.from_seed("2:%s" % seed)
  sk3 = SigningKey.from_seed("3:%s" % seed)
