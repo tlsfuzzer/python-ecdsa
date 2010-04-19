@@ -8,6 +8,7 @@ from hashlib import sha1
 
 from keys import SigningKey, VerifyingKey
 from keys import BadSignatureError
+import util
 from util import hashfunc_truncate, sig_to_der, sig_to_strings
 from util import infunc_strings, infunc_der
 from curves import Curve, UnknownCurveError
@@ -403,6 +404,30 @@ class DER(unittest.TestCase):
         x = der.encode_constructed(1, unhexlify("0102030a0b0c"))
         self.failUnlessEqual(hexlify(x), "a106" + "0102030a0b0c")
 
+class Util(unittest.TestCase):
+    def test_trytryagain(self):
+        for i in range(1000):
+            seed = "seed-%d" % i
+            for order in (2**8-2, 2**8-1, 2**8, 2**8+1, 2**8+2,
+                          2**16-1, 2**16+1):
+                n = util.string_to_randrange_trytryagain(seed, order)
+                self.failUnless(1 <= n < order, (1, n, order))
+
+    def OFF_test_prove_uniformity(self):
+        order = 2**8-2
+        counts = dict([(i, 0) for i in range(1, order)])
+        assert 0 not in counts
+        assert order not in counts
+        for i in range(1000000):
+            seed = "seed-%d" % i
+            n = util.string_to_randrange_trytryagain(seed, order)
+            counts[n] += 1
+        # this technique should use the full range
+        self.failUnless(counts[order-1])
+        for i in range(1, order):
+            print "%3d: %s" % (i, "*"*(counts[i]/100))
+
+            
 
 if __name__ == "__main__":
     unittest.main()
