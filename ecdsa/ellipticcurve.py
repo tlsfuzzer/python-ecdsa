@@ -146,6 +146,9 @@ class Point( object ):
   def double( self ):
     """Return a new point that is twice the old."""
 
+    if self == INFINITY:
+      return INFINITY
+
     # X9.62 B.3:
 
     p = self.__curve.p()
