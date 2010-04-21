@@ -5,7 +5,8 @@ import ecdsa
 import der
 from curves import NIST192p, find_curve
 from util import string_to_number_fixedlen, number_to_string, \
-     string_to_randrange_overshoot_modulo, string_to_randrange_trytryagain
+     string_to_randrange_trytryagain
+#from util import string_to_randrange_overshoot_modulo
 from util import sig_to_string, infunc_string
 from util import oid_ecPublicKey, encoded_oid_ecPublicKey
 
