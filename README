@@ -132,29 +132,39 @@ VerifyingKey.from_string().
 There are a couple of different ways to compute a signature. Fundamentally,
 ECDSA takes a number that represents the data being signed, and returns a
 pair of numbers that represent the signature. The hashfunc= argument to
-sk.sign() and vk.verify() is used to turn an arbitrary string into a number
-that ECDSA can sign, and both sign and verify must use the same approach. The
-default value does XXX.
+sk.sign() and vk.verify() is used to turn an arbitrary string into
+fixed-length digest, which is then turned into a number that ECDSA can sign,
+and both sign and verify must use the same approach. The default value is
+hashlib.sha1, but if you use NIST256p or a longer curve, you can use
+hashlib.sha256 instead.
 
 There are also multiple ways to represent a signature. The default sk.sign()
 and vk.verify() methods present it as a short string, for simplicity and
-minimal overhead. To use a different scheme, use the sk.sign(outfunc=) and
-vk.verify(infunc=) arguments.
+minimal overhead. To use a different scheme, use the sk.sign(sigencode=) and
+vk.verify(sigdecode=) arguments. There are helper funcions in the
+"ecdsa.util" module that can be useful here.
 
-You can also create a SigningKey from a "seed", which is deterministic:
-sk=SigningKey.from_seed(seed="abc") will always create the same key. This can
-be used in protocols where some master secret is available, perhaps to
-generate multiple signing keys from the same master. The unguessability of
-the key is directly related to the unguessability of the seed. The seed
-should be a randomly-distributed string with a length (in bytes) of
-"curve.baselen":
+It is also possible to create a SigningKey from a "seed", which is
+deterministic. This can be used in protocols where you want to derive
+consistent signing keys from some other secret, for example when you want
+three separate keys and only want to store a single master secret. You should
+start with a uniformly-distributed unguessable seed with about curve.baselen
+bytes of entropy, and then use one of the helper functions in ecdsa.util to
+convert it into an integer in the correct range, and then finally pass it
+into SigningKey.from_secret_exponent(), like this:
 
- from pyecda import NIST384p, SigningKey
- baselen = NIST384p.baselen
- seed = os.urandom(baselen)
- sk = SigningKey.from_seed(seed, curve=NIST384p)
- sk2 = SigningKey.from_seed(seed, curve=NIST384p)
- # sk and sk2 are the same key
+ from pyecdsa import NIST384p, SigningKey
+ from pyecdsa.util import randrange_from_seed__trytryagain
+
+ def make_key(seed):
+   secexp = randrange_from_seed__trytryagain(seed, NIST384p.order)
+   return SigningKey.from_secret_exponent(secexp, curve=NIST384p)
+
+ seed = os.urandom(NIST384p.baselen) # or other starting point
+ sk1a = make_key(seed)
+ sk1b = make_key(seed)
+ # note: sk1a and sk1b are the same key
+ sk2 = make_key("2-"+seed)  # different key
 
 == OpenSSL Compatibility ==
 
@@ -166,10 +176,8 @@ signatures that were produced by those tools, use:
  # openssl dgst -ecdsa-with-SHA1 -sign sk.pem -out data.sig data
  # openssl dgst -ecdsa-with-SHA1 -prverify vk.pem -signature data.sig data
 
- sk.sign(msg, hashfunc=ecdsa.util.hashfunc_truncate(hashlib.sha1),
-         outfunc=ecdsa.util.sig_to_der)
- vk.verify(sig, msg, hashfunc=ecdsa.util.hashfunc_truncate(hashlib.sha1),
-           infunc=ecdsa.util.infunc_der)
+ sk.sign(msg, hashfunc=hashlib.sha1, sigencode=ecdsa.util.sigencode_der)
+ vk.verify(sig, msg, hashfunc=hashlib.sha1, sigdecode=ecdsa.util.sigdecode_der)
 
 The keys that openssl handles can be read and written as follows:
 
@@ -182,9 +190,9 @@ The keys that openssl handles can be read and written as follows:
 == Entropy ==
 
 Creating a signing key with SigningKey.generate() requires some form of
-entropy (as opposed to from_seed/from_string/from_der/from_pem, which are
-deterministic and do not require an entropy source). The default source is
-os.urandom(), but you can pass any other function that behaves like
+entropy (as opposed to from_secret_exponent/from_string/from_der/from_pem,
+which are deterministic and do not require an entropy source). The default
+source is os.urandom(), but you can pass any other function that behaves like
 os.urandom as the entropy= argument to do something different. This may be
 useful in unit tests, where you want to achieve repeatable results. The
 ecdsa.util.PRNG utility is handy here: it takes a seed and produces a strong
@@ -198,10 +206,10 @@ pseudo-random stream from it:
  sk2 = SigningKey.generate(entropy=rng2)
  # sk1 and sk2 are the same key
 
-Likewise, ECDSA signatures require a random number, and each signature must
-use a different one (using the same number twice will immediately reveal the
-private signing key). The sk.sign() method takes an entropy= argument which
-behaves the same as SigningKey.generate(entropy=).
+Likewise, ECDSA signature generation requires a random number, and each
+signature must use a different one (using the same number twice will
+immediately reveal the private signing key). The sk.sign() method takes an
+entropy= argument which behaves the same as SigningKey.generate(entropy=).
 
 == Examples ==
 
@@ -243,11 +251,16 @@ Create a NIST521p keypair
 
 Create three independent signing keys from a master seed:
 
- from ecdsa import SigningKey
- sk1 = SigningKey.from_seed("1:%s" % seed)
- sk2 = SigningKey.from_seed("2:%s" % seed)
- sk3 = SigningKey.from_seed("3:%s" % seed)
+ from pyecdsa import NIST192p, SigningKey
+ from pyecdsa.util import randrange_from_seed__trytryagain
 
+ def make_key_from_seed(seed, curve=NIST192p):
+   secexp = randrange_from_seed__trytryagain(seed, curve.order)
+   return SigningKey.from_secret_exponent(secexp, curve)
+
+ sk1 = make_key_from_seed("1:%s" % seed)
+ sk2 = make_key_from_seed("2:%s" % seed)
+ sk3 = make_key_from_seed("3:%s" % seed)
 
 
 --footnotes--

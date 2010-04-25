@@ -9,8 +9,8 @@ from hashlib import sha1
 from keys import SigningKey, VerifyingKey
 from keys import BadSignatureError
 import util
-from util import hashfunc_truncate, sig_to_der, sig_to_strings
-from util import infunc_strings, infunc_der
+from util import sigencode_der, sigencode_strings
+from util import sigdecode_der, sigdecode_strings
 from curves import Curve, UnknownCurveError
 from curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
 import der
@@ -75,11 +75,18 @@ class ECDSA(unittest.TestCase):
 
     def test_serialize(self):
         seed = "secret"
-        data = "data"
-        priv1 = SigningKey.from_seed(seed)
-        priv2 = SigningKey.from_seed(seed)
+        curve = NIST192p
+        secexp1 = util.randrange_from_seed__trytryagain(seed, curve.order)
+        secexp2 = util.randrange_from_seed__trytryagain(seed, curve.order)
+        self.failUnlessEqual(secexp1, secexp2)
+        priv1 = SigningKey.from_secret_exponent(secexp1, curve)
+        priv2 = SigningKey.from_secret_exponent(secexp2, curve)
+        self.failUnlessEqual(hexlify(priv1.to_string()),
+                             hexlify(priv2.to_string()))
+        self.failUnlessEqual(priv1.to_pem(), priv2.to_pem())
         pub1 = priv1.get_verifying_key()
         pub2 = priv2.get_verifying_key()
+        data = "data"
         sig1 = priv1.sign(data)
         sig2 = priv2.sign(data)
         self.failUnless(pub1.verify(sig1, data))
@@ -131,18 +138,6 @@ class ECDSA(unittest.TestCase):
         priv2 = SigningKey.generate(entropy=not_much_entropy)
         self.failUnlessEqual(priv2.baselen, NIST192p.baselen)
         self.failUnlessPrivkeysEqual(priv1, priv2)
-
-        priv1 = SigningKey.from_seed(seed="no_entropy")
-        self.failUnlessEqual(priv1.baselen, NIST192p.baselen)
-        priv2 = SigningKey.from_seed(seed="no_entropy")
-        self.failUnlessPrivkeysEqual(priv1, priv2)
-
-        priv1 = SigningKey.from_seed(seed="no_entropy", curve=NIST224p)
-        self.failUnlessEqual(priv1.baselen, NIST224p.baselen)
-
-        priv1 = SigningKey.from_seed(seed="different")
-        priv2 = SigningKey.from_seed(seed="than you")
-        self.failIfPrivkeysEqual(priv1, priv2)
 
         priv1 = SigningKey.from_secret_exponent(secexp=3)
         self.failUnlessEqual(priv1.baselen, NIST192p.baselen)
@@ -239,19 +234,19 @@ class ECDSA(unittest.TestCase):
         self.failUnlessEqual(len(sig), NIST192p.signature_length)
         self.failUnless(pub1.verify(sig, data))
 
-        sig = priv1.sign(data, outfunc=sig_to_strings)
+        sig = priv1.sign(data, sigencode=sigencode_strings)
         self.failUnlessEqual(type(sig), tuple)
         self.failUnlessEqual(len(sig), 2)
         self.failUnlessEqual(type(sig[0]), str)
         self.failUnlessEqual(type(sig[1]), str)
         self.failUnlessEqual(len(sig[0]), NIST192p.baselen)
         self.failUnlessEqual(len(sig[1]), NIST192p.baselen)
-        self.failUnless(pub1.verify(sig, data, infunc=infunc_strings))
+        self.failUnless(pub1.verify(sig, data, sigdecode=sigdecode_strings))
 
-        sig_der = priv1.sign(data, outfunc=sig_to_der)
+        sig_der = priv1.sign(data, sigencode=sigencode_der)
         self.failUnlessEqual(type(sig_der), str)
-        self.failUnless(pub1.verify(sig_der, data, infunc=infunc_der))
-
+        self.failUnless(pub1.verify(sig_der, data, sigdecode=sigdecode_der))
+        
 
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools
@@ -293,8 +288,7 @@ class OpenSSL(unittest.TestCase):
         vk = VerifyingKey.from_pem(pubkey_pem) # 3
         sig_der = open("t/data.sig","rb").read()
         self.failUnless(vk.verify(sig_der, data, # 5
-                                  hashfunc=hashfunc_truncate(sha1),
-                                  infunc=infunc_der))
+                                  hashfunc=sha1, sigdecode=sigdecode_der))
 
         sk = SigningKey.from_pem(open("t/privkey.pem").read()) # 1
         sig = sk.sign(data)
@@ -320,8 +314,7 @@ class OpenSSL(unittest.TestCase):
         data = "data"
         open("t/pubkey.der","wb").write(vk.to_der()) # 4
         open("t/pubkey.pem","wb").write(vk.to_pem()) # 4
-        sig_der = sk.sign(data, hashfunc=hashfunc_truncate(sha1),
-                          outfunc=sig_to_der)
+        sig_der = sk.sign(data, hashfunc=sha1, sigencode=sigencode_der)
         open("t/data.sig","wb").write(sig_der) # 6
         open("t/data.txt","wb").write(data)
         open("t/baddata.txt","wb").write(data+"corrupt")
@@ -406,11 +399,27 @@ class DER(unittest.TestCase):
 
 class Util(unittest.TestCase):
     def test_trytryagain(self):
+        tta = util.randrange_from_seed__trytryagain
         for i in range(1000):
             seed = "seed-%d" % i
             for order in (2**8-2, 2**8-1, 2**8, 2**8+1, 2**8+2,
                           2**16-1, 2**16+1):
-                n = util.string_to_randrange_trytryagain(seed, order)
+                n = tta(seed, order)
+                self.failUnless(1 <= n < order, (1, n, order))
+        # this trytryagain *does* provide long-term stability
+        self.failUnlessEqual("%x"%(tta("seed", NIST224p.order)),
+                             "6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc")
+
+    def test_randrange(self):
+        # util.randrange does not provide long-term stability: we might
+        # change the algorithm in the future.
+        for i in range(1000):
+            entropy = util.PRNG("seed-%d" % i)
+            for order in (2**8-2, 2**8-1, 2**8,
+                          2**16-1, 2**16+1,
+                          ):
+                # that oddball 2**16+1 takes half our runtime
+                n = util.randrange(order, entropy=entropy)
                 self.failUnless(1 <= n < order, (1, n, order))
 
     def OFF_test_prove_uniformity(self):
@@ -420,13 +429,12 @@ class Util(unittest.TestCase):
         assert order not in counts
         for i in range(1000000):
             seed = "seed-%d" % i
-            n = util.string_to_randrange_trytryagain(seed, order)
+            n = util.randrange_from_seed__trytryagain(seed, order)
             counts[n] += 1
         # this technique should use the full range
         self.failUnless(counts[order-1])
         for i in range(1, order):
             print "%3d: %s" % (i, "*"*(counts[i]/100))
-
             
 
 if __name__ == "__main__":

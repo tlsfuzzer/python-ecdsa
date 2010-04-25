@@ -1,7 +1,8 @@
 
+import os
 import math
 import binascii
-from hashlib import sha256, sha512
+from hashlib import sha256
 import der
 from curves import orderlen
 
@@ -12,6 +13,46 @@ from curves import orderlen
 
 oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
+
+def randrange(order, entropy=None):
+    """Return a random integer k such that 1 <= k < order, uniformly
+    distributed across that range. For simplicity, this only behaves well if
+    'order' is fairly close (but below) a power of 256. The try-try-again
+    algorithm we use takes longer and longer time (on average) to complete as
+    'order' falls, rising to a maximum of avg=512 loops for the worst-case
+    (256**k)+1 . All of the standard curves behave well. There is a cutoff at
+    10k looks (which raises RuntimeError) to prevent an infinite loop when
+    something is really broken like the entropy function not working.
+
+    Note that this function is not declared to be forwards-compatible: we may
+    change the behavior in future releases. The entropy= argument (which
+    should get a callable that behaves like os.entropy) can be used to
+    achieve stability within a given release (for repeatable unit tests), but
+    should not be used as a long-term-compatible key generation algorithm.
+    """
+    # we could handle arbitrary orders (even 256**k+1) better if we created
+    # candidates bit-wise instead of byte-wise, which would reduce the
+    # worst-case behavior to avg=2 loops, but that would be more complex. The
+    # change would be to round the order up to a power of 256, subtract one
+    # (to get 0xffff..), use that to get a byte-long mask for the top byte,
+    # generate the len-1 entropy bytes, generate one extra byte and mask off
+    # the top bits, then combine it with the rest. Requires jumping back and
+    # forth between strings and integers a lot.
+
+    if entropy is None:
+        entropy = os.urandom
+    assert order > 1
+    bytes = orderlen(order)
+    dont_try_forever = 10000 # gives about 2**-60 failures for worst case
+    while dont_try_forever > 0:
+        dont_try_forever -= 1
+        candidate = string_to_number(entropy(bytes)) + 1
+        if 1 <= candidate < order:
+            return candidate
+        continue
+    raise RuntimeError("randrange() tried hard but gave up, either something"
+                       " is very wrong or you got realllly unlucky. Order was"
+                       " %x" % order)
 
 class PRNG:
     # this returns a callable which, when invoked with an integer N, will
@@ -29,7 +70,7 @@ class PRNG:
                 yield byte
             counter += 1
 
-def string_to_randrange_overshoot_modulo(seed, order):
+def randrange_from_seed__overshoot_modulo(seed, order):
     # hash the data, then turn the digest into a number in [1,order).
     #
     # We use David-Sarah Hopwood's suggestion: turn it into a number that's
@@ -43,25 +84,42 @@ def string_to_randrange_overshoot_modulo(seed, order):
 
 def lsb_of_ones(numbits):
     return (1 << numbits) - 1
-
-def string_to_randrange_truncate_bytes(data, order, hashmod=sha256):
-    # hash the data, then turn the digest into a number in [1,order), but
-    # don't worry about trying to uniformly fill the range. This will lose,
-    # on average, half a byte of entropy.
+def bits_and_bytes(order):
     bits = int(math.log(order-1, 2)+1)
     bytes = bits // 8
-    base = hashmod(data).digest()[:bytes]
+    extrabits = bits % 8
+    return bits, bytes, extrabits
+
+# the following randrange_from_seed__METHOD() functions take an
+# arbitrarily-sized secret seed and turn it into a number that obeys the same
+# range limits as randrange() above. They are meant for deriving consistent
+# signing keys from a secret rather than generating them randomly, for
+# example a protocol in which three signing keys are derived from a master
+# secret. You should use a uniformly-distributed unguessable seed with about
+# curve.baselen bytes of entropy. To use one, do this:
+#   seed = os.urandom(curve.baselen) # or other starting point
+#   secexp = ecdsa.util.randrange_from_seed__trytryagain(sed, curve.order)
+#   sk = SigningKey.from_secret_exponent(secexp, curve)
+
+def randrange_from_seed__truncate_bytes(seed, order, hashmod=sha256):
+    # hash the seed, then turn the digest into a number in [1,order), but
+    # don't worry about trying to uniformly fill the range. This will lose,
+    # on average, four bits of entropy.
+    bits, bytes, extrabits = bits_and_bytes(order)
+    if extrabits:
+        bytes += 1
+    base = hashmod(seed).digest()[:bytes]
     base = "\x00"*(bytes-len(base)) + base
     number = 1+int(binascii.hexlify(base), 16)
     assert 1 <= number < order
     return number
 
-def string_to_randrange_truncate_bits(data, order, hashmod=sha256):
+def randrange_from_seed__truncate_bits(seed, order, hashmod=sha256):
     # like string_to_randrange_truncate_bytes, but only lose an average of
     # half a bit
     bits = int(math.log(order-1, 2)+1)
     maxbytes = (bits+7) // 8
-    base = hashmod(data).digest()[:maxbytes]
+    base = hashmod(seed).digest()[:maxbytes]
     base = "\x00"*(maxbytes-len(base)) + base
     topbits = 8*maxbytes - bits
     if topbits:
@@ -70,33 +128,24 @@ def string_to_randrange_truncate_bits(data, order, hashmod=sha256):
     assert 1 <= number < order
     return number
 
-def string_to_randrange_trytryagain(data, order):
-    base = PRNG(data)
+def randrange_from_seed__trytryagain(seed, order):
     # figure out exactly how many bits we need (rounded up to the nearest
     # bit), so we can reduce the chance of looping to less than 0.5 . This is
     # specified to feed from a byte-oriented PRNG, and discards the
     # high-order bits of the first byte as necessary to get the right number
-    # of bits.
-    bits = int(math.log(order, 2)+1)
-    bytes = bits // 8
-    extrabits = bits - 8*bytes
+    # of bits. The average number of loops will range from 1.0 (when
+    # order=2**k-1) to 2.0 (when order=2**k+1).
+    assert order > 1
+    bits, bytes, extrabits = bits_and_bytes(order)
+    generate = PRNG(seed)
     while True:
         extrabyte = ""
         if extrabits:
-            extrabyte = chr(ord(base(1)) & lsb_of_ones(extrabits))
-        guess = string_to_number(extrabyte + base(bytes))
+            extrabyte = chr(ord(generate(1)) & lsb_of_ones(extrabits))
+        guess = string_to_number(extrabyte + generate(bytes)) + 1
         if 1 <= guess < order:
             return guess
 
-def OLDstring_to_randrange_truncate(data, order):
-    # hash the data, then turn the digest into a number in [1,order), but
-    # don't worry about trying to uniformly fill the range
-    h = 4*sha512(data).hexdigest()
-    olen = len("%x" % order)
-    assert len(h) > 2*olen, (len(h), olen)
-    number = (int(h, 16) % (order-1)) + 1
-    assert 1 <= number < order, (1, number, order)
-    return number
 
 def number_to_string(num, order):
     l = orderlen(order)
@@ -104,14 +153,6 @@ def number_to_string(num, order):
     string = binascii.unhexlify(fmt_str % num)
     assert len(string) == l, (len(string), l)
     return string
-
-def hashfunc_truncate(hashclass):
-    def hashfunc(string, order):
-        h = hashclass(string).digest()
-        h = "\x00"*(orderlen(order)-len(h)) + h # pad to size
-        number = string_to_number_fixedlen(h, order)
-        return number
-    return hashfunc
 
 def string_to_number(string):
     return int(binascii.hexlify(string), 16)
@@ -121,29 +162,33 @@ def string_to_number_fixedlen(string, order):
     assert len(string) == l, (len(string), l)
     return int(binascii.hexlify(string), 16)
 
-def sig_to_strings(r, s, order):
+# these methods are useful for the sigencode= argument to SK.sign() and the
+# sigdecode= argument to VK.verify(), and control how the signature is packed
+# or unpacked.
+
+def sigencode_strings(r, s, order):
     r_str = number_to_string(r, order)
     s_str = number_to_string(s, order)
     return (r_str, s_str)
 
-def sig_to_string(r, s, order):
+def sigencode_string(r, s, order):
     # for any given curve, the size of the signature numbers is
     # fixed, so just use simple concatenation
-    r_str, s_str = sig_to_strings(r, s, order)
+    r_str, s_str = sigencode_strings(r, s, order)
     return r_str + s_str
 
-def sig_to_der(r, s, order):
+def sigencode_der(r, s, order):
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
 
 
-def infunc_string(signature, order):
+def sigdecode_string(signature, order):
     l = orderlen(order)
     assert len(signature) == 2*l, (len(signature), 2*l)
     r = string_to_number_fixedlen(signature[:l], order)
     s = string_to_number_fixedlen(signature[l:], order)
     return r, s
 
-def infunc_strings((r_str, s_str), order):
+def sigdecode_strings((r_str, s_str), order):
     l = orderlen(order)
     assert len(r_str) == l, (len(r_str), l)
     assert len(s_str) == l, (len(s_str), l)
@@ -151,7 +196,7 @@ def infunc_strings((r_str, s_str), order):
     s = string_to_number_fixedlen(s_str, order)
     return r, s
 
-def infunc_der(sig_der, order):
+def sigdecode_der(sig_der, order):
     #return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
     rs_strings, empty = der.remove_sequence(sig_der)
     if empty != "":

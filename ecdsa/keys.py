@@ -1,19 +1,18 @@
-import os
 import binascii
 
 import ecdsa
 import der
 from curves import NIST192p, find_curve
-from util import string_to_number_fixedlen, number_to_string, \
-     string_to_randrange_trytryagain
-#from util import string_to_randrange_overshoot_modulo
-from util import sig_to_string, infunc_string
+from util import string_to_number, number_to_string, randrange
+from util import sigencode_string, sigdecode_string
 from util import oid_ecPublicKey, encoded_oid_ecPublicKey
-
-default_string_to_range = string_to_randrange_trytryagain
+from hashlib import sha1
 
 class BadSignatureError(Exception):
     pass
+class BadDigestError(Exception):
+    pass
+
 class VerifyingKey:
     @classmethod
     def from_public_point(klass, point, curve=NIST192p):
@@ -30,8 +29,10 @@ class VerifyingKey:
                (len(string), curve.verifying_key_length)
         xs = string[:curve.baselen]
         ys = string[curve.baselen:]
-        x = string_to_number_fixedlen(xs, order)
-        y = string_to_number_fixedlen(ys, order)
+        assert len(xs) == curve.baselen, (len(xs), curve.baselen)
+        assert len(ys) == curve.baselen, (len(ys), curve.baselen)
+        x = string_to_number(xs)
+        y = string_to_number(ys)
         assert ecdsa.point_is_valid(curve.generator, x, y)
         import ellipticcurve
         point = ellipticcurve.Point(curve.curve, x, y, order)
@@ -85,11 +86,18 @@ class VerifyingKey:
                                                        self.curve.encoded_oid),
                                    der.encode_bitstring(point_str))
 
-    def verify(self, signature, data,
-               hashfunc=default_string_to_range, infunc=infunc_string):
-        r, s = infunc(signature, self.pubkey.order)
+    def verify(self, signature, data, hashfunc=sha1, sigdecode=sigdecode_string):
+        digest = hashfunc(data).digest()
+        return self.verify_digest(signature, digest, sigdecode)
+
+    def verify_digest(self, signature, digest, sigdecode=sigdecode_string):
+        if len(digest) > self.curve.baselen:
+            raise BadDigestError("this curve (%s) is too short "
+                                 "for your digest (%d)" % (self.curve.name,
+                                                           8*len(digest)))
+        number = string_to_number(digest)
+        r, s = sigdecode(signature, self.pubkey.order)
         sig = ecdsa.Signature(r, s)
-        number = hashfunc(data, self.pubkey.order)
         if self.pubkey.verifies(number, sig):
             return True
         raise BadSignatureError
@@ -97,16 +105,13 @@ class VerifyingKey:
 class SigningKey:
     @classmethod
     def generate(klass, curve=NIST192p, entropy=None):
-        if entropy is None:
-            entropy = os.urandom
-        seed = entropy(curve.baselen)
-        return klass.from_seed(seed, curve)
-
-    @classmethod
-    def from_seed(klass, seed, curve=NIST192p):
-        n = curve.order
-        secexp = default_string_to_range(seed, n)
+        secexp = randrange(curve.order, entropy)
         return klass.from_secret_exponent(secexp, curve)
+
+    # to create a signing key from a short (arbitrary-length) seed, convert
+    # that seed into an integer with something like
+    # secexp=util.randrange_from_seed__X(seed, curve.order), and then pass
+    # that integer into SigningKey.from_secret_exponent(secexp, curve)
 
     @classmethod
     def from_secret_exponent(klass, secexp, curve=NIST192p):
@@ -125,7 +130,8 @@ class SigningKey:
 
     @classmethod
     def from_string(klass, string, curve=NIST192p):
-        secexp = string_to_number_fixedlen(string, curve.order)
+        assert len(string) == curve.baselen, (len(string), curve.baselen)
+        secexp = string_to_number(string)
         return klass.from_secret_exponent(secexp, curve)
 
     @classmethod
@@ -136,23 +142,25 @@ class SigningKey:
         return klass.from_der(der.unpem(privkey_pem))
     @classmethod
     def from_der(klass, string):
-        # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),cont[1],bitstring])
+        # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),
+        #      cont[1],bitstring])
         s, empty = der.remove_sequence(string)
         if empty != "":
             raise der.UnexpectedDER("trailing junk after DER privkey: %s" %
                                     binascii.hexlify(empty))
         one, s = der.remove_integer(s)
         if one != 1:
-            raise der.UnexpectedDER("expected '1' at start of DER privkey, got %d"
-                                    % one)
+            raise der.UnexpectedDER("expected '1' at start of DER privkey,"
+                                    " got %d" % one)
         privkey_str, s = der.remove_octet_string(s)
         tag, curve_oid_str, s = der.remove_constructed(s)
         if tag != 0:
-            raise der.UnexpectedDER("expected tag 0 in DER privkey, got %d" % tag)
+            raise der.UnexpectedDER("expected tag 0 in DER privkey,"
+                                    " got %d" % tag)
         curve_oid, empty = der.remove_object(curve_oid_str)
         if empty != "":
-            raise der.UnexpectedDER("trailing junk after DER privkey curve_oid: %s"
-                                    % binascii.hexlify(empty))
+            raise der.UnexpectedDER("trailing junk after DER privkey "
+                                    "curve_oid: %s" % binascii.hexlify(empty))
         curve = find_curve(curve_oid)
 
         # we don't actually care about the following fields
@@ -181,7 +189,8 @@ class SigningKey:
         return der.topem(self.to_der(), "EC PRIVATE KEY")
 
     def to_der(self):
-        # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),cont[1],bitstring])
+        # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),
+        #      cont[1],bitstring])
         encoded_vk = "\x00\x04" + self.get_verifying_key().to_string()
         return der.encode_sequence(der.encode_integer(1),
                                    der.encode_octet_string(self.to_string()),
@@ -189,37 +198,42 @@ class SigningKey:
                                    der.encode_constructed(1, der.encode_bitstring(encoded_vk)),
                                    )
 
-    # to serialize this, just remember the secret= you passed in.
-
     def get_verifying_key(self):
         return self.verifying_key
 
-    def sign(self, data, entropy=None,
-             hashfunc=default_string_to_range, outfunc=sig_to_string):
+    def sign(self, data, entropy=None, hashfunc=sha1, sigencode=sigencode_string):
         """
-        Use hashfunc=hashfunc_truncate(sha1) to match openssl's
-        -ecdsa-with-SHA1 mode."""
+        hashfunc= should behave like hashlib.sha1 . The output length of the
+        hash (in bytes) must not be longer than the length of the curve order
+        (rounded up to the nearest byte), so using SHA256 with nist256p is
+        ok, but SHA256 with nist192p is not. (In the 2**-96ish unlikely event
+        of a hash output larger than the curve order, the hash will
+        effectively be wrapped mod n).
 
-        number = hashfunc(data, self.privkey.order)
+        Use hashfunc=hashlib.sha1 to match openssl's -ecdsa-with-SHA1 mode,
+        or hashfunc=hashlib.sha256 for openssl-1.0.0's -ecdsa-with-SHA256.
+        """
+
+        h = hashfunc(data).digest()
+        return self.sign_digest(h, entropy, sigencode)
+
+    def sign_digest(self, digest, entropy=None, sigencode=sigencode_string):
+        if len(digest) > self.curve.baselen:
+            raise BadDigestError("this curve (%s) is too short "
+                                 "for your digest (%d)" % (self.curve.name,
+                                                           8*len(digest)))
+        number = string_to_number(digest)
         r, s = self.sign_number(number, entropy)
-        return outfunc(r, s, self.privkey.order)
+        return sigencode(r, s, self.privkey.order)
 
     def sign_number(self, number, entropy=None):
         # returns a pair of numbers
         order = self.privkey.order
-        if entropy is None:
-            entropy = os.urandom
-        dont_try_forever = 1000
-        while dont_try_forever > 0:
-            dont_try_forever -= 1
-            # the chance that we'll loop at all is like 2**-224, because most
-            # of the NIST orders are close-to-but-lower-than a power of two
-            k = default_string_to_range(entropy(self.baselen), order)
-            assert 1 <= k < self.privkey.order
-            try:
-                sig = self.privkey.sign(number, k)
-            except RuntimeError:
-                # try again
-                continue
-            break
+        # privkey.sign() may raise RuntimeError in the amazingly unlikely
+        # (2**-192) event that r=0 or s=0, because that would leak the key.
+        # We could re-try with a different 'k', but we couldn't test that
+        # code, so I choose to allow the signature to fail instead.
+        k = randrange(order, entropy)
+        assert 1 <= k < order
+        sig = self.privkey.sign(number, k)
         return sig.r, sig.s
