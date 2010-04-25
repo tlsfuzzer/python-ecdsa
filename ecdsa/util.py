@@ -56,7 +56,10 @@ def randrange(order, entropy=None):
 
 class PRNG:
     # this returns a callable which, when invoked with an integer N, will
-    # return N pseudorandom bytes.
+    # return N pseudorandom bytes. Note: this is a short-term PRNG, meant
+    # primarily for the needs of randrange_from_seed__trytryagain(), which
+    # only needs to run it a few times per seed. It does not provide
+    # protection against state compromise (forward security).
     def __init__(self, seed):
         self.generator = self.block_generator(seed)
 
