@@ -1,0 +1,9 @@
+Tue Apr 27 11:55:53 2010  Brian Warner  <warner@lothar.com>
+
+	* NEWS: release python-ecdsa-0.5
+
+Tue Apr 27 11:52:45 2010  Brian Warner  <warner@lothar.com>
+
+	* README: update for 0.5 release
+	* LICENSE: release under the MIT license
+	* ecdsa/__init__.py: point to github home page

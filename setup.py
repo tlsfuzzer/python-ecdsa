@@ -7,7 +7,7 @@ from distutils.core import setup
 #  python ecdsa/test_pyecdsa.py   # look for "Failure:" messages
 
 setup(name="ecdsa",
-      version="x",
+      version="0.5",
       description="ECDSA cryptographic signature library (pure python)",
       author="Brian Warner",
       author_email="warner-pyecdsa@lothar.com",

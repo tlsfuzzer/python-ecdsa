@@ -1,0 +1,6 @@
+
+* Release 0.5 (27 Apr 2010)
+
+Initial release. EC-DSA signature for five NIST "Suite B" GF(p) curves:
+prime192v1, secp224r1, prime256v1, secp384r1, and secp521r1. DER/PEM
+input/output functions, seed-to-randrange helper functions.

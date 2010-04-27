@@ -2,10 +2,11 @@
 = Pure-Python ECDSA =
 
 This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
-Digital Signature Algorithm), implemented purely in Python. With this
-library, you can quickly create keypairs (signing key and verifying key),
-sign messages, and verify the signatures. The keys and signatures are very
-short, making them easier to handle and incorporate into other protocols.
+Digital Signature Algorithm), implemented purely in Python, released under
+the MIT license. With this library, you can quickly create keypairs (signing
+key and verifying key), sign messages, and verify the signatures. The keys
+and signatures are very short, making them easy to handle and incorporate
+into other protocols.
 
 == Features ==
 
@@ -17,7 +18,7 @@ other curves are included, but it would not be too hard to add more.
 
 == Speed ==
 
-The following table shows how long this library takes to generate keys
+The following table shows how long this library takes to generate keypairs
 (keygen=), to sign data (sign=), and to verify those signatures (verify=), on
 my 2008 Mac laptop. All times are in seconds. It also shows the length of a
 signature (in bytes): the verifying ("public") key is typically the same
@@ -60,11 +61,23 @@ more for the wrapper. To run them all, do this:
 
 On my 2009 Mac laptop, the combined tests take about 34 seconds to run.
 
+One component of test_pyecdsa.py checks compatibility with OpenSSL, by
+running the "openssl" CLI tool. If this tool is not on your $PATH, you may
+want to comment out this test (the easiest way is to add a line that says
+"del OpenSSL" to the end of test_pyecdsa.py).
+
+== Security ==
+
+This library does not protect against timing attacks. Do not allow attackers
+to measure how long it takes you to generate a keypair or sign a message.
+This library depends upon a strong source of random numbers. Do not use it on
+a system where os.urandom() is weak.
+
 == Usage ==
 
 You start by creating a SigningKey. You can use this to sign data, by passing
 in a data string and getting back the signature (also a string). You can also
-ask a signingKey to give you the corresponding VerifyingKey. The VerifyingKey
+ask a SigningKey to give you the corresponding VerifyingKey. The VerifyingKey
 can be used to verify a signature, by passing it both the data string and the
 signature string: it either returns True or raises BadSignatureError.
 
