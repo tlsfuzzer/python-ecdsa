@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import re, sys, subprocess
+import os, sys, subprocess, re
 from distutils.core import setup, Command
 from distutils.command.sdist import sdist as _sdist
 
@@ -39,19 +39,26 @@ __version__ = '%s'
 """
 
 def update_version_py():
+    if not os.path.isdir(".git"):
+        print "This does not appear to be a Git repository."
+        return
     try:
-        ver = subprocess.Popen(["git", "describe", "--dirty", "--always"],
-                               stdout=subprocess.PIPE,
-                               ).communicate()[0]
-        # we use tags like "python-ecdsa-0.5", so strip the prefix
-        assert ver.startswith("python-ecdsa-")
-        ver = ver[len("python-ecdsa-"):].strip()
-        f = open("ecdsa/_version.py", "w")
-        f.write(VERSION_PY % ver)
-        f.close()
-        print "set ecdsa/_version.py to '%s'" % ver
-    except IndexError:
+        p = subprocess.Popen(["git", "describe", "--dirty", "--always"],
+                             stdout=subprocess.PIPE)
+    except EnvironmentError:
         print "unable to run git, leaving ecdsa/_version.py alone"
+        return
+    stdout = p.communicate()[0]
+    if p.returncode != 0:
+        print "unable to run git, leaving ecdsa/_version.py alone"
+        return
+    # we use tags like "python-ecdsa-0.5", so strip the prefix
+    assert stdout.startswith("python-ecdsa-")
+    ver = stdout[len("python-ecdsa-"):].strip()
+    f = open("ecdsa/_version.py", "w")
+    f.write(VERSION_PY % ver)
+    f.close()
+    print "set ecdsa/_version.py to '%s'" % ver
 
 def get_version():
     try:
@@ -75,10 +82,14 @@ class Version(Command):
         pass
     def run(self):
         update_version_py()
+        print "Version is now", get_version()
 
 class sdist(_sdist):
     def run(self):
         update_version_py()
+        # unless we update this, the sdist command will keep using the old
+        # version
+        self.distribution.metadata.version = get_version()
         return _sdist.run(self)
 
 setup(name="ecdsa",
