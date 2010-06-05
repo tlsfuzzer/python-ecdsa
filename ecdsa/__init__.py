@@ -7,3 +7,8 @@ _hush_pyflakes = [SigningKey, VerifyingKey, BadSignatureError, BadDigestError,
 del _hush_pyflakes
 
 # This code comes from http://github.com/warner/python-ecdsa
+
+try:
+    from _version import __version__
+except ImportError:
+    __version__ = "unknown"

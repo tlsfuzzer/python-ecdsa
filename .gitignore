@@ -2,3 +2,4 @@
 /coverage-html/
 /t/
 /build/
+/ecdsa/_version.py
