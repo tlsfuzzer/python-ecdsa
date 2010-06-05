@@ -605,4 +605,8 @@ if __name__ == '__main__':
   assert n_tests > 1000
   print n_tests, " tests of inverse_mod completed."
 
+  class FailedTest(Exception): pass
   print error_tally, "errors detected."
+  if error_tally != 0:
+    raise FailedTest("%d errors detected" % error_tally)
+

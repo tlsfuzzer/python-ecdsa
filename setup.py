@@ -4,6 +4,33 @@ import re, sys, subprocess
 from distutils.core import setup, Command
 from distutils.command.sdist import sdist as _sdist
 
+class Test(Command):
+    description = "run unit tests"
+    user_options = []
+    boolean_options = []
+    def initialize_options(self):
+        pass
+    def finalize_options(self):
+        pass
+    def run(self):
+        for t in ["ecdsa/numbertheory.py",
+                  "ecdsa/ellipticcurve.py",
+                  "ecdsa/ecdsa.py",
+                  "ecdsa/test_pyecdsa.py",
+                  ]:
+            rc = self.do_test(t)
+            if rc != 0:
+                sys.exit(rc)
+
+    def do_test(self, which):
+        print "======= running %s" % which
+        p = subprocess.Popen([sys.executable, which])
+        rc = p.wait()
+        if rc != 0:
+            print >>sys.stderr, "Test (%s) FAILED" % which
+        print "== finished %s" % which
+        return rc
+
 VERSION_PY = """
 # This file is originally generated from Git information by running 'setup.py
 # version'. Distribution tarballs contain a pre-generated copy of this file.
@@ -62,5 +89,5 @@ setup(name="ecdsa",
       url="http://github.com/warner/python-ecdsa",
       packages=["ecdsa"],
       license="MIT",
-      cmdclass={ "version": Version, "sdist": sdist },
+      cmdclass={ "test": Test, "version": Version, "sdist": sdist },
       )

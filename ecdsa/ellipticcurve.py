@@ -180,6 +180,7 @@ INFINITY = Point( None, None, None )
 
 if __name__ == "__main__":
 
+  class FailedTest(Exception): pass
   def test_add( c, x1, y1, x2,  y2, x3, y3 ):
     """We expect that on curve c, (x1,y1) + (x2, y2 ) = (x3, y3)."""
     p1 = Point( c, x1, y1 )
@@ -187,7 +188,7 @@ if __name__ == "__main__":
     p3 = p1 + p2
     print "%s + %s = %s" % ( p1, p2, p3 ),
     if p3.x() != x3 or p3.y() != y3:
-      print " Failure: should give (%d,%d)." % ( x3, y3 )
+      raise FailedTest("Failure: should give (%d,%d)." % ( x3, y3 ))
     else:
       print " Good."
 
@@ -197,7 +198,7 @@ if __name__ == "__main__":
     p3 = p1.double()
     print "%s doubled = %s" % ( p1, p3 ),
     if p3.x() != x3 or p3.y() != y3:
-      print " Failure: should give (%d,%d)." % ( x3, y3 )
+      raise FailedTest("Failure: should give (%d,%d)." % ( x3, y3 ))
     else:
       print " Good."
 
@@ -207,7 +208,7 @@ if __name__ == "__main__":
     p3 = p1.double()
     print "%s doubled = %s" % ( p1, p3 ),
     if p3.x() != INFINITY.x() or p3.y() != INFINITY.y():
-      print " Failure: should give (%d,%d)." % ( INFINITY.x(), INFINITY.y() )
+      raise FailedTest("Failure: should give (%d,%d)." % ( INFINITY.x(), INFINITY.y() ))
     else:
       print " Good."
 
@@ -217,7 +218,7 @@ if __name__ == "__main__":
     p3 = p1 * m
     print "%s * %d = %s" % ( p1, m, p3 ),
     if p3.x() != x3 or p3.y() != y3:
-      print " Failure: should give (%d,%d)." % ( x3, y3 )
+      raise FailedTest("Failure: should give (%d,%d)." % ( x3, y3 ))
     else:
       print " Good."
 
@@ -243,7 +244,7 @@ if __name__ == "__main__":
     if p == check:
       print " Good."
     else:
-      print " Bad."
+      raise FailedTest("Bad.")
     check = check + g
 
   # NIST Curve P-192:
@@ -264,7 +265,7 @@ if __name__ == "__main__":
   d = 651056770906015076056810763456358567190100156695615665659L
   Q = d * p192
   if Q.x() != 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5L:
-    print "p192 * d came out wrong."
+    raise FailedTest("p192 * d came out wrong.")
   else:
     print "p192 * d came out right."
 
@@ -272,7 +273,7 @@ if __name__ == "__main__":
   R = k * p192
   if R.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEADL \
      or R.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835L:
-    print "k * p192 came out wrong."
+    raise FailedTest("k * p192 came out wrong.")
   else:
     print "k * p192 came out right."
 
@@ -281,6 +282,6 @@ if __name__ == "__main__":
   temp = u1 * p192 + u2 * Q
   if temp.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEADL \
      or temp.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835L:
-    print "u1 * p192 + u2 * Q came out wrong."
+    raise FailedTest("u1 * p192 + u2 * Q came out wrong.")
   else:
     print "u1 * p192 + u2 * Q came out right."

@@ -264,6 +264,7 @@ generator_521 = ellipticcurve.Point( curve_521, _Gx, _Gy, _r )
   
 
 if __name__ == "__main__":
+  class TestFailure(Exception): pass
 
   def test_point_validity( generator, x, y, expected ):
     """generator defines the curve; is (x,y) a point on
@@ -271,7 +272,7 @@ if __name__ == "__main__":
     if point_is_valid( generator, x, y ) == expected:
       print "Point validity tested as expected."
     else:
-      print "*** Point validity test gave wrong result."
+      raise TestFailure("*** Point validity test gave wrong result.")
 
   def test_signature_validity( Msg, Qx, Qy, R, S, expected ):
     """Msg = message, Qx and Qy represent the base point on
@@ -284,8 +285,8 @@ if __name__ == "__main__":
       print "Signature tested as expected: got %s, expected %s." % \
             ( got, expected )
     else:
-      print "*** Signature test failed: got %s, expected %s." % \
-            ( got, expected )
+      raise TestFailure("*** Signature test failed: got %s, expected %s." % \
+                        ( got, expected ))
 
   print "NIST Curve P-192:"
 
@@ -296,7 +297,7 @@ if __name__ == "__main__":
   d = 651056770906015076056810763456358567190100156695615665659L
   Q = d * p192
   if Q.x() != 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5L:
-    print "*** p192 * d came out wrong."
+    raise TestFailure("*** p192 * d came out wrong.")
   else:
     print "p192 * d came out right."
 
@@ -304,7 +305,7 @@ if __name__ == "__main__":
   R = k * p192
   if R.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEADL \
      or R.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835L:
-    print "*** k * p192 came out wrong."
+    raise TestFailure("*** k * p192 came out wrong.")
   else:
     print "k * p192 came out right."
 
@@ -313,7 +314,7 @@ if __name__ == "__main__":
   temp = u1 * p192 + u2 * Q
   if temp.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEADL \
      or temp.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835L:
-    print "*** u1 * p192 + u2 * Q came out wrong."
+    raise TestFailure("*** u1 * p192 + u2 * Q came out wrong.")
   else:
     print "u1 * p192 + u2 * Q came out right."
 
@@ -324,17 +325,17 @@ if __name__ == "__main__":
   r, s = sig.r, sig.s
   if r != 3342403536405981729393488334694600415596881826869351677613L \
      or s != 5735822328888155254683894997897571951568553642892029982342L:
-    print "*** r or s came out wrong."
+    raise TestFailure("*** r or s came out wrong.")
   else:
     print "r and s came out right."
 
   valid = pubk.verifies( e, sig )
   if valid: print "Signature verified OK."
-  else: print "*** Signature failed verification."
+  else: raise TestFailure("*** Signature failed verification.")
 
   valid = pubk.verifies( e-1, sig )
   if not valid: print "Forgery was correctly rejected."
-  else: print "*** Forgery was erroneously accepted."
+  else: raise TestFailure("*** Forgery was erroneously accepted.")
 
   print "Testing point validity, as per ECDSAVS.pdf B.2.2:"
 
@@ -548,9 +549,9 @@ if __name__ == "__main__":
   if pubkey.verifies( hash, signature ):
     print "Demo verification succeeded."
   else:
-    print "*** Demo verification failed."
+    raise TestFailure("*** Demo verification failed.")
 
   if pubkey.verifies( hash-1, signature ):
-    print "**** Demo verification failed to reject tampered hash."
+    raise TestFailure( "**** Demo verification failed to reject tampered hash.")
   else:
     print "Demo verification correctly rejected tampered hash."

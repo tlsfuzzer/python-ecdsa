@@ -21,7 +21,7 @@ def randrange(order, entropy=None):
     algorithm we use takes longer and longer time (on average) to complete as
     'order' falls, rising to a maximum of avg=512 loops for the worst-case
     (256**k)+1 . All of the standard curves behave well. There is a cutoff at
-    10k looks (which raises RuntimeError) to prevent an infinite loop when
+    10k loops (which raises RuntimeError) to prevent an infinite loop when
     something is really broken like the entropy function not working.
 
     Note that this function is not declared to be forwards-compatible: we may
