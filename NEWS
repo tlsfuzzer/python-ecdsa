@@ -1,4 +1,9 @@
 
+* Release 0.6 (15 Oct 2010)
+
+Small packaging changes: extract version number from git, add 'setup.py test'
+command, set exit code correctly on test failure. Fix pyflakes warnings.
+
 * Release 0.5 (27 Apr 2010)
 
 Initial release. EC-DSA signature for five NIST "Suite B" GF(p) curves:
