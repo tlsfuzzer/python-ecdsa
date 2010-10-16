@@ -43,7 +43,8 @@ def update_version_py():
         print "This does not appear to be a Git repository."
         return
     try:
-        p = subprocess.Popen(["git", "describe", "--dirty", "--always"],
+        p = subprocess.Popen(["git", "describe",
+                              "--tags", "--dirty", "--always"],
                              stdout=subprocess.PIPE)
     except EnvironmentError:
         print "unable to run git, leaving ecdsa/_version.py alone"
