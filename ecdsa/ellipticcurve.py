@@ -110,7 +110,7 @@ class Point( object ):
       assert x > 0
       result = 1L
       while result <= x: result = 2 * result
-      return result / 2
+      return result // 2
 
     e = other
     if self.__order: e = e % self.__order
@@ -122,7 +122,7 @@ class Point( object ):
 
     e3 = 3 * e
     negative_self = Point( self.__curve, self.__x, -self.__y, self.__order )
-    i = leftmost_bit( e3 ) / 2
+    i = leftmost_bit( e3 ) // 2
     result = self
     # print "Multiplying %s by %d (e3 = %d):" % ( self, other, e3 )
     while i > 1:
@@ -130,7 +130,7 @@ class Point( object ):
       if ( e3 & i ) != 0 and ( e & i ) == 0: result = result + self
       if ( e3 & i ) == 0 and ( e & i ) != 0: result = result + negative_self
       # print ". . . i = %d, result = %s" % ( i, result )
-      i = i / 2
+      i = i // 2
 
     return result
 

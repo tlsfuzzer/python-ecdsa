@@ -434,7 +434,7 @@ class Util(unittest.TestCase):
         # this technique should use the full range
         self.failUnless(counts[order-1])
         for i in range(1, order):
-            print "%3d: %s" % (i, "*"*(counts[i]/100))
+            print "%3d: %s" % (i, "*"*(counts[i]//100))
             
 
 if __name__ == "__main__":

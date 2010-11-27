@@ -4,7 +4,7 @@ class UnknownCurveError(Exception):
     pass
 
 def orderlen(order):
-    return (1+len("%x"%order))/2 # bytes
+    return (1+len("%x"%order))//2 # bytes
 
 # the NIST curves
 class Curve:

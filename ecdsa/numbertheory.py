@@ -37,7 +37,7 @@ def modular_exp( base, exponent, modulus ):
 #   b = base + 0L
 #   while x > 0:
 #     if x % 2 > 0: result = (result * b) % modulus
-#     x = x / 2
+#     x = x // 2
 #     b = ( b * b ) % modulus
 #   return result
 
@@ -113,7 +113,7 @@ def polynomial_exp_mod( base, exponent, polymod, p ):
   else:        s = [ 1 ]
 
   while k > 1:
-    k = k / 2
+    k = k // 2
     G = polynomial_multiply_mod( G, G, polymod, p )
     if k%2 == 1: s = polynomial_multiply_mod( G, s, polymod, p )
 
@@ -137,7 +137,7 @@ def jacobi( a, n ):
   if a == 1: return 1
   a1, e = a, 0
   while a1%2 == 0:
-    a1, e = a1/2, e+1
+    a1, e = a1//2, e+1
   if e%2 == 0 or n%8 == 1 or n%8 == 7: s = 1
   else: s = -1
   if a1 == 1: return s
@@ -165,18 +165,18 @@ def square_root_mod_prime( a, p ):
   if jac == -1: raise SquareRootError( "%d has no square root modulo %d" \
                                        % ( a, p ) )
 
-  if p % 4 == 3: return modular_exp( a, (p+1)/4, p )
+  if p % 4 == 3: return modular_exp( a, (p+1)//4, p )
 
   if p % 8 == 5:
-    d = modular_exp( a, (p-1)/4, p )
-    if d == 1: return modular_exp( a, (p+3)/8, p )
-    if d == p-1: return ( 2 * a * modular_exp( 4*a, (p-5)/8, p ) ) % p
+    d = modular_exp( a, (p-1)//4, p )
+    if d == 1: return modular_exp( a, (p+3)//8, p )
+    if d == p-1: return ( 2 * a * modular_exp( 4*a, (p-5)//8, p ) ) % p
     raise RuntimeError, "Shouldn't get here."
 
   for b in range( 2, p ):
     if jacobi( b*b-4*a, p ) == -1:
       f = ( a, -b, 1 )
-      ff = polynomial_exp_mod( ( 0, 1 ), (p+1)/2, f, p )
+      ff = polynomial_exp_mod( ( 0, 1 ), (p+1)//2, f, p )
       assert ff[1] == 0
       return ff[0]
   raise RuntimeError, "No b found."
@@ -226,7 +226,7 @@ def gcd( *a ):
 def lcm2(a,b):
   """Least common multiple of two integers."""
 
-  return (a*b)/gcd(a,b)
+  return (a*b)//gcd(a,b)
 
 
 def lcm( *a ):
@@ -442,7 +442,7 @@ def is_prime( n ):
   r = n - 1
   while ( r % 2 ) == 0:
     s = s + 1
-    r = r / 2
+    r = r // 2
   for i in xrange( t ):
     a = smallprimes[ i ]
     y = modular_exp( a, r, n )
@@ -542,7 +542,7 @@ if __name__ == '__main__':
     print "Testing square_root_mod_prime for modulus p = %d." % p
     squares = []
 
-    for root in range( 0, 1+p/2 ):
+    for root in range( 0, 1+p//2 ):
       sq = ( root * root ) % p
       squares.append( sq )
       calculated = square_root_mod_prime( sq, p )
