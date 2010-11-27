@@ -178,7 +178,7 @@ class Point( object ):
 # This one point is the Point At Infinity for all purposes:
 INFINITY = Point( None, None, None )  
 
-if __name__ == "__main__":
+def __main__():
 
   class FailedTest(Exception): pass
   def test_add( c, x1, y1, x2,  y2, x3, y3 ):
@@ -285,3 +285,6 @@ if __name__ == "__main__":
     raise FailedTest("u1 * p192 + u2 * Q came out wrong.")
   else:
     print "u1 * p192 + u2 * Q came out right."
+
+if __name__ == "__main__":
+  __main__()

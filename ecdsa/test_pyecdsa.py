@@ -437,5 +437,7 @@ class Util(unittest.TestCase):
             print "%3d: %s" % (i, "*"*(counts[i]//100))
             
 
-if __name__ == "__main__":
+def __main__():
     unittest.main()
+if __name__ == "__main__":
+    __main__()

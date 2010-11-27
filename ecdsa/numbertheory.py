@@ -492,8 +492,8 @@ smallprimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
 
 miller_rabin_test_count = 0
 
-if __name__ == '__main__':
-
+def __main__():
+  
   # Making sure locally defined exceptions work:
   # p = modular_exp( 2, -2, 3 )
   # p = square_root_mod_prime( 2, 3 )
@@ -610,3 +610,5 @@ if __name__ == '__main__':
   if error_tally != 0:
     raise FailedTest("%d errors detected" % error_tally)
 
+if __name__ == '__main__':
+  __main__()
