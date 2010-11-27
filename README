@@ -16,6 +16,15 @@ and 521 bits. The "short names" for these curves, as known by the OpenSSL
 tool, are: prime192v1, secp224r1, prime256v1, secp384r1, and secp521r1. No
 other curves are included, but it would not be too hard to add more.
 
+== Dependencies ==
+
+This library uses only Python. It requires python2.5 or later versions of the
+python2.x series. It is not compatible with python3.x .
+
+To run the OpenSSL compatibility tests, the 'openssl' tool must be on your
+$PATH. This release has been tested successfully against OpenSSL 0.9.8g,
+however the compatibility tests fail against OpenSSL 1.0.0a .
+
 == Speed ==
 
 The following table shows how long this library takes to generate keypairs

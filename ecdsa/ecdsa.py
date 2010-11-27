@@ -178,8 +178,8 @@ def digest_integer( m ):
   # it in order to be able to duplicate the examples
   # in ECDSAVS.
   #
-  import sha
-  return string_to_int( sha.new( int_to_string( m ) ).digest() )
+  from hashlib import sha1
+  return string_to_int( sha1( int_to_string( m ) ).digest() )
 
 
 def point_is_valid( generator, x, y ):
