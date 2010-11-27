@@ -191,7 +191,8 @@ def sigdecode_string(signature, order):
     s = string_to_number_fixedlen(signature[l:], order)
     return r, s
 
-def sigdecode_strings((r_str, s_str), order):
+def sigdecode_strings(rs_strings, order):
+    (r_str, s_str) = rs_strings
     l = orderlen(order)
     assert len(r_str) == l, (len(r_str), l)
     assert len(s_str) == l, (len(s_str), l)
