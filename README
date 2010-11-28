@@ -22,8 +22,8 @@ This library uses only Python. It requires python2.5 or later versions of the
 python2.x series. It is not compatible with python3.x .
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be on your
-$PATH. This release has been tested successfully against OpenSSL 0.9.8g,
-however the compatibility tests fail against OpenSSL 1.0.0a .
+$PATH. This release has been tested successfully against both OpenSSL 0.9.8o
+and 1.0.0a .
 
 == Speed ==
 
@@ -68,7 +68,8 @@ more for the wrapper. To run them all, do this:
  python ecdsa/ecdsa.py   # look for "****" and "failed" for problems
  python ecdsa/test_pyecdsa.py  # look for "FAILED" for problems
 
-On my 2009 Mac laptop, the combined tests take about 34 seconds to run.
+On my 2009 Mac laptop, the combined tests take about 34 seconds to run. On a
+2.4GHz P4 Linux box, they take 81 seconds.
 
 One component of test_pyecdsa.py checks compatibility with OpenSSL, by
 running the "openssl" CLI tool. If this tool is not on your $PATH, you may
