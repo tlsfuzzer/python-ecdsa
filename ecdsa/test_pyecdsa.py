@@ -18,14 +18,16 @@ import der
 class SubprocessError(Exception):
     pass
 
-def run(cmd):
-    p = subprocess.Popen(cmd.split(),
+def run_openssl(cmd):
+    OPENSSL = "openssl"
+    p = subprocess.Popen([OPENSSL] + cmd.split(),
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
     stdout, ignored = p.communicate()
     if p.returncode != 0:
-        raise SubprocessError("cmd '%s' failed: rc=%s, stdout/err was %s" %
-                              (cmd, p.returncode, stdout))
+        raise SubprocessError("cmd '%s %s' failed: rc=%s, stdout/err was %s" %
+                              (OPENSSL, cmd, p.returncode, stdout))
+    return stdout
 
 BENCH = False
 
@@ -249,7 +251,13 @@ class ECDSA(unittest.TestCase):
         
 
 class OpenSSL(unittest.TestCase):
-    # test interoperability with OpenSSL tools
+    # test interoperability with OpenSSL tools. Note that openssl's ECDSA
+    # sign/verify arguments changed between 0.9.8 and 1.0.0: the early
+    # versions require "-ecdsa-with-SHA1", the later versions want just
+    # "-SHA1" (or to leave out that argument entirely, which means the
+    # signature will use some default digest algorithm, probably determined
+    # by the key, probably always SHA1).
+    #
     # openssl ecparam -name secp224r1 -genkey -out privkey.pem
     # openssl ec -in privkey.pem -text -noout # get the priv/pub keys
     # openssl dgst -ecdsa-with-SHA1 -sign privkey.pem -out data.sig data.txt
@@ -258,6 +266,16 @@ class OpenSSL(unittest.TestCase):
     # openssl dgst -ecdsa-with-SHA1 -prverify privkey.pem -signature data.sig data.txt ; echo $?
     # openssl ec -in privkey.pem -pubout -out pubkey.pem
     # openssl ec -in privkey.pem -pubout -outform DER -out pubkey.der
+
+    def get_openssl_messagedigest_arg(self):
+        v = run_openssl("version")
+        # e.g. "OpenSSL 1.0.0 29 Mar 2010", or "OpenSSL 1.0.0a 1 Jun 2010",
+        # or "OpenSSL 0.9.8o 01 Jun 2010"
+        vs = v.split()[1].split(".")
+        if vs >=  ["1","0","0"]:
+            return "-SHA1"
+        else:
+            return "-ecdsa-with-SHA1"
 
     # sk: 1:OpenSSL->python  2:python->OpenSSL
     # vk: 3:OpenSSL->python  4:python->OpenSSL
@@ -275,15 +293,16 @@ class OpenSSL(unittest.TestCase):
     def do_test_from_openssl(self, curve, curvename):
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
+        mdarg = self.get_openssl_messagedigest_arg()
         if os.path.isdir("t"):
             shutil.rmtree("t")
         os.mkdir("t")
-        run("openssl ecparam -name %s -genkey -out t/privkey.pem" % curvename)
-        run("openssl ec -in t/privkey.pem -pubout -out t/pubkey.pem")
+        run_openssl("ecparam -name %s -genkey -out t/privkey.pem" % curvename)
+        run_openssl("ec -in t/privkey.pem -pubout -out t/pubkey.pem")
         data = "data"
         open("t/data.txt","wb").write(data)
-        run("openssl dgst -ecdsa-with-SHA1 -sign t/privkey.pem -out t/data.sig t/data.txt")
-        run("openssl dgst -ecdsa-with-SHA1 -verify t/pubkey.pem -signature t/data.sig t/data.txt")
+        run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig t/data.txt" % mdarg)
+        run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig t/data.txt" % mdarg)
         pubkey_pem = open("t/pubkey.pem").read()
         vk = VerifyingKey.from_pem(pubkey_pem) # 3
         sig_der = open("t/data.sig","rb").read()
@@ -306,6 +325,7 @@ class OpenSSL(unittest.TestCase):
     def do_test_to_openssl(self, curve, curvename):
         # Python: create sk, vk, sign.
         # OpenSSL: read vk(4), checksig(6), read sk(2), sign, check
+        mdarg = self.get_openssl_messagedigest_arg()
         if os.path.isdir("t"):
             shutil.rmtree("t")
         os.mkdir("t")
@@ -319,13 +339,13 @@ class OpenSSL(unittest.TestCase):
         open("t/data.txt","wb").write(data)
         open("t/baddata.txt","wb").write(data+"corrupt")
 
-        self.failUnlessRaises(SubprocessError, run,
-                              "openssl dgst -ecdsa-with-SHA1 -verify t/pubkey.der -keyform DER -signature t/data.sig t/baddata.txt")
-        run("openssl dgst -ecdsa-with-SHA1 -verify t/pubkey.der -keyform DER -signature t/data.sig t/data.txt")
+        self.failUnlessRaises(SubprocessError, run_openssl,
+                              "dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/baddata.txt" % mdarg)
+        run_openssl("dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/data.txt" % mdarg)
 
         open("t/privkey.pem","wb").write(sk.to_pem()) # 2
-        run("openssl dgst -ecdsa-with-SHA1 -sign t/privkey.pem -out t/data.sig2 t/data.txt")
-        run("openssl dgst -ecdsa-with-SHA1 -verify t/pubkey.pem -signature t/data.sig2 t/data.txt") 
+        run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig2 t/data.txt" % mdarg)
+        run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig2 t/data.txt" % mdarg)
 
 class DER(unittest.TestCase):
     def test_oids(self):
