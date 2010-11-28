@@ -1,3 +1,10 @@
+* Release 0.7 (28 Nov 2010)
+
+Fix test failure against OpenSSL-1.0.0 (previous versions only worked against
+openssl-0.9.8 or earlier). Increase python requirement to py2.5 or later
+(still no py3 compatibility, but work is underway). Replace use of obsolete
+'sha' library with modern 'hashlib'. Clean up unit test runner (stop using
+subprocesses).
 
 * Release 0.6 (15 Oct 2010)
 
