@@ -45,6 +45,11 @@ class ECDSA(unittest.TestCase):
         pub2 = VerifyingKey.from_string(pub.to_string())
         self.failUnless(pub2.verify(sig, data))
 
+    def test_bad_usage(self):
+        # sk=SigningKey() is wrong
+        self.failUnlessRaises(TypeError, SigningKey)
+        self.failUnlessRaises(TypeError, VerifyingKey)
+
     def test_lengths(self):
         default = NIST192p
         priv = SigningKey.generate()

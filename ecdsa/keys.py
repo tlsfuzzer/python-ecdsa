@@ -14,9 +14,13 @@ class BadDigestError(Exception):
     pass
 
 class VerifyingKey:
+    def __init__(self, _error__please_use_generate=None):
+        if not _error__please_use_generate:
+            raise TypeError("Please use SigningKey.generate() to construct me")
+
     @classmethod
     def from_public_point(klass, point, curve=NIST192p):
-        self = klass()
+        self = klass(_error__please_use_generate=True)
         self.curve = curve
         self.pubkey = ecdsa.Public_key(curve.generator, point)
         self.pubkey.order = curve.order
@@ -103,6 +107,10 @@ class VerifyingKey:
         raise BadSignatureError
 
 class SigningKey:
+    def __init__(self, _error__please_use_generate=None):
+        if not _error__please_use_generate:
+            raise TypeError("Please use SigningKey.generate() to construct me")
+
     @classmethod
     def generate(klass, curve=NIST192p, entropy=None):
         secexp = randrange(curve.order, entropy)
@@ -115,7 +123,7 @@ class SigningKey:
 
     @classmethod
     def from_secret_exponent(klass, secexp, curve=NIST192p):
-        self = klass()
+        self = klass(_error__please_use_generate=True)
         self.curve = curve
         self.baselen = curve.baselen
         n = curve.order
