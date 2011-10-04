@@ -1,3 +1,10 @@
+* Release 0.8 (04 Oct 2011)
+
+Small API addition: accept a hashfunc= argument in the constructors for
+SigningKey and VerifyingKey. This makes it easier to write wrappers that e.g.
+use NIST256p and SHA256 without their obligating callers to pass
+hashfunc=sha256 in each time they call sign() or verify().
+
 * Release 0.7 (28 Nov 2010)
 
 Fix test failure against OpenSSL-1.0.0 (previous versions only worked against
