@@ -4,7 +4,7 @@ import time
 import shutil
 import subprocess
 from binascii import hexlify, unhexlify
-from hashlib import sha1
+from hashlib import sha1, sha256
 
 from keys import SigningKey, VerifyingKey
 from keys import BadSignatureError
@@ -253,7 +253,25 @@ class ECDSA(unittest.TestCase):
         sig_der = priv1.sign(data, sigencode=sigencode_der)
         self.failUnlessEqual(type(sig_der), str)
         self.failUnless(pub1.verify(sig_der, data, sigdecode=sigdecode_der))
-        
+
+    def test_hashfunc(self):
+        sk = SigningKey.generate(curve=NIST256p, hashfunc=sha256)
+        data = "security level is 128 bits"
+        sig = sk.sign(data)
+        vk = VerifyingKey.from_string(sk.get_verifying_key().to_string(),
+                                      curve=NIST256p, hashfunc=sha256)
+        self.failUnless(vk.verify(sig, data))
+
+        sk2 = SigningKey.generate(curve=NIST256p)
+        sig2 = sk2.sign(data, hashfunc=sha256)
+        vk2 = VerifyingKey.from_string(sk2.get_verifying_key().to_string(),
+                                       curve=NIST256p, hashfunc=sha256)
+        self.failUnless(vk2.verify(sig2, data))
+
+        vk3 = VerifyingKey.from_string(sk.get_verifying_key().to_string(),
+                                       curve=NIST256p)
+        self.failUnless(vk3.verify(sig, data, hashfunc=sha256))
+
 
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
