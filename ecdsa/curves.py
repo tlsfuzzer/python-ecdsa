@@ -29,8 +29,10 @@ NIST384p = Curve("NIST384p", ecdsa.curve_384, ecdsa.generator_384,
                  (1, 3, 132, 0, 34))
 NIST521p = Curve("NIST521p", ecdsa.curve_521, ecdsa.generator_521,
                  (1, 3, 132, 0, 35))
+SECP256k1 = Curve("SECP256k1", ecdsa.curve_secp256k1,
+        ecdsa.generator_secp256k1, (1, 3, 132, 0, 10))
 
-curves = [NIST192p, NIST224p, NIST256p, NIST384p, NIST521p]
+curves = [NIST192p, NIST224p, NIST256p, NIST384p, NIST521p, SECP256k1]
 
 def find_curve(oid_curve):
     for c in curves:
