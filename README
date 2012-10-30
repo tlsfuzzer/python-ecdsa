@@ -95,7 +95,7 @@ signature string: it either returns True or raises BadSignatureError.
  sk = SigningKey.generate() # uses NIST192p
  vk = sk.get_verifying_key()
  signature = sk.sign("message")
- assert sk.verify(signature, "message")
+ assert vk.verify(signature, "message")
 
 Each SigningKey/VerifyingKey is associated with a specific curve, like
 NIST192p (the default one). Longer curves are more secure, but take longer to
@@ -105,7 +105,7 @@ use, and result in longer keys and signatures.
  sk = SigningKey.generate(curve=NIST384p)
  vk = sk.get_verifying_key()
  signature = sk.sign("message")
- assert sk.verify(signature, "message")
+ assert vk.verify(signature, "message")
 
 The SigningKey can be serialized into several different formats: the shortest
 is to call s=sk.to_string(), and then re-create it with
