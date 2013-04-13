@@ -1,4 +1,6 @@
 *.py[cod]
+ecdsa/_version.py
+MANIFEST
 
 # C extensions
 *.so
@@ -28,6 +30,7 @@ pip-log.txt
 
 # Unit test / coverage reports
 .coverage
+coverage-html
 .tox
 nosetests.xml
 t/
