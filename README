@@ -195,9 +195,10 @@ To produce signatures that can be verified by OpenSSL tools, or to verify
 signatures that were produced by those tools, use:
 
  # openssl ecparam -name secp224r1 -genkey -out sk.pem
- # openssl ec -in sk.pem -pubout -out pk.pem
+ # openssl ec -in sk.pem -pubout -out vk.pem
  # openssl dgst -ecdsa-with-SHA1 -sign sk.pem -out data.sig data
- # openssl dgst -ecdsa-with-SHA1 -prverify vk.pem -signature data.sig data
+ # openssl dgst -ecdsa-with-SHA1 -verify vk.pem -signature data.sig data
+ # openssl dgst -ecdsa-with-SHA1 -prverify sk.pem -signature data.sig data
 
  sk.sign(msg, hashfunc=hashlib.sha1, sigencode=ecdsa.util.sigencode_der)
  vk.verify(sig, msg, hashfunc=hashlib.sha1, sigdecode=ecdsa.util.sigdecode_der)
