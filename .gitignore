@@ -1,7 +1,48 @@
-/.coverage
-/coverage-html/
-/t/
-/build/
-/ecdsa/_version.py
-/MANIFEST
-/dist/
+*.py[cod]
+ecdsa/_version.py
+MANIFEST
+
+# C extensions
+*.so
+*.dylib
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
+
+# Installer logs
+pip-log.txt
+
+# Other logs
+*.log
+
+# Unit test / coverage reports
+.coverage
+coverage-html
+.tox
+nosetests.xml
+t/
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Backup files
+*.swp
+*~
