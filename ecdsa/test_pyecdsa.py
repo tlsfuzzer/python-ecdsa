@@ -47,6 +47,27 @@ class ECDSA(unittest.TestCase):
         pub2 = VerifyingKey.from_string(pub.to_string())
         self.failUnless(pub2.verify(sig, data))
 
+    def test_deterministic(self):
+        data = "blahblah"
+        secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16)
+
+        priv = SigningKey.from_secret_exponent(secexp, SECP256k1, sha256)
+        pub = priv.get_verifying_key()
+
+        k = rfc6979.generate_k(SECP256k1.generator, secexp, sha256, sha256(data).digest())
+
+        sig1 = priv.sign(data, k=k)
+        self.failUnless(pub.verify(sig1, data))
+
+        sig2 = priv.sign(data, k=k)
+        self.failUnless(pub.verify(sig2, data))
+
+        sig3 = priv.sign_deterministic(data, sha256)
+        self.failUnless(pub.verify(sig3, data))
+
+        self.failUnlessEqual(sig1, sig2)
+        self.failUnlessEqual(sig1, sig3)
+
     def test_bad_usage(self):
         # sk=SigningKey() is wrong
         self.failUnlessRaises(TypeError, SigningKey)
@@ -488,7 +509,7 @@ class RFC6979(unittest.TestCase):
         self.failUnlessEqual(expected, actual)
 
     def test_SECP256k1(self):
-        ''' RFC doesn't contain test vectors for SECP256k1 used in bitcoin.
+        '''RFC doesn't contain test vectors for SECP256k1 used in bitcoin.
         This vector has been computed by Golang reference implementation instead.'''
         self._do(
             generator = SECP256k1.generator,
