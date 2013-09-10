@@ -518,6 +518,14 @@ class RFC6979(unittest.TestCase):
             hash_func = sha256,
             expected = int("8fa1f95d514760e498f28957b824ee6ec39ed64826ff4fecc2b5739ec45b91cd", 16))
 
+    def test_SECP256k1_2(self):
+        self._do(
+            generator=SECP256k1.generator,
+            secexp=int("cca9fbcc1b41e5a95d369eaa6ddcff73b61a4efaa279cfc6567e8daa39cbaf50", 16),
+            hsh=sha256("sample").digest(),
+            hash_func=sha256,
+            expected=int("2df40ca70e639d89528a6b670d9d48d9165fdc0febc0974056bdce192b8e16a3", 16))
+
     def test_1(self):
         # Basic example of the RFC
         self._do(
