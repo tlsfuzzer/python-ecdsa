@@ -4,7 +4,7 @@ import time
 import shutil
 import subprocess
 from binascii import hexlify, unhexlify
-from hashlib import sha1, sha256
+from hashlib import sha1, sha256, sha512
 
 from keys import SigningKey, VerifyingKey
 from keys import BadSignatureError
@@ -12,8 +12,10 @@ import util
 from util import sigencode_der, sigencode_strings
 from util import sigdecode_der, sigdecode_strings
 from curves import Curve, UnknownCurveError
-from curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
+from curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p, SECP256k1
+from ellipticcurve import Point
 import der
+import rfc6979
 
 class SubprocessError(Exception):
     pass
@@ -478,7 +480,103 @@ class Util(unittest.TestCase):
         self.failUnless(counts[order-1])
         for i in range(1, order):
             print "%3d: %s" % (i, "*"*(counts[i]//100))
-            
+
+class RFC6979(unittest.TestCase):
+    # https://tools.ietf.org/html/rfc6979#appendix-A.1
+    def _do(self, generator, secexp, hsh, hash_func, expected):
+        actual = rfc6979.generate_k(generator, secexp, hash_func, hsh)
+        self.failUnlessEqual(expected, actual)
+
+    def test_SECP256k1(self):
+        ''' RFC doesn't contain test vectors for SECP256k1 used in bitcoin.
+        This vector has been computed by Golang reference implementation instead.'''
+        self._do(
+            generator = SECP256k1.generator,
+            secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16),
+            hsh = sha256("sample").digest(),
+            hash_func = sha256,
+            expected = int("8fa1f95d514760e498f28957b824ee6ec39ed64826ff4fecc2b5739ec45b91cd", 16))
+
+    def test_1(self):
+        # Basic example of the RFC
+        self._do(
+            generator = Point(None, 0, 0, int("4000000000000000000020108A2E0CC0D99F8A5EF", 16)),
+            secexp = int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
+            hsh = unhexlify("AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"),
+            hash_func = sha256,
+            expected = int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16))
+
+    def test_2(self):
+        self._do(
+            generator=NIST192p.generator,
+            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh = sha1("sample").digest(),
+            hash_func = sha1,
+            expected = int("37D7CA00D2C7B0E5E412AC03BD44BA837FDD5B28CD3B0021", 16))
+
+    def test_3(self):
+        self._do(
+            generator=NIST192p.generator,
+            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh = sha256("sample").digest(),
+            hash_func = sha256,
+            expected = int("32B1B6D7D42A05CB449065727A84804FB1A3E34D8F261496", 16))
+
+    def test_4(self):
+        self._do(
+            generator=NIST192p.generator,
+            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh = sha512("sample").digest(),
+            hash_func = sha512,
+            expected = int("A2AC7AB055E4F20692D49209544C203A7D1F2C0BFBC75DB1", 16))
+
+    def test_5(self):
+        self._do(
+            generator=NIST192p.generator,
+            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh = sha1("test").digest(),
+            hash_func = sha1,
+            expected = int("D9CF9C3D3297D3260773A1DA7418DB5537AB8DD93DE7FA25", 16))
+
+    def test_6(self):
+        self._do(
+            generator=NIST192p.generator,
+            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh = sha256("test").digest(),
+            hash_func = sha256,
+            expected = int("5C4CE89CF56D9E7C77C8585339B006B97B5F0680B4306C6C", 16))
+
+    def test_7(self):
+        self._do(
+            generator=NIST192p.generator,
+            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh = sha512("test").digest(),
+            hash_func = sha512,
+            expected = int("0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527", 16))
+
+    def test_8(self):
+        self._do(
+            generator=NIST521p.generator,
+            secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
+            hsh = sha1("sample").digest(),
+            hash_func = sha1,
+            expected = int("089C071B419E1C2820962321787258469511958E80582E95D8378E0C2CCDB3CB42BEDE42F50E3FA3C71F5A76724281D31D9C89F0F91FC1BE4918DB1C03A5838D0F9", 16))
+
+    def test_9(self):
+        self._do(
+            generator=NIST521p.generator,
+            secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
+            hsh = sha256("sample").digest(),
+            hash_func = sha256,
+            expected = int("0EDF38AFCAAECAB4383358B34D67C9F2216C8382AAEA44A3DAD5FDC9C32575761793FEF24EB0FC276DFC4F6E3EC476752F043CF01415387470BCBD8678ED2C7E1A0", 16))
+
+    def test_10(self):
+        self._do(
+            generator=NIST521p.generator,
+            secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
+            hsh = sha512("test").digest(),
+            hash_func = sha512,
+            expected = int("16200813020EC986863BEDFC1B121F605C1215645018AEA1A7B215A564DE9EB1B38A67AA1128B80CE391C4FB71187654AAA3431027BFC7F395766CA988C964DC56D", 16))
 
 def __main__():
     unittest.main()
