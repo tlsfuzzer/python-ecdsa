@@ -215,17 +215,21 @@ class SigningKey:
         return self.verifying_key
 
     def sign_deterministic(self, data, hashfunc=None, sigencode=sigencode_string):
+        hashfunc = hashfunc or self.default_hashfunc
+        digest = hashfunc(data).digest()
+
+        return self.sign_digest_deterministic(digest, hashfunc=hashfunc, sigencode=sigencode)
+
+    def sign_digest_deterministic(self, digest, hashfunc=None, sigencode=sigencode_string):
         """
         Calculates 'k' from data itself, removing the need for strong
         random generator and producing deterministic (reproducible) signatures.
         See RFC 6979 for more details.
         """
-        hashfunc = hashfunc or self.default_hashfunc
         secexp = self.privkey.secret_multiplier
-        h = hashfunc(data).digest()
-        k = rfc6979.generate_k(self.curve.generator, secexp, hashfunc, h)
+        k = rfc6979.generate_k(self.curve.generator, secexp, hashfunc, digest)
 
-        return self.sign(data, hashfunc=hashfunc, sigencode=sigencode, k=k)
+        return self.sign_digest(digest, sigencode=sigencode, k=k)
 
     def sign(self, data, entropy=None, hashfunc=None, sigencode=sigencode_string, k=None):
         """
