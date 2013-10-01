@@ -92,9 +92,7 @@ def polynomial_multiply_mod( m1, m2, polymod, p ):
 
   return polynomial_reduce_mod( prod, polymod, p )
 
-  
 
-  
 def polynomial_exp_mod( base, exponent, polymod, p ):
   """Polynomial exponentiation modulo a polynomial over ints mod p.
 
@@ -146,7 +144,6 @@ def jacobi( a, n ):
   if a1 == 1: return s
   if n%4 == 3 and a1%4 == 3: s = -s
   return s * jacobi( n % a1, a1 )
-  
 
 
 
@@ -163,7 +160,7 @@ def square_root_mod_prime( a, p ):
 
   if a == 0: return 0
   if p == 2: return a
-  
+
   jac = jacobi( a, p )
   if jac == -1: raise SquareRootError( "%d has no square root modulo %d" \
                                        % ( a, p ) )
@@ -291,7 +288,7 @@ def factorization( n ):
             count = count + 1
           result.append( ( d, count ) )
       if n > 1: result.append( ( n, 1 ) )
-        
+
   return result
 
 
@@ -405,12 +402,12 @@ def is_prime( n ):
   Miller-Rabin was (19999999 - 10000001)*(2/3)*(4/5)*(6/7)
   = 4.57 million.
   """
-  
+
   # (This is used to study the risk of false positives:)
   global miller_rabin_test_count
 
   miller_rabin_test_count = 0
-  
+
   if n <= smallprimes[-1]:
     if n in smallprimes: return True
     else: return False
@@ -496,7 +493,7 @@ smallprimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
 miller_rabin_test_count = 0
 
 def __main__():
-  
+
   # Making sure locally defined exceptions work:
   # p = modular_exp( 2, -2, 3 )
   # p = square_root_mod_prime( 2, 3 )

@@ -72,7 +72,7 @@ class Point( object ):
     # self.curve is allowed to be None only for INFINITY:
     if self.__curve: assert self.__curve.contains_point( x, y )
     if order: assert self * order == INFINITY
- 
+
   def __eq__( self, other ):
     """Return True if the points are identical, False otherwise."""
     if self.__curve == other.__curve \
@@ -84,7 +84,7 @@ class Point( object ):
 
   def __add__( self, other ):
     """Add one point to another point."""
-    
+
     # X9.62 B.3:
 
     if other == INFINITY: return self
@@ -103,7 +103,7 @@ class Point( object ):
 
     x3 = ( l * l - self.__x - other.__x ) % p
     y3 = ( l * ( self.__x - x3 ) - self.__y ) % p
-    
+
     return Point( self.__curve, x3, y3 )
 
   def __mul__( self, other ):
@@ -139,7 +139,7 @@ class Point( object ):
 
   def __rmul__( self, other ):
     """Multiply a point by an integer."""
-    
+
     return self * other
 
   def __str__( self ):
@@ -162,7 +162,7 @@ class Point( object ):
 
     x3 = ( l * l - 2 * self.__x ) % p
     y3 = ( l * ( self.__x - x3 ) - self.__y ) % p
-    
+
     return Point( self.__curve, x3, y3 )
 
   def x( self ):
@@ -173,13 +173,13 @@ class Point( object ):
 
   def curve( self ):
     return self.__curve
-  
+
   def order( self ):
     return self.__order
 
 
 # This one point is the Point At Infinity for all purposes:
-INFINITY = Point( None, None, None )  
+INFINITY = Point( None, None, None )
 
 def __main__():
 

@@ -1,14 +1,12 @@
 '''
-           
 RFC 6979:
     Deterministic Usage of the Digital Signature Algorithm (DSA) and
     Elliptic Curve Digital Signature Algorithm (ECDSA)
 
     http://tools.ietf.org/html/rfc6979
-    
+
 Many thanks to Coda Hale for his implementation in Go language:
     https://github.com/codahale/rfc6979
-
 '''
 
 import hmac
@@ -38,34 +36,34 @@ def bit_length(num):
 def bits2int(data, qlen):
     x = int(hexlify(data), 16)
     l = len(data) * 8
-    
+
     if l > qlen:
         return x >> (l-qlen)
-    return x    
+    return x
 
 def bits2octets(data, order):
     z1 = bits2int(data, bit_length(order))
     z2 = z1 - order
-    
+
     if z2 < 0:
         z2 = z1
-        
+
     return number_to_string_crop(z2, order)
-    
+
 # https://tools.ietf.org/html/rfc6979#section-3.2
 def generate_k(generator, secexp, hash_func, data):
     '''
         generator - ECDSA generator used in the signature
         secexp - secure exponent (private key) in numeric form
         hash_func - reference to the same hash function used for generating hash
-        data - hash in binary form of the signing data 
+        data - hash in binary form of the signing data
     '''
-    
+
     qlen = bit_length(generator.order())
     holen = hash_func().digest_size
     rolen = (qlen + 7) / 8
     bx = number_to_string(secexp, generator.order()) + bits2octets(data, generator.order())
-    
+
     # Step B
     v = b('\x01') * holen
 
@@ -74,11 +72,11 @@ def generate_k(generator, secexp, hash_func, data):
 
     # Step D
 
-    k = hmac.new(k, v+b('\x00')+bx, hash_func).digest() 
+    k = hmac.new(k, v+b('\x00')+bx, hash_func).digest()
 
     # Step E
     v = hmac.new(k, v, hash_func).digest()
-    
+
     # Step F
     k = hmac.new(k, v+b('\x01')+bx, hash_func).digest()
 

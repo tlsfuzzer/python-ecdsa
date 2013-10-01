@@ -24,7 +24,7 @@ Example:
   privkey = Private_key( pubkey, secret )
 
   # Signing a hash value:
- 
+
   hash = randrange( 1, n )
   signature = privkey.sign( hash, randrange( 1, n ) )
 
@@ -77,7 +77,7 @@ class Public_key( object ):
     """generator is the Point that generates the group,
     point is the Point that defines the public key.
     """
-    
+
     self.curve = generator.curve()
     self.generator = generator
     self.point = point
@@ -109,7 +109,7 @@ class Public_key( object ):
     xy = u1 * G + u2 * self.point
     v = xy.x() % n
     return v == r
-    
+
 
 
 class Private_key( object ):
@@ -120,7 +120,7 @@ class Private_key( object ):
     """public_key is of class Public_key;
     secret_multiplier is a large integer.
     """
-    
+
     self.public_key = public_key
     self.secret_multiplier = secret_multiplier
 
@@ -396,31 +396,31 @@ def __main__():
     0x6a223d00bd22c52833409a163e057e5b5da1def2a197dd15, \
     0x7b482604199367f1f303f9ef627f922f97023e90eae08abf, \
     True )
-  
+
   test_point_validity(
     p192, \
     0x6dccbde75c0948c98dab32ea0bc59fe125cf0fb1a3798eda, \
     0x0001171a3e0fa60cf3096f4e116b556198de430e1fbd330c8835, \
     False )
-  
+
   test_point_validity(
     p192, \
     0xd266b39e1f491fc4acbbbc7d098430931cfa66d55015af12, \
     0x193782eb909e391a3148b7764e6b234aa94e48d30a16dbb2, \
     False )
-  
+
   test_point_validity(
     p192, \
     0x9d6ddbcd439baa0c6b80a654091680e462a7d1d3f1ffeb43, \
     0x6ad8efc4d133ccf167c44eb4691c80abffb9f82b932b8caa, \
     False )
-  
+
   test_point_validity(
     p192, \
     0x146479d944e6bda87e5b35818aa666a4c998a71f4e95edbc, \
     0xa86d6fe62bc8fbd88139693f842635f687f132255858e7f6, \
     False )
-  
+
   test_point_validity(
     p192, \
     0xe594d4a598046f3598243f50fd2c7bd7d380edb055802253, \
@@ -550,18 +550,18 @@ def __main__():
   # further precautions are appropriate.)
 
   randrange = random.SystemRandom().randrange
-  
+
   secret = randrange( 1, n )
   pubkey = Public_key( g, g * secret )
   privkey = Private_key( pubkey, secret )
 
   # Signing a hash value:
-  
+
   hash = randrange( 1, n )
   signature = privkey.sign( hash, randrange( 1, n ) )
 
   # Verifying a signature for a hash value:
-  
+
   if pubkey.verifies( hash, signature ):
     print_("Demo verification succeeded.")
   else:
