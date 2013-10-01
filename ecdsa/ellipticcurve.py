@@ -74,13 +74,13 @@ class Point( object ):
     if order: assert self * order == INFINITY
  
   def __eq__( self, other ):
-    """Return 0 if the points are identical, 1 otherwise."""
+    """Return True if the points are identical, False otherwise."""
     if self.__curve == other.__curve \
        and self.__x == other.__x \
        and self.__y == other.__y:
-      return 1 
+      return True
     else:
-      return 0 
+      return False
 
   def __add__( self, other ):
     """Add one point to another point."""
