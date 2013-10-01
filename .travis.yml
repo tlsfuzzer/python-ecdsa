@@ -3,5 +3,6 @@ python:
   - "2.5"
   - "2.6"
   - "2.7"
+install:
 script:
-  - make test
+  - python setup.py test
