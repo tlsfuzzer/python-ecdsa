@@ -77,15 +77,15 @@ def generate_k(generator, secexp, hash_func, data):
         t = ''
 
         # Step H2
-        while len(t) < rolen: #qlen/8:
+        while len(t) < rolen:
             v = hmac.new(k, v, hash_func).digest()
             t += v
-    
+
         # Step H3
         secret = bits2int(t, qlen)
 
         if secret >= 1 and secret < generator.order():
             return secret
-        
+
         k = hmac.new(k, v+'\x00', hash_func).digest()
         v = hmac.new(k, v, hash_func).digest()

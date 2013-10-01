@@ -559,7 +559,7 @@ class RFC6979(unittest.TestCase):
             expected=0x525A82B70E67874398067543FD84C83D30C175FDC45FDEEE082FE13B1D7CFDF1)
 
     def test_1(self):
-        # Basic example of the RFC
+        # Basic example of the RFC, it also tests 'try-try-again' from Step H of rfc6979
         self._do(
             generator = Point(None, 0, 0, int("4000000000000000000020108A2E0CC0D99F8A5EF", 16)),
             secexp = int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
