@@ -1,5 +1,8 @@
 # Pure-Python ECDSA
 
+[![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
+
+
 This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
 Digital Signature Algorithm), implemented purely in Python, released under
 the MIT license. With this library, you can quickly create keypairs (signing
