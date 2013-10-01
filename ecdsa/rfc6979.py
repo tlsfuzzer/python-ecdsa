@@ -13,7 +13,8 @@ Many thanks to Coda Hale for his implementation in Go language:
 
 import hmac
 from binascii import hexlify
-from util import number_to_string, number_to_string_crop
+from .util import number_to_string, number_to_string_crop
+from .six import b
 
 try:
     bin(0)
@@ -61,25 +62,25 @@ def generate_k(generator, secexp, hash_func, data):
     '''
     
     qlen = bit_length(generator.order())
-    holen = hash_func().digestsize
+    holen = hash_func().digest_size
     rolen = (qlen + 7) / 8
     bx = number_to_string(secexp, generator.order()) + bits2octets(data, generator.order())
     
     # Step B
-    v = '\x01' * holen
+    v = b('\x01') * holen
 
     # Step C
-    k = '\x00' * holen
+    k = b('\x00') * holen
 
     # Step D
 
-    k = hmac.new(k, v+'\x00'+bx, hash_func).digest() 
+    k = hmac.new(k, v+b('\x00')+bx, hash_func).digest() 
 
     # Step E
     v = hmac.new(k, v, hash_func).digest()
     
     # Step F
-    k = hmac.new(k, v+'\x01'+bx, hash_func).digest()
+    k = hmac.new(k, v+b('\x01')+bx, hash_func).digest()
 
     # Step G
     v = hmac.new(k, v, hash_func).digest()
@@ -87,7 +88,7 @@ def generate_k(generator, secexp, hash_func, data):
     # Step H
     while True:
         # Step H1
-        t = ''
+        t = b('')
 
         # Step H2
         while len(t) < rolen:
@@ -100,5 +101,5 @@ def generate_k(generator, secexp, hash_func, data):
         if secret >= 1 and secret < generator.order():
             return secret
 
-        k = hmac.new(k, v+'\x00', hash_func).digest()
+        k = hmac.new(k, v+b('\x00'), hash_func).digest()
         v = hmac.new(k, v, hash_func).digest()
