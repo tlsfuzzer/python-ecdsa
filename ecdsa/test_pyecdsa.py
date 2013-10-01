@@ -51,7 +51,7 @@ class ECDSA(unittest.TestCase):
         self.assertTrue(pub2.verify(sig, data))
 
     def test_deterministic(self):
-        data = "blahblah"
+        data = b("blahblah")
         secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16)
 
         priv = SigningKey.from_secret_exponent(secexp, SECP256k1, sha256)
@@ -60,16 +60,16 @@ class ECDSA(unittest.TestCase):
         k = rfc6979.generate_k(SECP256k1.generator, secexp, sha256, sha256(data).digest())
 
         sig1 = priv.sign(data, k=k)
-        self.failUnless(pub.verify(sig1, data))
+        self.assertTrue(pub.verify(sig1, data))
 
         sig2 = priv.sign(data, k=k)
-        self.failUnless(pub.verify(sig2, data))
+        self.assertTrue(pub.verify(sig2, data))
 
         sig3 = priv.sign_deterministic(data, sha256)
-        self.failUnless(pub.verify(sig3, data))
+        self.assertTrue(pub.verify(sig3, data))
 
-        self.failUnlessEqual(sig1, sig2)
-        self.failUnlessEqual(sig1, sig3)
+        self.assertEqual(sig1, sig2)
+        self.assertEqual(sig1, sig3)
 
     def test_bad_usage(self):
         # sk=SigningKey() is wrong
@@ -511,7 +511,7 @@ class RFC6979(unittest.TestCase):
     # https://tools.ietf.org/html/rfc6979#appendix-A.1
     def _do(self, generator, secexp, hsh, hash_func, expected):
         actual = rfc6979.generate_k(generator, secexp, hash_func, hsh)
-        self.failUnlessEqual(expected, actual)
+        self.assertEqual(expected, actual)
 
     def test_SECP256k1(self):
         '''RFC doesn't contain test vectors for SECP256k1 used in bitcoin.
@@ -519,7 +519,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator = SECP256k1.generator,
             secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16),
-            hsh = sha256("sample").digest(),
+            hsh = sha256(b("sample")).digest(),
             hash_func = sha256,
             expected = int("8fa1f95d514760e498f28957b824ee6ec39ed64826ff4fecc2b5739ec45b91cd", 16))
 
@@ -527,7 +527,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=int("cca9fbcc1b41e5a95d369eaa6ddcff73b61a4efaa279cfc6567e8daa39cbaf50", 16),
-            hsh=sha256("sample").digest(),
+            hsh=sha256(b("sample")).digest(),
             hash_func=sha256,
             expected=int("2df40ca70e639d89528a6b670d9d48d9165fdc0febc0974056bdce192b8e16a3", 16))
 
@@ -535,7 +535,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0x1,
-            hsh=sha256("Satoshi Nakamoto").digest(),
+            hsh=sha256(b("Satoshi Nakamoto")).digest(),
             hash_func=sha256,
             expected=0x8F8A276C19F4149656B280621E358CCE24F5F52542772691EE69063B74F15D15)
 
@@ -543,7 +543,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0x1,
-            hsh=sha256("All those moments will be lost in time, like tears in rain. Time to die...").digest(),
+            hsh=sha256(b("All those moments will be lost in time, like tears in rain. Time to die...")).digest(),
             hash_func=sha256,
             expected=0x38AA22D72376B4DBC472E06C3BA403EE0A394DA63FC58D88686C611ABA98D6B3)
 
@@ -551,7 +551,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140,
-            hsh=sha256("Satoshi Nakamoto").digest(),
+            hsh=sha256(b("Satoshi Nakamoto")).digest(),
             hash_func=sha256,
             expected=0x33A19B60E25FB6F4435AF53A3D42D493644827367E6453928554F43E49AA6F90)
 
@@ -559,7 +559,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=SECP256k1.generator,
             secexp=0xf8b8af8ce3c7cca5e300d33939540c10d45ce001b8f252bfbc57ba0342904181,
-            hsh=sha256("Alan Turing").digest(),
+            hsh=sha256(b("Alan Turing")).digest(),
             hash_func=sha256,
             expected=0x525A82B70E67874398067543FD84C83D30C175FDC45FDEEE082FE13B1D7CFDF1)
 
@@ -576,7 +576,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha1("sample").digest(),
+            hsh = sha1(b("sample")).digest(),
             hash_func = sha1,
             expected = int("37D7CA00D2C7B0E5E412AC03BD44BA837FDD5B28CD3B0021", 16))
 
@@ -584,7 +584,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha256("sample").digest(),
+            hsh = sha256(b("sample")).digest(),
             hash_func = sha256,
             expected = int("32B1B6D7D42A05CB449065727A84804FB1A3E34D8F261496", 16))
 
@@ -592,7 +592,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha512("sample").digest(),
+            hsh = sha512(b("sample")).digest(),
             hash_func = sha512,
             expected = int("A2AC7AB055E4F20692D49209544C203A7D1F2C0BFBC75DB1", 16))
 
@@ -600,7 +600,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha1("test").digest(),
+            hsh = sha1(b("test")).digest(),
             hash_func = sha1,
             expected = int("D9CF9C3D3297D3260773A1DA7418DB5537AB8DD93DE7FA25", 16))
 
@@ -608,7 +608,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha256("test").digest(),
+            hsh = sha256(b("test")).digest(),
             hash_func = sha256,
             expected = int("5C4CE89CF56D9E7C77C8585339B006B97B5F0680B4306C6C", 16))
 
@@ -616,7 +616,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST192p.generator,
             secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha512("test").digest(),
+            hsh = sha512(b("test")).digest(),
             hash_func = sha512,
             expected = int("0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527", 16))
 
@@ -624,7 +624,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST521p.generator,
             secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
-            hsh = sha1("sample").digest(),
+            hsh = sha1(b("sample")).digest(),
             hash_func = sha1,
             expected = int("089C071B419E1C2820962321787258469511958E80582E95D8378E0C2CCDB3CB42BEDE42F50E3FA3C71F5A76724281D31D9C89F0F91FC1BE4918DB1C03A5838D0F9", 16))
 
@@ -632,7 +632,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST521p.generator,
             secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
-            hsh = sha256("sample").digest(),
+            hsh = sha256(b("sample")).digest(),
             hash_func = sha256,
             expected = int("0EDF38AFCAAECAB4383358B34D67C9F2216C8382AAEA44A3DAD5FDC9C32575761793FEF24EB0FC276DFC4F6E3EC476752F043CF01415387470BCBD8678ED2C7E1A0", 16))
 
@@ -640,7 +640,7 @@ class RFC6979(unittest.TestCase):
         self._do(
             generator=NIST521p.generator,
             secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
-            hsh = sha512("test").digest(),
+            hsh = sha512(b("test")).digest(),
             hash_func = sha512,
             expected = int("16200813020EC986863BEDFC1B121F605C1215645018AEA1A7B215A564DE9EB1B38A67AA1128B80CE391C4FB71187654AAA3431027BFC7F395766CA988C964DC56D", 16))
 
