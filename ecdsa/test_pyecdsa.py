@@ -526,6 +526,38 @@ class RFC6979(unittest.TestCase):
             hash_func=sha256,
             expected=int("2df40ca70e639d89528a6b670d9d48d9165fdc0febc0974056bdce192b8e16a3", 16))
 
+    def test_SECP256k1_3(self):
+        self._do(
+            generator=SECP256k1.generator,
+            secexp=0x1,
+            hsh=sha256("Satoshi Nakamoto").digest(),
+            hash_func=sha256,
+            expected=0x8F8A276C19F4149656B280621E358CCE24F5F52542772691EE69063B74F15D15)
+
+    def test_SECP256k1_4(self):
+        self._do(
+            generator=SECP256k1.generator,
+            secexp=0x1,
+            hsh=sha256("All those moments will be lost in time, like tears in rain. Time to die...").digest(),
+            hash_func=sha256,
+            expected=0x38AA22D72376B4DBC472E06C3BA403EE0A394DA63FC58D88686C611ABA98D6B3)
+
+    def test_SECP256k1_5(self):
+        self._do(
+            generator=SECP256k1.generator,
+            secexp=0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364140,
+            hsh=sha256("Satoshi Nakamoto").digest(),
+            hash_func=sha256,
+            expected=0x33A19B60E25FB6F4435AF53A3D42D493644827367E6453928554F43E49AA6F90)
+
+    def test_SECP256k1_6(self):
+        self._do(
+            generator=SECP256k1.generator,
+            secexp=0xf8b8af8ce3c7cca5e300d33939540c10d45ce001b8f252bfbc57ba0342904181,
+            hsh=sha256("Alan Turing").digest(),
+            hash_func=sha256,
+            expected=0x525A82B70E67874398067543FD84C83D30C175FDC45FDEEE082FE13B1D7CFDF1)
+
     def test_1(self):
         # Basic example of the RFC
         self._do(
