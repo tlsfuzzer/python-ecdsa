@@ -15,16 +15,22 @@ import hmac
 from binascii import hexlify
 from util import number_to_string, number_to_string_crop
 
+def bit_length(num):
+    # http://docs.python.org/dev/library/stdtypes.html#int.bit_length
+    s = bin(num)  # binary representation:  bin(-37) --> '-0b100101'
+    s = s.lstrip('-0b')  # remove leading zeros and minus sign
+    return len(s)  # len('100101') --> 6
+
 def bits2int(data, qlen):
     x = int(hexlify(data), 16)
-    l = len(data) * 8 #x.bit_length()
+    l = len(data) * 8
     
     if l > qlen:
         return x >> (l-qlen)
     return x    
 
 def bits2octets(data, order):
-    z1 = bits2int(data, order.bit_length())
+    z1 = bits2int(data, bit_length(order))
     z2 = z1 - order
     
     if z2 < 0:
@@ -41,7 +47,7 @@ def generate_k(generator, secexp, hash_func, data):
         data - hash in binary form of the signing data 
     '''
     
-    qlen = generator.order().bit_length()  # bit_length is python 2.7+ only
+    qlen = bit_length(generator.order())
     holen = hash_func().digestsize
     rolen = (qlen + 7) / 8
     bx = number_to_string(secexp, generator.order()) + bits2octets(data, generator.order())
