@@ -4,5 +4,6 @@ python:
   - "2.6"
   - "2.7"
 install:
+  - echo "nothing to install: python-ecdsa is pure-python and has no dependencies"
 script:
   - python setup.py test
