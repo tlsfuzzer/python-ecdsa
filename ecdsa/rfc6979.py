@@ -89,24 +89,3 @@ def generate_k(generator, secexp, hash_func, data):
         
         k = hmac.new(k, v+'\x00', hash_func).digest()
         v = hmac.new(k, v, hash_func).digest()
-        
-if __name__ == '__main__':
-    
-    from ellipticcurve import Point
-    from hashlib import sha256
-    import binascii
-    
-    q = int("4000000000000000000020108A2E0CC0D99F8A5EF", 16)
-    x = int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16)
-
-    hsh = binascii.unhexlify("AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF")
-    expected = int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16)
-    
-    generator = Point(None, 0, 0, q)    
-    actual = generate_k(generator, x, sha256, hsh)
-    
-    print "Expected:", expected
-    print "Got:     ", actual
-    
-    if expected != actual:
-        print "ERROR"
