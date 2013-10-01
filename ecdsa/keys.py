@@ -2,6 +2,7 @@ import binascii
 
 import ecdsa
 import der
+import rfc6979
 from curves import NIST192p, find_curve
 from util import string_to_number, number_to_string, randrange
 from util import sigencode_string, sigdecode_string
@@ -213,7 +214,24 @@ class SigningKey:
     def get_verifying_key(self):
         return self.verifying_key
 
-    def sign(self, data, entropy=None, hashfunc=None, sigencode=sigencode_string):
+    def sign_deterministic(self, data, hashfunc=None, sigencode=sigencode_string):
+        hashfunc = hashfunc or self.default_hashfunc
+        digest = hashfunc(data).digest()
+
+        return self.sign_digest_deterministic(digest, hashfunc=hashfunc, sigencode=sigencode)
+
+    def sign_digest_deterministic(self, digest, hashfunc=None, sigencode=sigencode_string):
+        """
+        Calculates 'k' from data itself, removing the need for strong
+        random generator and producing deterministic (reproducible) signatures.
+        See RFC 6979 for more details.
+        """
+        secexp = self.privkey.secret_multiplier
+        k = rfc6979.generate_k(self.curve.generator, secexp, hashfunc, digest)
+
+        return self.sign_digest(digest, sigencode=sigencode, k=k)
+
+    def sign(self, data, entropy=None, hashfunc=None, sigencode=sigencode_string, k=None):
         """
         hashfunc= should behave like hashlib.sha1 . The output length of the
         hash (in bytes) must not be longer than the length of the curve order
@@ -228,25 +246,32 @@ class SigningKey:
 
         hashfunc = hashfunc or self.default_hashfunc
         h = hashfunc(data).digest()
-        return self.sign_digest(h, entropy, sigencode)
+        return self.sign_digest(h, entropy, sigencode, k)
 
-    def sign_digest(self, digest, entropy=None, sigencode=sigencode_string):
+    def sign_digest(self, digest, entropy=None, sigencode=sigencode_string, k=None):
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,
                                                            8*len(digest)))
         number = string_to_number(digest)
-        r, s = self.sign_number(number, entropy)
+        r, s = self.sign_number(number, entropy, k)
         return sigencode(r, s, self.privkey.order)
 
-    def sign_number(self, number, entropy=None):
+    def sign_number(self, number, entropy=None, k=None):
         # returns a pair of numbers
         order = self.privkey.order
         # privkey.sign() may raise RuntimeError in the amazingly unlikely
         # (2**-192) event that r=0 or s=0, because that would leak the key.
         # We could re-try with a different 'k', but we couldn't test that
         # code, so I choose to allow the signature to fail instead.
-        k = randrange(order, entropy)
-        assert 1 <= k < order
-        sig = self.privkey.sign(number, k)
+
+        # If k is set, it is used directly. In other cases
+        # it is generated using entropy function
+        if k is not None:
+            _k = k
+        else:
+            _k = randrange(order, entropy)
+
+        assert 1 <= _k < order
+        sig = self.privkey.sign(number, _k)
         return sig.r, sig.s

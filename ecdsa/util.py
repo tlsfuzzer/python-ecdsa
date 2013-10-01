@@ -157,6 +157,12 @@ def number_to_string(num, order):
     assert len(string) == l, (len(string), l)
     return string
 
+def number_to_string_crop(num, order):
+    l = orderlen(order)
+    fmt_str = "%0" + str(2*l) + "x"
+    string = binascii.unhexlify(fmt_str % num)
+    return string[:l]
+
 def string_to_number(string):
     return int(binascii.hexlify(string), 16)
 
