@@ -15,6 +15,19 @@ import hmac
 from binascii import hexlify
 from util import number_to_string, number_to_string_crop
 
+try:
+    bin(0)
+except NameError:
+    binmap = {"0": "0000", "1": "0001", "2": "0010", "3": "0011",
+              "4": "0100", "5": "0101", "6": "0110", "7": "0111",
+              "8": "1000", "9": "1001", "a": "1010", "b": "1011",
+              "c": "1100", "d": "1101", "e": "1110", "f": "1111"}
+    def bin(value): # for python2.5
+        v = "".join(binmap[x] for x in "%x"%abs(value)).lstrip("0")
+        if value < 0:
+            return "-0b" + v
+        return "0b" + v
+
 def bit_length(num):
     # http://docs.python.org/dev/library/stdtypes.html#int.bit_length
     s = bin(num)  # binary representation:  bin(-37) --> '-0b100101'
