@@ -5,3 +5,4 @@
 /ecdsa/_version.py
 /MANIFEST
 /dist/
+*.pyc
