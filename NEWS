@@ -1,3 +1,9 @@
+* Release 0.9 (01 Oct 2013)
+
+Add secp256k1 curve (thanks to Benjamin Dauvergne). Add deterministic (no
+entropy needed) signatures (thanks to slush). Added py3.2/py3.3 compatibility
+(thanks to Elizabeth Myers).
+
 * Release 0.8 (04 Oct 2011)
 
 Small API addition: accept a hashfunc= argument in the constructors for

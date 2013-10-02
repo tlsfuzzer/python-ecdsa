@@ -241,6 +241,18 @@ signature must use a different one (using the same number twice will
 immediately reveal the private signing key). The `sk.sign()` method takes an
 entropy= argument which behaves the same as `SigningKey.generate(entropy=)`.
 
+## Deterministic Signatures
+
+If you call `SigningKey.sign_deterministic(data)` instead of `.sign(data)`,
+the code will generate a deterministic signature instead of a random one.
+This uses the algorithm from RFC6979 to safely generate a unique `k` value,
+derived from the private key and the message being signed. Each time you sign
+the same message with the same key, you will get the same signature (using
+the same `k`).
+
+This may become the default in a future version, as it is not vulnerable to
+failures of the entropy source.
+
 ## Examples
 
 Create a NIST192p keypair and immediately save both to disk:
