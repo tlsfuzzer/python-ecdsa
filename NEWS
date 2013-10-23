@@ -1,3 +1,7 @@
+* Release 0.10 (23 Oct 2013)
+
+Make the secp256k1 available in __init__.py too (thanks to Scott Bannert).
+
 * Release 0.9 (01 Oct 2013)
 
 Add secp256k1 curve (thanks to Benjamin Dauvergne). Add deterministic (no
