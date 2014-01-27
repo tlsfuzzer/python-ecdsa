@@ -34,6 +34,8 @@ def run_openssl(cmd):
                               (OPENSSL, cmd, p.returncode, stdout))
     return stdout.decode()
 
+OPENSSL_SUPPORTED_ECURVES = [c.split(':')[0].strip() for c in run_openssl("ecparam -list_curves").split('\n')]
+
 BENCH = False
 
 class ECDSA(unittest.TestCase):
@@ -316,7 +318,11 @@ class OpenSSL(unittest.TestCase):
     # openssl ec -in privkey.pem -pubout -out pubkey.pem
     # openssl ec -in privkey.pem -pubout -outform DER -out pubkey.der
 
-    def get_openssl_messagedigest_arg(self):
+    def setUp(self):
+        self.mdarg = self.get_openssl_messagedigest_arg()
+
+    @staticmethod
+    def get_openssl_messagedigest_arg():
         v = run_openssl("version")
         # e.g. "OpenSSL 1.0.0 29 Mar 2010", or "OpenSSL 1.0.0a 1 Jun 2010",
         # or "OpenSSL 0.9.8o 01 Jun 2010"
@@ -330,19 +336,23 @@ class OpenSSL(unittest.TestCase):
     # vk: 3:OpenSSL->python  4:python->OpenSSL
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
+    @unittest.skipUnless("prime192v1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_from_openssl_nist192p(self):
-        return self.do_test_from_openssl(NIST192p, "prime192v1")
+        return self.do_from_openssl(NIST192p, "prime192v1")
+    @unittest.skipUnless("secp224r1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_from_openssl_nist224p(self):
-        return self.do_test_from_openssl(NIST224p, "secp224r1")
+        return self.do_from_openssl(NIST224p, "secp224r1")
+    @unittest.skipUnless("secp384r1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_from_openssl_nist384p(self):
-        return self.do_test_from_openssl(NIST384p, "secp384r1")
+        return self.do_from_openssl(NIST384p, "secp384r1")
+    @unittest.skipUnless("secp521r1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_from_openssl_nist521p(self):
-        return self.do_test_from_openssl(NIST521p, "secp521r1")
+        return self.do_from_openssl(NIST521p, "secp521r1")
 
-    def do_test_from_openssl(self, curve, curvename):
+    def do_from_openssl(self, curve, curvename):
+        # Check for OpenSSL curve support
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
-        mdarg = self.get_openssl_messagedigest_arg()
         if os.path.isdir("t"):
             shutil.rmtree("t")
         os.mkdir("t")
@@ -350,8 +360,8 @@ class OpenSSL(unittest.TestCase):
         run_openssl("ec -in t/privkey.pem -pubout -out t/pubkey.pem")
         data = b("data")
         with open("t/data.txt","wb") as e: e.write(data)
-        run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig t/data.txt" % mdarg)
-        run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig t/data.txt" % mdarg)
+        run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig t/data.txt" % self.mdarg)
+        run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig t/data.txt" % self.mdarg)
         with open("t/pubkey.pem","rb") as e: pubkey_pem = e.read()
         vk = VerifyingKey.from_pem(pubkey_pem) # 3
         with open("t/data.sig","rb") as e: sig_der = e.read()
@@ -363,19 +373,22 @@ class OpenSSL(unittest.TestCase):
         sig = sk.sign(data)
         self.assertTrue(vk.verify(sig, data))
 
+    @unittest.skipUnless("prime192v1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_to_openssl_nist192p(self):
-        self.do_test_to_openssl(NIST192p, "prime192v1")
+        self.do_to_openssl(NIST192p, "prime192v1")
+    @unittest.skipUnless("secp224r1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_to_openssl_nist224p(self):
-        self.do_test_to_openssl(NIST224p, "secp224r1")
+        self.do_to_openssl(NIST224p, "secp224r1")
+    @unittest.skipUnless("secp384r1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_to_openssl_nist384p(self):
-        self.do_test_to_openssl(NIST384p, "secp384r1")
+        self.do_to_openssl(NIST384p, "secp384r1")
+    @unittest.skipUnless("secp521r1" in OPENSSL_SUPPORTED_ECURVES, "unsupported by OpenSSL")
     def test_to_openssl_nist521p(self):
-        self.do_test_to_openssl(NIST521p, "secp521r1")
+        self.do_to_openssl(NIST521p, "secp521r1")
 
-    def do_test_to_openssl(self, curve, curvename):
+    def do_to_openssl(self, curve, curvename):
         # Python: create sk, vk, sign.
         # OpenSSL: read vk(4), checksig(6), read sk(2), sign, check
-        mdarg = self.get_openssl_messagedigest_arg()
         if os.path.isdir("t"):
             shutil.rmtree("t")
         os.mkdir("t")
@@ -391,12 +404,12 @@ class OpenSSL(unittest.TestCase):
         with open("t/baddata.txt","wb") as e: e.write(data+b("corrupt"))
 
         self.assertRaises(SubprocessError, run_openssl,
-                              "dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/baddata.txt" % mdarg)
-        run_openssl("dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/data.txt" % mdarg)
+                              "dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/baddata.txt" % self.mdarg)
+        run_openssl("dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/data.txt" % self.mdarg)
 
         with open("t/privkey.pem","wb") as e: e.write(sk.to_pem()) # 2
-        run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig2 t/data.txt" % mdarg)
-        run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig2 t/data.txt" % mdarg)
+        run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig2 t/data.txt" % self.mdarg)
+        run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig2 t/data.txt" % self.mdarg)
 
 class DER(unittest.TestCase):
     def test_oids(self):
