@@ -5,6 +5,7 @@ import os
 import time
 import shutil
 import subprocess
+import sys
 from binascii import hexlify, unhexlify
 from hashlib import sha1, sha256, sha512
 
