@@ -20,6 +20,17 @@ from .ellipticcurve import Point
 from . import der
 from . import rfc6979
 
+# provide missing unittest decorators and API for python 2.6; these decorators
+# do not actually work, just avoid the syntax failure
+if sys.version_info[:2] == (2, 6):
+    def skipUnless(condition, reason):
+        if not condition:
+            sys.stderr.write('[expected failure] ')
+        return lambda obj: obj
+
+    unittest.skipUnless = skipUnless
+    unittest.expectedFailure = lambda obj: obj
+
 class SubprocessError(Exception):
     pass
 
