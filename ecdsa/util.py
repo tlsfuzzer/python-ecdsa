@@ -197,6 +197,24 @@ def sigencode_string(r, s, order):
 def sigencode_der(r, s, order):
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
 
+# canonical versions of sigencode methods
+# these enforce low S values, by negating the value (modulo the order) if above order/2
+# see CECKey::Sign() https://github.com/bitcoin/bitcoin/blob/master/src/key.cpp#L214
+def sigencode_strings_canonize(r, s, order):
+    if s > order / 2:
+        s = order - s
+    return sigencode_strings(r, s, order)
+
+def sigencode_string_canonize(r, s, order):
+    if s > order / 2:
+        s = order - s
+    return sigencode_string(r, s, order)
+
+def sigencode_der_canonize(r, s, order):
+    if s > order / 2:
+        s = order - s
+    return sigencode_der(r, s, order)
+
 
 def sigdecode_string(signature, order):
     l = orderlen(order)
