@@ -30,7 +30,8 @@ class VerifyingKey:
         return self
 
     @classmethod
-    def from_string(klass, string, curve=NIST192p, hashfunc=sha1):
+    def from_string(klass, string, curve=NIST192p, hashfunc=sha1,
+                    validate_point=True):
         order = curve.order
         assert len(string) == curve.verifying_key_length, \
                (len(string), curve.verifying_key_length)
@@ -40,7 +41,8 @@ class VerifyingKey:
         assert len(ys) == curve.baselen, (len(ys), curve.baselen)
         x = string_to_number(xs)
         y = string_to_number(ys)
-        assert ecdsa.point_is_valid(curve.generator, x, y)
+        if validate_point:
+            assert ecdsa.point_is_valid(curve.generator, x, y)
         from . import ellipticcurve
         point = ellipticcurve.Point(curve.curve, x, y, order)
         return klass.from_public_point(point, curve, hashfunc)
