@@ -1,3 +1,12 @@
+* Release 0.11 (10 Mar 2014)
+
+Add signature-encoding functions "sigencode_{strings,string,der}_canonize"
+which canonicalize the S value (using the smaller of the two possible
+values). Add "validate_point=" argument to VerifyingKey.from_string()
+constructor (defaults to True) which can be used to disable time-consuming
+point validation when importing a pre-validated verifying key. Drop python2.5
+support (untested but not explicitly broken yet), update trove classifiers.
+
 * Release 0.10 (23 Oct 2013)
 
 Make the secp256k1 available in __init__.py too (thanks to Scott Bannert).
