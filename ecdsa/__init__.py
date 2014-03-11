@@ -9,9 +9,6 @@ del _hush_pyflakes
 
 # This code comes from http://github.com/warner/python-ecdsa
 
-try:
-    from _version import __version__ as v
-    __version__ = v
-    del v
-except ImportError:
-    __version__ = "UNKNOWN"
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions

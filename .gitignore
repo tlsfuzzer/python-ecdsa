@@ -1,5 +1,4 @@
 *.py[cod]
-ecdsa/_version.py
 MANIFEST
 
 # C extensions
