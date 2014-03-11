@@ -1,2 +1,2 @@
 # basic metadata
-include MANIFEST.in LICENSE NEWS README.md
+include MANIFEST.in LICENSE NEWS README.md versioneer.py
