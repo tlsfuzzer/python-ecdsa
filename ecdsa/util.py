@@ -28,7 +28,7 @@ def randrange(order, entropy=None):
 
     Note that this function is not declared to be forwards-compatible: we may
     change the behavior in future releases. The entropy= argument (which
-    should get a callable that behaves like os.entropy) can be used to
+    should get a callable that behaves like os.urandom) can be used to
     achieve stability within a given release (for repeatable unit tests), but
     should not be used as a long-term-compatible key generation algorithm.
     """
