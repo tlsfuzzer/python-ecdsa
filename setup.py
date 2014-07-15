@@ -1,5 +1,10 @@
 #!/usr/bin/env python
-from distutils.core import setup, Command
+try:
+    # try setuptools, so devs can run bdist_wheel
+    from setuptools import setup, Command
+except ImportError:
+    # but most users really don't require it
+    from distutils.core import setup, Command
 
 import versioneer
 versioneer.versionfile_source = "ecdsa/_version.py"
