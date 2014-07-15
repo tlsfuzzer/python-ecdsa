@@ -9,6 +9,7 @@ versioneer.versionfile_source = "ecdsa/_version.py"
 versioneer.versionfile_build = versioneer.versionfile_source
 versioneer.tag_prefix = "python-ecdsa-"
 versioneer.parentdir_prefix = "ecdsa-"
+versioneer.VCS = "git"
 
 commands = versioneer.get_cmdclass().copy()
 
