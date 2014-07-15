@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-import os, subprocess, re
 from distutils.core import setup, Command
-from distutils.command.sdist import sdist as _sdist
-from ecdsa.six import print_
 
 import versioneer
 versioneer.versionfile_source = "ecdsa/_version.py"
