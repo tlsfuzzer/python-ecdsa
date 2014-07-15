@@ -331,15 +331,21 @@ class OpenSSL(unittest.TestCase):
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
     def test_from_openssl_nist192p(self):
-        return self.do_test_from_openssl(NIST192p, "prime192v1")
+        return self.do_test_from_openssl(NIST192p)
     def test_from_openssl_nist224p(self):
-        return self.do_test_from_openssl(NIST224p, "secp224r1")
+        return self.do_test_from_openssl(NIST224p)
+    def test_from_openssl_nist256p(self):
+        return self.do_test_from_openssl(NIST256p)
     def test_from_openssl_nist384p(self):
-        return self.do_test_from_openssl(NIST384p, "secp384r1")
+        return self.do_test_from_openssl(NIST384p)
     def test_from_openssl_nist521p(self):
-        return self.do_test_from_openssl(NIST521p, "secp521r1")
+        return self.do_test_from_openssl(NIST521p)
+    def test_from_openssl_secp256k1(self):
+        return self.do_test_from_openssl(SECP256k1)
 
-    def do_test_from_openssl(self, curve, curvename):
+    def do_test_from_openssl(self, curve):
+        curvename = curve.openssl_name
+        assert curvename
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
@@ -364,15 +370,21 @@ class OpenSSL(unittest.TestCase):
         self.assertTrue(vk.verify(sig, data))
 
     def test_to_openssl_nist192p(self):
-        self.do_test_to_openssl(NIST192p, "prime192v1")
+        self.do_test_to_openssl(NIST192p)
     def test_to_openssl_nist224p(self):
-        self.do_test_to_openssl(NIST224p, "secp224r1")
+        self.do_test_to_openssl(NIST224p)
+    def test_to_openssl_nist256p(self):
+        self.do_test_to_openssl(NIST256p)
     def test_to_openssl_nist384p(self):
-        self.do_test_to_openssl(NIST384p, "secp384r1")
+        self.do_test_to_openssl(NIST384p)
     def test_to_openssl_nist521p(self):
-        self.do_test_to_openssl(NIST521p, "secp521r1")
+        self.do_test_to_openssl(NIST521p)
+    def test_to_openssl_secp256k1(self):
+        self.do_test_to_openssl(SECP256k1)
 
-    def do_test_to_openssl(self, curve, curvename):
+    def do_test_to_openssl(self, curve):
+        curvename = curve.openssl_name
+        assert curvename
         # Python: create sk, vk, sign.
         # OpenSSL: read vk(4), checksig(6), read sk(2), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
