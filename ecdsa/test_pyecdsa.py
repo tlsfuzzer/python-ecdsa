@@ -245,7 +245,7 @@ class ECDSA(unittest.TestCase):
         badpub = VerifyingKey.from_der(pub1_der)
         class FakeGenerator:
             def order(self): return 123456789
-        badcurve = Curve("unknown", None, FakeGenerator(), (1,2,3,4,5,6))
+        badcurve = Curve("unknown", None, None, FakeGenerator(), (1,2,3,4,5,6))
         badpub.curve = badcurve
         badder = badpub.to_der()
         self.assertRaises(UnknownCurveError, VerifyingKey.from_der, badder)
