@@ -15,7 +15,6 @@ from .six import print_, integer_types
 from .six.moves import reduce
 
 import math
-import types
 
 
 class Error( Exception ):
