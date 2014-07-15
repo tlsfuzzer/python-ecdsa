@@ -15,8 +15,10 @@ into other protocols.
 This library provides key generation, signing, and verifying, for five
 popular NIST "Suite B" GF(p) curves, with key lengths of 192, 224, 256, 384,
 and 521 bits. The "short names" for these curves, as known by the OpenSSL
-tool, are: prime192v1, secp224r1, prime256v1, secp384r1, and secp521r1. No
-other curves are included, but it would not be too hard to add more.
+tool (`openssl ecparam --list_curves`), are: prime192v1, secp224r1,
+prime256v1, secp384r1, and secp521r1. It also includes the 256-bit curve used
+by Bitcoin, whose short name is secp256k1. No other curves are included, but
+it would not be too hard to add more.
 
 ## Dependencies
 
