@@ -7,6 +7,7 @@ from .curves import NIST192p, find_curve
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey
+from .numbertheory import modular_sqrt
 from .six import PY3, b
 from hashlib import sha1
 
@@ -47,6 +48,30 @@ class VerifyingKey:
         point = ellipticcurve.Point(curve.curve, x, y, order)
         return klass.from_public_point(point, curve, hashfunc)
 
+    # based on code from https://github.com/richardkiss/pycoin
+    @classmethod
+    def from_sec (klass, string, curve=NIST192p, hashfunc=sha1, validate_point=True):
+        if string[0] == b'\x04':
+            # uncompressed
+            return klass.from_string (string[1:], curve, hashfunc, validate_point)
+        elif string[0] in b'\x02\x03':
+            # compressed
+            is_even = string[0] == '\x02'
+            x = string_to_number (string[1:])
+            order = curve.order
+            p = curve.curve.p()
+            alpha = (pow(x, 3, p) + curve.curve.a() * x + curve.curve.b()) % p
+            beta  = modular_sqrt (alpha, p)
+            if is_even == bool(beta & 1):
+                y = p - beta
+            else:
+                y = beta
+            if validate_point:
+                assert ecdsa.point_is_valid(curve.generator, x, y)
+            from . import ellipticcurve
+            point = ellipticcurve.Point (curve.curve, x, y, order)
+            return klass.from_public_point (point, curve, hashfunc)
+
     @classmethod
     def from_pem(klass, string):
         return klass.from_der(der.unpem(string))
@@ -82,6 +107,20 @@ class VerifyingKey:
         x_str = number_to_string(self.pubkey.point.x(), order)
         y_str = number_to_string(self.pubkey.point.y(), order)
         return x_str + y_str
+
+    def to_sec(self, compressed=True):
+        order = self.pubkey.order
+        x = self.pubkey.point.x()
+        y = self.pubkey.point.y()
+        if compressed:
+            x_str = number_to_string(x, order)
+            if y & 1:
+                return '\x03' + x_str
+            else:
+                return '\x02' + x_str
+        else:
+            y_str = number_to_string(y, order)
+            return '\x04' + x_str + y_str
 
     def to_pem(self):
         return der.topem(self.to_der(), "PUBLIC KEY")

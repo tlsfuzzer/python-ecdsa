@@ -50,6 +50,23 @@ class ECDSA(unittest.TestCase):
         pub2 = VerifyingKey.from_string(pub.to_string())
         self.assertTrue(pub2.verify(sig, data))
 
+    def test_sec(self):
+        for i in range (20):
+            skey = SigningKey.generate()
+            pkey0 = skey.get_verifying_key()
+            sec0 = pkey0.to_sec()
+            pkey1 = VerifyingKey.from_sec (sec0)
+            self.assertEqual (pkey0.to_string(), pkey1.to_string())
+        pkey2 = VerifyingKey.from_sec (
+            '045b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8'
+            '55981f2803fc3c07edfc2435fbf2326d65d3f237f0bcc2399514255b8d4285c5'.decode ('hex'),
+            curve=SECP256k1
+        )
+        self.assertEqual (
+            pkey2.to_sec (compressed=True),
+            '035b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8'.decode ('hex')
+        )
+
     def test_deterministic(self):
         data = b("blahblah")
         secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16)
