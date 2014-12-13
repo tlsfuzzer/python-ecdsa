@@ -51,12 +51,12 @@ class VerifyingKey:
     # based on code from https://github.com/richardkiss/pycoin
     @classmethod
     def from_sec (klass, string, curve=NIST192p, hashfunc=sha1, validate_point=True):
-        if string[0] == b'\x04':
+        if string.startswith (b'\x04'):
             # uncompressed
             return klass.from_string (string[1:], curve, hashfunc, validate_point)
-        elif string[0] in b'\x02\x03':
+        elif string.startswith (b('\x02')) or string.startswith (b'\x03'):
             # compressed
-            is_even = string[0] == '\x02'
+            is_even = string.startswith (b'\x02')
             x = string_to_number (string[1:])
             order = curve.order
             p = curve.curve.p()
@@ -115,12 +115,12 @@ class VerifyingKey:
         if compressed:
             x_str = number_to_string(x, order)
             if y & 1:
-                return '\x03' + x_str
+                return b('\x03') + x_str
             else:
-                return '\x02' + x_str
+                return b('\x02') + x_str
         else:
             y_str = number_to_string(y, order)
-            return '\x04' + x_str + y_str
+            return b('\x04') + x_str + y_str
 
     def to_pem(self):
         return der.topem(self.to_der(), "PUBLIC KEY")

@@ -57,14 +57,14 @@ class ECDSA(unittest.TestCase):
             sec0 = pkey0.to_sec()
             pkey1 = VerifyingKey.from_sec (sec0)
             self.assertEqual (pkey0.to_string(), pkey1.to_string())
-        pkey2 = VerifyingKey.from_sec (
+        pkey2 = VerifyingKey.from_sec (unhexlify (b (
             '045b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8'
-            '55981f2803fc3c07edfc2435fbf2326d65d3f237f0bcc2399514255b8d4285c5'.decode ('hex'),
+            '55981f2803fc3c07edfc2435fbf2326d65d3f237f0bcc2399514255b8d4285c5')),
             curve=SECP256k1
         )
         self.assertEqual (
             pkey2.to_sec (compressed=True),
-            '035b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8'.decode ('hex')
+            unhexlify (b('035b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8'))
         )
 
     def test_deterministic(self):
