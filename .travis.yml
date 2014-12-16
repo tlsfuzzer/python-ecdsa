@@ -9,3 +9,4 @@ python:
 install: true
 script:
   - python setup.py test
+  - python setup.py speed
