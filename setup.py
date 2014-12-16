@@ -53,9 +53,9 @@ class Speed(Test):
 
         for curve in ["NIST192p", "NIST224p", "NIST256p", "SECP256k1",
                       "NIST384p", "NIST521p"]:
-            S1 = "import ecdsa"
-            S2 = "sk = ecdsa.SigningKey.generate(ecdsa.%s)" % curve
-            S3 = "msg = 'msg'"
+            S1 = "from ecdsa import six, SigningKey, %s" % curve
+            S2 = "sk = SigningKey.generate(%s)" % curve
+            S3 = "msg = six.b('msg')"
             S4 = "sig = sk.sign(msg)"
             S5 = "vk = sk.get_verifying_key()"
             S6 = "vk.verify(sig, msg)"
@@ -67,9 +67,10 @@ class Speed(Test):
             sign = do([S1,S2,S3], S4)
             verf = do([S1,S2,S3,S4,S5], S6)
             import ecdsa
-            sig = ecdsa.SigningKey.generate(getattr(ecdsa, curve)).sign("msg")
-            print "%9s: siglen=%3d, keygen=%.3fs, sign=%.3fs, verify=%.3fs" \
-                  % (curve, len(sig), keygen, sign, verf)
+            c = getattr(ecdsa, curve)
+            sig = ecdsa.SigningKey.generate(c).sign(ecdsa.six.b("msg"))
+            print("%9s: siglen=%3d, keygen=%.3fs, sign=%.3fs, verify=%.3fs" \
+                  % (curve, len(sig), keygen, sign, verf))
 
 commands["speed"] = Speed
 
