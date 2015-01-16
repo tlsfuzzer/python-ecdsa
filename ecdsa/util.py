@@ -3,6 +3,7 @@ from __future__ import division
 import os
 import math
 import binascii
+import sys
 from hashlib import sha256
 from . import der
 from .curves import orderlen
@@ -16,6 +17,16 @@ from .six import PY3, int2byte, b, next
 oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
 
+if sys.version > '3': 
+    entropy_to_bits = lambda ent_256: ''.join(bin(x)[2:].zfill(8) for x in ent_256)
+else: 
+    entropy_to_bits = lambda ent_256: ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
+if sys.version < '2.7':  #Can't add a method to a built-in type so we are stuck with this
+    bit_length = lambda x: len(bin(x)) - 2
+else: 
+    bit_length = lambda x: x.bit_length() or 1
+    
+        
 def randrange(order, entropy=None):
     """Return a random integer k such that 1 <= k < order, uniformly
     distributed across that range. Worst case should be a mean of 2 loops at (2**k)+2. 
@@ -29,11 +40,11 @@ def randrange(order, entropy=None):
     assert order > 1
     if entropy is None:
         entropy = os.urandom
-    upper_2 = (order-2).bit_length() or 1
+    upper_2 = bit_length(order-2)
     upper_256 = int(upper_2/8 + 1); 
-    while True:  #I don't think we need a counter with bit-wise randrange
+    while True:  #I don't think this needs a counter with bit-wise randrange
         ent_256 = entropy(upper_256) 
-        ent_2=''.join(bin(x)[2:].zfill(8) for x in ent_256)
+        ent_2=entropy_to_bits(ent_256)
         rand_num = int(ent_2[:upper_2], base=2) +1
         if 0 < rand_num < order: return rand_num
         else:continue
