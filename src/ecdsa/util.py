@@ -18,7 +18,7 @@ oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
 
 if sys.version > '3': 
-    entropy_to_bits = lambda ent_256: ''.join(bin(x)[2:].zfill(8) for x in ent_256)
+    entropy_to_bits = lambda ent_256: bin(int.from_bytes(ent_256, 'big'))[2:].zfill(len(ent_256)*8)
 else: 
     entropy_to_bits = lambda ent_256: ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
 if sys.version < '2.7':  #Can't add a method to a built-in type so we are stuck with this
@@ -47,7 +47,7 @@ def randrange(order, entropy=None):
     if entropy is None:
         entropy = os.urandom
     upper_2 = bit_length(order-2)
-    upper_256 = int(upper_2/8 + 1); 
+    upper_256 = upper_2//8 + 1 
     while True:  #I don't think this needs a counter with bit-wise randrange
         ent_256 = entropy(upper_256) 
         ent_2=entropy_to_bits(ent_256)
