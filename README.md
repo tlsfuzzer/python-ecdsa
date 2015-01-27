@@ -70,12 +70,9 @@ safer to use. You are looking at the README for this wrapper.
 There are four test suites, three for the original Pearson module, and one
 more for the wrapper. To run them all, do this:
 
-    python ecdsa/numbertheory.py   # look for "****" and "failed" for problems
-    python ecdsa/ellipticcurve.py   # look for "Bad" for problems
-    python ecdsa/ecdsa.py   # look for "****" and "failed" for problems
-    python ecdsa/test_pyecdsa.py  # look for "FAILED" for problems
+    python setup.py test
 
-On my 2009 Mac laptop, the combined tests take about 34 seconds to run. On a
+On my 2014 Mac Mini, the combined tests take about 20 seconds to run. On a
 2.4GHz P4 Linux box, they take 81 seconds.
 
 One component of `test_pyecdsa.py` checks compatibility with OpenSSL, by
