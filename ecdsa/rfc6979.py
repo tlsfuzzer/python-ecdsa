@@ -53,7 +53,7 @@ def bits2octets(data, order):
 # https://tools.ietf.org/html/rfc6979#section-3.2
 def generate_k(order, secexp, hash_func, data):
     '''
-        generator - order of the DSA generator used in the signature
+        order - order of the DSA generator used in the signature
         secexp - secure exponent (private key) in numeric form
         hash_func - reference to the same hash function used for generating hash
         data - hash in binary form of the signing data
