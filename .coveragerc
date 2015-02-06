@@ -1,0 +1,9 @@
+# -*- conf -*-
+
+[run]
+include =
+ ecdsa/*
+omit =
+ ecdsa/six.py
+ ecdsa/_version.py
+ ecdsa/test_ecdsa.py

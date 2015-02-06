@@ -1,6 +1,8 @@
 # Pure-Python ECDSA
 
 [![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
+[![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
+[![Latest Version](https://pypip.in/version/ecdsa/badge.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 
 
 This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
