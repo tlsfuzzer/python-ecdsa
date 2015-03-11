@@ -1,3 +1,16 @@
+* Release 0.13 (07 Feb 2015)
+
+Fix the argument order for Curve constructor (put openssl_name= at the end,
+with a default value) to unbreak compatibility with external callers who used
+the 0.11 convention.
+
+* Release 0.12 (06 Feb 2015)
+
+Switch to Versioneer for version-string management (fixing the broken
+`ecdsa.__version__` attribute). Add Curve.openssl_name property. Mention
+secp256k1 in README, test against OpenSSL. Produce "wheel" distributions. Add
+py3.4 and pypy3 compatibility testing. Other minor fixes.
+
 * Release 0.11 (10 Mar 2014)
 
 Add signature-encoding functions "sigencode_{strings,string,der}_canonize"

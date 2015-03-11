@@ -1,6 +1,8 @@
 # Pure-Python ECDSA
 
 [![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
+[![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
+[![Latest Version](https://pypip.in/version/ecdsa/badge.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 
 
 This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
@@ -15,8 +17,10 @@ into other protocols.
 This library provides key generation, signing, and verifying, for five
 popular NIST "Suite B" GF(p) curves, with key lengths of 192, 224, 256, 384,
 and 521 bits. The "short names" for these curves, as known by the OpenSSL
-tool, are: prime192v1, secp224r1, prime256v1, secp384r1, and secp521r1. No
-other curves are included, but it would not be too hard to add more.
+tool (`openssl ecparam --list_curves`), are: prime192v1, secp224r1,
+prime256v1, secp384r1, and secp521r1. It also includes the 256-bit curve used
+by Bitcoin, whose short name is secp256k1. No other curves are included, but
+it would not be too hard to add more.
 
 ## Dependencies
 
@@ -33,7 +37,7 @@ The following table shows how long this library takes to generate keypairs
 (keygen=), to sign data (sign=), and to verify those signatures (verify=), on
 my 2008 Mac laptop. All times are in seconds. It also shows the length of a
 signature (in bytes): the verifying ("public") key is typically the same
-length as the signature, and the signing ("private") key is half that length.
+length as the signature, and the signing ("private") key is half that length. Use "python setup.py speed" to generate this table on your own computer.
 
 * NIST192p: siglen= 48, keygen=0.160s, sign=0.058s, verify=0.116s
 * NIST224p: siglen= 56, keygen=0.230s, sign=0.086s, verify=0.165s
@@ -68,12 +72,9 @@ safer to use. You are looking at the README for this wrapper.
 There are four test suites, three for the original Pearson module, and one
 more for the wrapper. To run them all, do this:
 
-    python ecdsa/numbertheory.py   # look for "****" and "failed" for problems
-    python ecdsa/ellipticcurve.py   # look for "Bad" for problems
-    python ecdsa/ecdsa.py   # look for "****" and "failed" for problems
-    python ecdsa/test_pyecdsa.py  # look for "FAILED" for problems
+    python setup.py test
 
-On my 2009 Mac laptop, the combined tests take about 34 seconds to run. On a
+On my 2014 Mac Mini, the combined tests take about 20 seconds to run. On a
 2.4GHz P4 Linux box, they take 81 seconds.
 
 One component of `test_pyecdsa.py` checks compatibility with OpenSSL, by

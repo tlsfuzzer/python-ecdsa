@@ -2,7 +2,7 @@ from __future__ import division
 
 import binascii
 import base64
-from .six import int2byte, b, PY3, integer_types, text_type
+from .six import int2byte, b, integer_types, text_type
 
 class UnexpectedDER(Exception):
     pass

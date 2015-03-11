@@ -6,6 +6,11 @@ python:
   - "3.3"
   - "3.4"
   - "pypy"
-install: true
+  - "pypy3"
+install:
+  - pip install python-coveralls
 script:
-  - python setup.py test
+  - coverage run setup.py test
+  - python setup.py speed
+after_success:
+  - coveralls

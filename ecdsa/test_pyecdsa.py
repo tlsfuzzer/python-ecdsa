@@ -57,7 +57,8 @@ class ECDSA(unittest.TestCase):
         priv = SigningKey.from_secret_exponent(secexp, SECP256k1, sha256)
         pub = priv.get_verifying_key()
 
-        k = rfc6979.generate_k(SECP256k1.generator, secexp, sha256, sha256(data).digest())
+        k = rfc6979.generate_k(
+            SECP256k1.generator.order(), secexp, sha256, sha256(data).digest())
 
         sig1 = priv.sign(data, k=k)
         self.assertTrue(pub.verify(sig1, data))
@@ -245,7 +246,7 @@ class ECDSA(unittest.TestCase):
         badpub = VerifyingKey.from_der(pub1_der)
         class FakeGenerator:
             def order(self): return 123456789
-        badcurve = Curve("unknown", None, FakeGenerator(), (1,2,3,4,5,6))
+        badcurve = Curve("unknown", None, FakeGenerator(), (1,2,3,4,5,6), None)
         badpub.curve = badcurve
         badder = badpub.to_der()
         self.assertRaises(UnknownCurveError, VerifyingKey.from_der, badder)
@@ -331,15 +332,21 @@ class OpenSSL(unittest.TestCase):
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
     def test_from_openssl_nist192p(self):
-        return self.do_test_from_openssl(NIST192p, "prime192v1")
+        return self.do_test_from_openssl(NIST192p)
     def test_from_openssl_nist224p(self):
-        return self.do_test_from_openssl(NIST224p, "secp224r1")
+        return self.do_test_from_openssl(NIST224p)
+    def test_from_openssl_nist256p(self):
+        return self.do_test_from_openssl(NIST256p)
     def test_from_openssl_nist384p(self):
-        return self.do_test_from_openssl(NIST384p, "secp384r1")
+        return self.do_test_from_openssl(NIST384p)
     def test_from_openssl_nist521p(self):
-        return self.do_test_from_openssl(NIST521p, "secp521r1")
+        return self.do_test_from_openssl(NIST521p)
+    def test_from_openssl_secp256k1(self):
+        return self.do_test_from_openssl(SECP256k1)
 
-    def do_test_from_openssl(self, curve, curvename):
+    def do_test_from_openssl(self, curve):
+        curvename = curve.openssl_name
+        assert curvename
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
@@ -364,15 +371,21 @@ class OpenSSL(unittest.TestCase):
         self.assertTrue(vk.verify(sig, data))
 
     def test_to_openssl_nist192p(self):
-        self.do_test_to_openssl(NIST192p, "prime192v1")
+        self.do_test_to_openssl(NIST192p)
     def test_to_openssl_nist224p(self):
-        self.do_test_to_openssl(NIST224p, "secp224r1")
+        self.do_test_to_openssl(NIST224p)
+    def test_to_openssl_nist256p(self):
+        self.do_test_to_openssl(NIST256p)
     def test_to_openssl_nist384p(self):
-        self.do_test_to_openssl(NIST384p, "secp384r1")
+        self.do_test_to_openssl(NIST384p)
     def test_to_openssl_nist521p(self):
-        self.do_test_to_openssl(NIST521p, "secp521r1")
+        self.do_test_to_openssl(NIST521p)
+    def test_to_openssl_secp256k1(self):
+        self.do_test_to_openssl(SECP256k1)
 
-    def do_test_to_openssl(self, curve, curvename):
+    def do_test_to_openssl(self, curve):
+        curvename = curve.openssl_name
+        assert curvename
         # Python: create sk, vk, sign.
         # OpenSSL: read vk(4), checksig(6), read sk(2), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
@@ -510,7 +523,7 @@ class Util(unittest.TestCase):
 class RFC6979(unittest.TestCase):
     # https://tools.ietf.org/html/rfc6979#appendix-A.1
     def _do(self, generator, secexp, hsh, hash_func, expected):
-        actual = rfc6979.generate_k(generator, secexp, hash_func, hsh)
+        actual = rfc6979.generate_k(generator.order(), secexp, hash_func, hsh)
         self.assertEqual(expected, actual)
 
     def test_SECP256k1(self):

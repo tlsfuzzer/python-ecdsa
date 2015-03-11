@@ -51,18 +51,18 @@ def bits2octets(data, order):
     return number_to_string_crop(z2, order)
 
 # https://tools.ietf.org/html/rfc6979#section-3.2
-def generate_k(generator, secexp, hash_func, data):
+def generate_k(order, secexp, hash_func, data):
     '''
-        generator - ECDSA generator used in the signature
+        order - order of the DSA generator used in the signature
         secexp - secure exponent (private key) in numeric form
         hash_func - reference to the same hash function used for generating hash
         data - hash in binary form of the signing data
     '''
 
-    qlen = bit_length(generator.order())
+    qlen = bit_length(order)
     holen = hash_func().digest_size
     rolen = (qlen + 7) / 8
-    bx = number_to_string(secexp, generator.order()) + bits2octets(data, generator.order())
+    bx = number_to_string(secexp, order) + bits2octets(data, order)
 
     # Step B
     v = b('\x01') * holen
@@ -96,7 +96,7 @@ def generate_k(generator, secexp, hash_func, data):
         # Step H3
         secret = bits2int(t, qlen)
 
-        if secret >= 1 and secret < generator.order():
+        if secret >= 1 and secret < order:
             return secret
 
         k = hmac.new(k, v+b('\x00'), hash_func).digest()
