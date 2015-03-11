@@ -48,6 +48,27 @@ class VerifyingKey:
         return klass.from_public_point(point, curve, hashfunc)
 
     @classmethod
+    def from_signature(klass, signature, recid, message_digest, curve):
+        # See http://www.secg.org/download/aid-780/sec1-v2.pdf, chapter 4.1.6
+        from .ellipticcurve import Point
+        from .numbertheory import inverse_mod
+        from .msqr import modular_sqrt
+        curveFp = curve.curve
+        G = curve.generator
+        order = G.order()
+        r, s = sigdecode_string(signature, order)
+        x = r + (recid/2) * order
+        alpha = (x * x * x  + curveFp.a() * x + curveFp.b()) % curveFp.p()
+        beta = modular_sqrt(alpha, curveFp.p())
+        y = beta if (beta - recid) % 2 == 0 else curveFp.p() - beta
+        R = Point(curveFp, x, y, order)
+        e = string_to_number(message_digest)
+        minus_e = -e % order
+        inv_r = inverse_mod(r,order)
+        Q = inv_r * (s * R + minus_e * G)
+        return klass.from_public_point(Q, curve)
+
+    @classmethod
     def from_pem(klass, string):
         return klass.from_der(der.unpem(string))
 
