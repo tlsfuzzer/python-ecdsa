@@ -7,7 +7,7 @@ from .curves import NIST192p, find_curve
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey
-from .numbertheory import modular_sqrt
+from .numbertheory import square_root_mod_prime
 from .six import PY3, b
 from hashlib import sha1
 
@@ -61,7 +61,7 @@ class VerifyingKey:
             order = curve.order
             p = curve.curve.p()
             alpha = (pow(x, 3, p) + curve.curve.a() * x + curve.curve.b()) % p
-            beta  = modular_sqrt (alpha, p)
+            beta  = square_root_mod_prime (alpha, p)
             if is_even == bool(beta & 1):
                 y = p - beta
             else:
@@ -112,8 +112,8 @@ class VerifyingKey:
         order = self.pubkey.order
         x = self.pubkey.point.x()
         y = self.pubkey.point.y()
+        x_str = number_to_string(x, order)
         if compressed:
-            x_str = number_to_string(x, order)
             if y & 1:
                 return b('\x03') + x_str
             else:
