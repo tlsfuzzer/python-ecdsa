@@ -184,8 +184,8 @@ bytes of entropy, and then use one of the helper functions in ecdsa.util to
 convert it into an integer in the correct range, and then finally pass it
 into `SigningKey.from_secret_exponent()`, like this:
 
-    from pyecdsa import NIST384p, SigningKey
-    from pyecdsa.util import randrange_from_seed__trytryagain
+    from ecdsa import NIST384p, SigningKey
+    from ecdsa.util import randrange_from_seed__trytryagain
 
     def make_key(seed):
       secexp = randrange_from_seed__trytryagain(seed, NIST384p.order)
@@ -295,8 +295,8 @@ Create a NIST521p keypair
 
 Create three independent signing keys from a master seed:
 
-    from pyecdsa import NIST192p, SigningKey
-    from pyecdsa.util import randrange_from_seed__trytryagain
+    from ecdsa import NIST192p, SigningKey
+    from ecdsa.util import randrange_from_seed__trytryagain
 
     def make_key_from_seed(seed, curve=NIST192p):
       secexp = randrange_from_seed__trytryagain(seed, curve.order)
