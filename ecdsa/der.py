@@ -4,13 +4,17 @@ import binascii
 import base64
 from .six import int2byte, b, integer_types, text_type
 
+
 class UnexpectedDER(Exception):
     pass
 
+
 def encode_constructed(tag, value):
     return int2byte(0xa0+tag) + encode_length(len(value)) + value
+
+
 def encode_integer(r):
-    assert r >= 0 # can't support negative numbers yet
+    assert r >= 0  # can't support negative numbers yet
     h = ("%x" % r).encode()
     if len(h) % 2:
         h = b("0") + h
@@ -24,10 +28,15 @@ def encode_integer(r):
         # looking negative.
         return b("\x02") + int2byte(len(s)+1) + b("\x00") + s
 
+
 def encode_bitstring(s):
     return b("\x03") + encode_length(len(s)) + s
+
+
 def encode_octet_string(s):
     return b("\x04") + encode_length(len(s)) + s
+
+
 def encode_oid(first, second, *pieces):
     assert first <= 2
     assert second <= 39
@@ -35,9 +44,13 @@ def encode_oid(first, second, *pieces):
                                                     for p in pieces]
     body = b('').join(encoded_pieces)
     return b('\x06') + encode_length(len(body)) + body
+
+
 def encode_sequence(*encoded_pieces):
     total_len = sum([len(p) for p in encoded_pieces])
     return b('\x30') + encode_length(total_len) + b('').join(encoded_pieces)
+
+
 def encode_number(n):
     b128_digits = []
     while n:
@@ -47,6 +60,7 @@ def encode_number(n):
         b128_digits.append(0)
     b128_digits[-1] &= 0x7f
     return b('').join([int2byte(d) for d in b128_digits])
+
 
 def remove_constructed(string):
     s0 = string[0] if isinstance(string[0], integer_types) else ord(string[0])
@@ -59,6 +73,7 @@ def remove_constructed(string):
     rest = string[1+llen+length:]
     return tag, body, rest
 
+
 def remove_sequence(string):
     if not string.startswith(b("\x30")):
         n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
@@ -66,6 +81,7 @@ def remove_sequence(string):
     length, lengthlength = read_length(string[1:])
     endseq = 1+lengthlength+length
     return string[1+lengthlength:endseq], string[endseq:]
+
 
 def remove_octet_string(string):
     if not string.startswith(b("\x04")):
@@ -75,6 +91,7 @@ def remove_octet_string(string):
     body = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
     return body, rest
+
 
 def remove_object(string):
     if not string.startswith(b("\x06")):
@@ -95,6 +112,7 @@ def remove_object(string):
     numbers.insert(1, second)
     return tuple(numbers), rest
 
+
 def remove_integer(string):
     if not string.startswith(b("\x02")):
         n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
@@ -103,8 +121,9 @@ def remove_integer(string):
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
     nbytes = numberbytes[0] if isinstance(numberbytes[0], integer_types) else ord(numberbytes[0])
-    assert nbytes < 0x80 # can't support negative numbers yet
+    assert nbytes < 0x80  # can't support negative numbers yet
     return int(binascii.hexlify(numberbytes), 16), rest
+
 
 def read_number(string):
     number = 0
@@ -121,16 +140,18 @@ def read_number(string):
             break
     return number, llen
 
+
 def encode_length(l):
     assert l >= 0
     if l < 0x80:
         return int2byte(l)
     s = ("%x" % l).encode()
-    if len(s)%2:
-        s = b("0")+s
+    if len(s) % 2:
+        s = b("0") + s
     s = binascii.unhexlify(s)
     llen = len(s)
-    return int2byte(0x80|llen) + s
+    return int2byte(0x80 | llen) + s
+
 
 def read_length(string):
     num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
@@ -143,6 +164,7 @@ def read_length(string):
     if llen > len(string)-1:
         raise UnexpectedDER("ran out of length bytes")
     return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
+
 
 def remove_bitstring(string):
     num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
@@ -189,6 +211,8 @@ def unpem(pem):
     d = b("").join([l.strip() for l in pem.split(b("\n"))
                     if l and not l.startswith(b("-----"))])
     return base64.b64decode(d)
+
+
 def topem(der, name):
     b64 = base64.b64encode(der)
     lines = [("-----BEGIN %s-----\n" % name).encode()]
@@ -196,4 +220,3 @@ def topem(der, name):
                   for start in range(0, len(b64), 64)])
     lines.append(("-----END %s-----\n" % name).encode())
     return b("").join(lines)
-

@@ -20,8 +20,10 @@ from .ellipticcurve import Point
 from . import der
 from . import rfc6979
 
+
 class SubprocessError(Exception):
     pass
+
 
 def run_openssl(cmd):
     OPENSSL = "openssl"
@@ -34,7 +36,9 @@ def run_openssl(cmd):
                               (OPENSSL, cmd, p.returncode, stdout))
     return stdout.decode()
 
+
 BENCH = False
+
 
 class ECDSA(unittest.TestCase):
     def test_basic(self):
@@ -45,7 +49,7 @@ class ECDSA(unittest.TestCase):
         sig = priv.sign(data)
 
         self.assertTrue(pub.verify(sig, data))
-        self.assertRaises(BadSignatureError, pub.verify, sig, data+b("bad"))
+        self.assertRaises(BadSignatureError, pub.verify, sig, data + b("bad"))
 
         pub2 = VerifyingKey.from_string(pub.to_string())
         self.assertTrue(pub2.verify(sig, data))
@@ -94,7 +98,7 @@ class ECDSA(unittest.TestCase):
             pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
             self.assertEqual(pub1.to_string(), pub2.to_string())
             self.assertEqual(len(pub1.to_string()),
-                                 curve.verifying_key_length)
+                             curve.verifying_key_length)
             start = time.time()
             sig = priv.sign(b("data"))
             sign_time = time.time() - start
@@ -104,8 +108,8 @@ class ECDSA(unittest.TestCase):
                 pub1.verify(sig, b("data"))
                 verify_time = time.time() - start
                 print_("%s: siglen=%d, keygen=%0.3fs, sign=%0.3f, verify=%0.3f" \
-                      % (curve.name, curve.signature_length,
-                         keygen_time, sign_time, verify_time))
+                       % (curve.name, curve.signature_length,
+                          keygen_time, sign_time, verify_time))
 
     def test_serialize(self):
         seed = b("secret")
@@ -116,7 +120,7 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.from_secret_exponent(secexp1, curve)
         priv2 = SigningKey.from_secret_exponent(secexp2, curve)
         self.assertEqual(hexlify(priv1.to_string()),
-                             hexlify(priv2.to_string()))
+                         hexlify(priv2.to_string()))
         self.assertEqual(priv1.to_pem(), priv2.to_pem())
         pub1 = priv1.get_verifying_key()
         pub2 = priv2.get_verifying_key()
@@ -128,17 +132,19 @@ class ECDSA(unittest.TestCase):
         self.assertTrue(pub1.verify(sig2, data))
         self.assertTrue(pub2.verify(sig2, data))
         self.assertEqual(hexlify(pub1.to_string()),
-                             hexlify(pub2.to_string()))
+                         hexlify(pub2.to_string()))
 
     def test_nonrandom(self):
         s = b("all the entropy in the entire world, compressed into one line")
+
         def not_much_entropy(numbytes):
             return s[:numbytes]
+
         # we control the entropy source, these two keys should be identical:
         priv1 = SigningKey.generate(entropy=not_much_entropy)
         priv2 = SigningKey.generate(entropy=not_much_entropy)
         self.assertEqual(hexlify(priv1.get_verifying_key().to_string()),
-                             hexlify(priv2.get_verifying_key().to_string()))
+                         hexlify(priv2.get_verifying_key().to_string()))
         # likewise, signatures should be identical. Obviously you'd never
         # want to do this with keys you care about, because the secrecy of
         # the private key depends upon using different random numbers for
@@ -149,9 +155,9 @@ class ECDSA(unittest.TestCase):
 
     def assertTruePrivkeysEqual(self, priv1, priv2):
         self.assertEqual(priv1.privkey.secret_multiplier,
-                             priv2.privkey.secret_multiplier)
+                         priv2.privkey.secret_multiplier)
         self.assertEqual(priv1.privkey.public_key.generator,
-                             priv2.privkey.public_key.generator)
+                         priv2.privkey.public_key.generator)
 
     def failIfPrivkeysEqual(self, priv1, priv2):
         self.failIfEqual(priv1.privkey.secret_multiplier,
@@ -159,8 +165,10 @@ class ECDSA(unittest.TestCase):
 
     def test_privkey_creation(self):
         s = b("all the entropy in the entire world, compressed into one line")
+
         def not_much_entropy(numbytes):
             return s[:numbytes]
+
         priv1 = SigningKey.generate()
         self.assertEqual(priv1.baselen, NIST192p.baselen)
 
@@ -242,11 +250,14 @@ class ECDSA(unittest.TestCase):
         self.assertTruePubkeysEqual(pub1, pub2)
 
         self.assertRaises(der.UnexpectedDER,
-                              VerifyingKey.from_der, pub1_der+b("junk"))
+                          VerifyingKey.from_der, pub1_der + b("junk"))
         badpub = VerifyingKey.from_der(pub1_der)
+
         class FakeGenerator:
-            def order(self): return 123456789
-        badcurve = Curve("unknown", None, FakeGenerator(), (1,2,3,4,5,6), None)
+            def order(self):
+                return 123456789
+
+        badcurve = Curve("unknown", None, FakeGenerator(), (1, 2, 3, 4, 5, 6), None)
         badpub.curve = badcurve
         badder = badpub.to_der()
         self.assertRaises(UnknownCurveError, VerifyingKey.from_der, badder)
@@ -322,7 +333,7 @@ class OpenSSL(unittest.TestCase):
         # e.g. "OpenSSL 1.0.0 29 Mar 2010", or "OpenSSL 1.0.0a 1 Jun 2010",
         # or "OpenSSL 0.9.8o 01 Jun 2010"
         vs = v.split()[1].split(".")
-        if vs >= ["1","0","0"]:
+        if vs >= ["1", "0", "0"]:
             return "-SHA1"
         else:
             return "-ecdsa-with-SHA1"
@@ -333,14 +344,19 @@ class OpenSSL(unittest.TestCase):
 
     def test_from_openssl_nist192p(self):
         return self.do_test_from_openssl(NIST192p)
+
     def test_from_openssl_nist224p(self):
         return self.do_test_from_openssl(NIST224p)
+
     def test_from_openssl_nist256p(self):
         return self.do_test_from_openssl(NIST256p)
+
     def test_from_openssl_nist384p(self):
         return self.do_test_from_openssl(NIST384p)
+
     def test_from_openssl_nist521p(self):
         return self.do_test_from_openssl(NIST521p)
+
     def test_from_openssl_secp256k1(self):
         return self.do_test_from_openssl(SECP256k1)
 
@@ -356,30 +372,39 @@ class OpenSSL(unittest.TestCase):
         run_openssl("ecparam -name %s -genkey -out t/privkey.pem" % curvename)
         run_openssl("ec -in t/privkey.pem -pubout -out t/pubkey.pem")
         data = b("data")
-        with open("t/data.txt","wb") as e: e.write(data)
+        with open("t/data.txt", "wb") as e:
+          e.write(data)
         run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig t/data.txt" % mdarg)
         run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig t/data.txt" % mdarg)
-        with open("t/pubkey.pem","rb") as e: pubkey_pem = e.read()
-        vk = VerifyingKey.from_pem(pubkey_pem) # 3
-        with open("t/data.sig","rb") as e: sig_der = e.read()
-        self.assertTrue(vk.verify(sig_der, data, # 5
+        with open("t/pubkey.pem", "rb") as e:
+          pubkey_pem = e.read()
+        vk = VerifyingKey.from_pem(pubkey_pem)  # 3
+        with open("t/data.sig", "rb") as e:
+          sig_der = e.read()
+        self.assertTrue(vk.verify(sig_der, data,  # 5
                                   hashfunc=sha1, sigdecode=sigdecode_der))
 
-        with open("t/privkey.pem") as e: fp = e.read()
-        sk = SigningKey.from_pem(fp) # 1
+        with open("t/privkey.pem") as e:
+          fp = e.read()
+        sk = SigningKey.from_pem(fp)  # 1
         sig = sk.sign(data)
         self.assertTrue(vk.verify(sig, data))
 
     def test_to_openssl_nist192p(self):
         self.do_test_to_openssl(NIST192p)
+
     def test_to_openssl_nist224p(self):
         self.do_test_to_openssl(NIST224p)
+
     def test_to_openssl_nist256p(self):
         self.do_test_to_openssl(NIST256p)
+
     def test_to_openssl_nist384p(self):
         self.do_test_to_openssl(NIST384p)
+
     def test_to_openssl_nist521p(self):
         self.do_test_to_openssl(NIST521p)
+
     def test_to_openssl_secp256k1(self):
         self.do_test_to_openssl(SECP256k1)
 
@@ -395,21 +420,28 @@ class OpenSSL(unittest.TestCase):
         sk = SigningKey.generate(curve=curve)
         vk = sk.get_verifying_key()
         data = b("data")
-        with open("t/pubkey.der","wb") as e: e.write(vk.to_der()) # 4
-        with open("t/pubkey.pem","wb") as e: e.write(vk.to_pem()) # 4
+        with open("t/pubkey.der", "wb") as e:
+          e.write(vk.to_der())  # 4
+        with open("t/pubkey.pem", "wb") as e:
+          e.write(vk.to_pem())  # 4
         sig_der = sk.sign(data, hashfunc=sha1, sigencode=sigencode_der)
 
-        with open("t/data.sig","wb") as e: e.write(sig_der) # 6
-        with open("t/data.txt","wb") as e: e.write(data)
-        with open("t/baddata.txt","wb") as e: e.write(data+b("corrupt"))
+        with open("t/data.sig", "wb") as e:
+          e.write(sig_der)  # 6
+        with open("t/data.txt", "wb") as e:
+          e.write(data)
+        with open("t/baddata.txt", "wb") as e:
+          e.write(data + b("corrupt"))
 
         self.assertRaises(SubprocessError, run_openssl,
-                              "dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/baddata.txt" % mdarg)
+                          "dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/baddata.txt" % mdarg)
         run_openssl("dgst %s -verify t/pubkey.der -keyform DER -signature t/data.sig t/data.txt" % mdarg)
 
-        with open("t/privkey.pem","wb") as e: e.write(sk.to_pem()) # 2
+        with open("t/privkey.pem", "wb") as e:
+          e.write(sk.to_pem())  # 2
         run_openssl("dgst %s -sign t/privkey.pem -out t/data.sig2 t/data.txt" % mdarg)
         run_openssl("dgst %s -verify t/pubkey.pem -signature t/data.sig2 t/data.txt" % mdarg)
+
 
 class DER(unittest.TestCase):
     def test_oids(self):
@@ -417,7 +449,7 @@ class DER(unittest.TestCase):
         self.assertEqual(hexlify(oid_ecPublicKey), b("06072a8648ce3d0201"))
         self.assertEqual(hexlify(NIST224p.encoded_oid), b("06052b81040021"))
         self.assertEqual(hexlify(NIST256p.encoded_oid),
-                             b("06082a8648ce3d030107"))
+                         b("06082a8648ce3d030107"))
         x = oid_ecPublicKey + b("more")
         x1, rest = der.remove_object(x)
         self.assertEqual(x1, (1, 2, 840, 10045, 2, 1))
@@ -429,25 +461,26 @@ class DER(unittest.TestCase):
         self.assertEqual(der.encode_integer(127), b("\x02\x01\x7f"))
         self.assertEqual(der.encode_integer(128), b("\x02\x02\x00\x80"))
         self.assertEqual(der.encode_integer(256), b("\x02\x02\x01\x00"))
-        #self.assertEqual(der.encode_integer(-1), b("\x02\x01\xff"))
+        # self.assertEqual(der.encode_integer(-1), b("\x02\x01\xff"))
 
-        def s(n): return der.remove_integer(der.encode_integer(n) + b("junk"))
+        def s(n):
+          return der.remove_integer(der.encode_integer(n) + b("junk"))
         self.assertEqual(s(0), (0, b("junk")))
         self.assertEqual(s(1), (1, b("junk")))
         self.assertEqual(s(127), (127, b("junk")))
         self.assertEqual(s(128), (128, b("junk")))
         self.assertEqual(s(256), (256, b("junk")))
         self.assertEqual(s(1234567890123456789012345678901234567890),
-                             (1234567890123456789012345678901234567890,b("junk")))
+                         (1234567890123456789012345678901234567890, b("junk")))
 
     def test_number(self):
         self.assertEqual(der.encode_number(0), b("\x00"))
         self.assertEqual(der.encode_number(127), b("\x7f"))
         self.assertEqual(der.encode_number(128), b("\x81\x00"))
-        self.assertEqual(der.encode_number(3*128+7), b("\x83\x07"))
-        #self.assertEqual(der.read_number("\x81\x9b"+"more"), (155, 2))
-        #self.assertEqual(der.encode_number(155), b("\x81\x9b"))
-        for n in (0, 1, 2, 127, 128, 3*128+7, 840, 10045): #, 155):
+        self.assertEqual(der.encode_number(3 * 128 + 7), b("\x83\x07"))
+        # self.assertEqual(der.read_number("\x81\x9b" + "more"), (155, 2))
+        # self.assertEqual(der.encode_number(155), b("\x81\x9b"))
+        for n in (0, 1, 2, 127, 128, 3 * 128 + 7, 840, 10045):  # , 155):
             x = der.encode_number(n) + b("more")
             n1, llen = der.read_number(x)
             self.assertEqual(n1, n)
@@ -459,10 +492,10 @@ class DER(unittest.TestCase):
         self.assertEqual(der.encode_length(128), b("\x81\x80"))
         self.assertEqual(der.encode_length(255), b("\x81\xff"))
         self.assertEqual(der.encode_length(256), b("\x82\x01\x00"))
-        self.assertEqual(der.encode_length(3*256+7), b("\x82\x03\x07"))
-        self.assertEqual(der.read_length(b("\x81\x9b")+b("more")), (155, 2))
+        self.assertEqual(der.encode_length(3 * 256 + 7), b("\x82\x03\x07"))
+        self.assertEqual(der.read_length(b("\x81\x9b") + b("more")), (155, 2))
         self.assertEqual(der.encode_length(155), b("\x81\x9b"))
-        for n in (0, 1, 2, 127, 128, 255, 256, 3*256+7, 155):
+        for n in (0, 1, 2, 127, 128, 255, 256, 3 * 256 + 7, 155):
             x = der.encode_length(n) + b("more")
             n1, llen = der.read_length(x)
             self.assertEqual(n1, n)
@@ -481,33 +514,34 @@ class DER(unittest.TestCase):
         x = der.encode_constructed(1, unhexlify(b("0102030a0b0c")))
         self.assertEqual(hexlify(x), b("a106") + b("0102030a0b0c"))
 
+
 class Util(unittest.TestCase):
     def test_trytryagain(self):
         tta = util.randrange_from_seed__trytryagain
         for i in range(1000):
             seed = "seed-%d" % i
-            for order in (2**8-2, 2**8-1, 2**8, 2**8+1, 2**8+2,
-                          2**16-1, 2**16+1):
+            for order in (2**8 - 2, 2**8 - 1, 2**8, 2**8 + 1, 2**8 + 2,
+                          2**16 - 1, 2**16 + 1):
                 n = tta(seed, order)
                 self.assertTrue(1 <= n < order, (1, n, order))
         # this trytryagain *does* provide long-term stability
-        self.assertEqual(("%x"%(tta("seed", NIST224p.order))).encode(),
-                             b("6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc"))
+        self.assertEqual(("%x" % (tta("seed", NIST224p.order))).encode(),
+                         b("6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc"))
 
     def test_randrange(self):
         # util.randrange does not provide long-term stability: we might
         # change the algorithm in the future.
         for i in range(1000):
             entropy = util.PRNG("seed-%d" % i)
-            for order in (2**8-2, 2**8-1, 2**8,
-                          2**16-1, 2**16+1,
+            for order in (2**8 - 2, 2**8 - 1, 2**8,
+                          2**16 - 1, 2**16 + 1,
                           ):
                 # that oddball 2**16+1 takes half our runtime
                 n = util.randrange(order, entropy=entropy)
                 self.assertTrue(1 <= n < order, (1, n, order))
 
     def OFF_test_prove_uniformity(self):
-        order = 2**8-2
+        order = 2**8 - 2
         counts = dict([(i, 0) for i in range(1, order)])
         assert 0 not in counts
         assert order not in counts
@@ -516,9 +550,10 @@ class Util(unittest.TestCase):
             n = util.randrange_from_seed__trytryagain(seed, order)
             counts[n] += 1
         # this technique should use the full range
-        self.assertTrue(counts[order-1])
+        self.assertTrue(counts[order - 1])
         for i in range(1, order):
-            print_("%3d: %s" % (i, "*"*(counts[i]//100)))
+            print_("%3d: %s" % (i, "*" * (counts[i] // 100)))
+
 
 class RFC6979(unittest.TestCase):
     # https://tools.ietf.org/html/rfc6979#appendix-A.1
@@ -530,11 +565,11 @@ class RFC6979(unittest.TestCase):
         '''RFC doesn't contain test vectors for SECP256k1 used in bitcoin.
         This vector has been computed by Golang reference implementation instead.'''
         self._do(
-            generator = SECP256k1.generator,
-            secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16),
-            hsh = sha256(b("sample")).digest(),
-            hash_func = sha256,
-            expected = int("8fa1f95d514760e498f28957b824ee6ec39ed64826ff4fecc2b5739ec45b91cd", 16))
+            generator=SECP256k1.generator,
+            secexp=int("9d0219792467d7d37b4d43298a7d0c05", 16),
+            hsh=sha256(b("sample")).digest(),
+            hash_func=sha256,
+            expected=int("8fa1f95d514760e498f28957b824ee6ec39ed64826ff4fecc2b5739ec45b91cd", 16))
 
     def test_SECP256k1_2(self):
         self._do(
@@ -579,85 +614,88 @@ class RFC6979(unittest.TestCase):
     def test_1(self):
         # Basic example of the RFC, it also tests 'try-try-again' from Step H of rfc6979
         self._do(
-            generator = Point(None, 0, 0, int("4000000000000000000020108A2E0CC0D99F8A5EF", 16)),
-            secexp = int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
-            hsh = unhexlify(b("AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF")),
-            hash_func = sha256,
-            expected = int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16))
+            generator=Point(None, 0, 0, int("4000000000000000000020108A2E0CC0D99F8A5EF", 16)),
+            secexp=int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
+            hsh=unhexlify(b("AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF")),
+            hash_func=sha256,
+            expected=int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16))
 
     def test_2(self):
         self._do(
             generator=NIST192p.generator,
-            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha1(b("sample")).digest(),
-            hash_func = sha1,
-            expected = int("37D7CA00D2C7B0E5E412AC03BD44BA837FDD5B28CD3B0021", 16))
+            secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh=sha1(b("sample")).digest(),
+            hash_func=sha1,
+            expected=int("37D7CA00D2C7B0E5E412AC03BD44BA837FDD5B28CD3B0021", 16))
 
     def test_3(self):
         self._do(
             generator=NIST192p.generator,
-            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha256(b("sample")).digest(),
-            hash_func = sha256,
-            expected = int("32B1B6D7D42A05CB449065727A84804FB1A3E34D8F261496", 16))
+            secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh=sha256(b("sample")).digest(),
+            hash_func=sha256,
+            expected=int("32B1B6D7D42A05CB449065727A84804FB1A3E34D8F261496", 16))
 
     def test_4(self):
         self._do(
             generator=NIST192p.generator,
-            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha512(b("sample")).digest(),
-            hash_func = sha512,
-            expected = int("A2AC7AB055E4F20692D49209544C203A7D1F2C0BFBC75DB1", 16))
+            secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh=sha512(b("sample")).digest(),
+            hash_func=sha512,
+            expected=int("A2AC7AB055E4F20692D49209544C203A7D1F2C0BFBC75DB1", 16))
 
     def test_5(self):
         self._do(
             generator=NIST192p.generator,
-            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha1(b("test")).digest(),
-            hash_func = sha1,
-            expected = int("D9CF9C3D3297D3260773A1DA7418DB5537AB8DD93DE7FA25", 16))
+            secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh=sha1(b("test")).digest(),
+            hash_func=sha1,
+            expected=int("D9CF9C3D3297D3260773A1DA7418DB5537AB8DD93DE7FA25", 16))
 
     def test_6(self):
         self._do(
             generator=NIST192p.generator,
-            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha256(b("test")).digest(),
-            hash_func = sha256,
-            expected = int("5C4CE89CF56D9E7C77C8585339B006B97B5F0680B4306C6C", 16))
+            secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh=sha256(b("test")).digest(),
+            hash_func=sha256,
+            expected=int("5C4CE89CF56D9E7C77C8585339B006B97B5F0680B4306C6C", 16))
 
     def test_7(self):
         self._do(
             generator=NIST192p.generator,
-            secexp = int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
-            hsh = sha512(b("test")).digest(),
-            hash_func = sha512,
-            expected = int("0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527", 16))
+            secexp=int("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
+            hsh=sha512(b("test")).digest(),
+            hash_func=sha512,
+            expected=int("0758753A5254759C7CFBAD2E2D9B0792EEE44136C9480527", 16))
 
     def test_8(self):
         self._do(
             generator=NIST521p.generator,
-            secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
-            hsh = sha1(b("sample")).digest(),
-            hash_func = sha1,
-            expected = int("089C071B419E1C2820962321787258469511958E80582E95D8378E0C2CCDB3CB42BEDE42F50E3FA3C71F5A76724281D31D9C89F0F91FC1BE4918DB1C03A5838D0F9", 16))
+            secexp=int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
+            hsh=sha1(b("sample")).digest(),
+            hash_func=sha1,
+            expected=int("089C071B419E1C2820962321787258469511958E80582E95D8378E0C2CCDB3CB42BEDE42F50E3FA3C71F5A76724281D31D9C89F0F91FC1BE4918DB1C03A5838D0F9", 16))
 
     def test_9(self):
         self._do(
             generator=NIST521p.generator,
-            secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
-            hsh = sha256(b("sample")).digest(),
-            hash_func = sha256,
-            expected = int("0EDF38AFCAAECAB4383358B34D67C9F2216C8382AAEA44A3DAD5FDC9C32575761793FEF24EB0FC276DFC4F6E3EC476752F043CF01415387470BCBD8678ED2C7E1A0", 16))
+            secexp=int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
+            hsh=sha256(b("sample")).digest(),
+            hash_func=sha256,
+            expected=int("0EDF38AFCAAECAB4383358B34D67C9F2216C8382AAEA44A3DAD5FDC9C32575761793FEF24EB0FC276DFC4F6E3EC476752F043CF01415387470BCBD8678ED2C7E1A0", 16))
 
     def test_10(self):
         self._do(
             generator=NIST521p.generator,
-            secexp = int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
-            hsh = sha512(b("test")).digest(),
-            hash_func = sha512,
-            expected = int("16200813020EC986863BEDFC1B121F605C1215645018AEA1A7B215A564DE9EB1B38A67AA1128B80CE391C4FB71187654AAA3431027BFC7F395766CA988C964DC56D", 16))
+            secexp=int("0FAD06DAA62BA3B25D2FB40133DA757205DE67F5BB0018FEE8C86E1B68C7E75CAA896EB32F1F47C70855836A6D16FCC1466F6D8FBEC67DB89EC0C08B0E996B83538", 16),
+            hsh=sha512(b("test")).digest(),
+            hash_func=sha512,
+            expected=int("16200813020EC986863BEDFC1B121F605C1215645018AEA1A7B215A564DE9EB1B38A67AA1128B80CE391C4FB71187654AAA3431027BFC7F395766CA988C964DC56D", 16))
+
 
 def __main__():
     unittest.main()
+
+
 if __name__ == "__main__":
     __main__()
