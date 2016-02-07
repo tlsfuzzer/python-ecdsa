@@ -54,6 +54,21 @@ class ECDSA(unittest.TestCase):
         pub2 = VerifyingKey.from_string(pub.to_string())
         self.assertTrue(pub2.verify(sig, data))
 
+    def test_sec(self):
+        for i in range (20):
+            skey = SigningKey.generate()
+            pkey0 = skey.get_verifying_key()
+            sec0 = pkey0.to_sec()
+            pkey1 = VerifyingKey.from_sec (sec0)
+            self.assertEqual(pkey0.to_string(), pkey1.to_string())
+        pkey2 = VerifyingKey.from_sec(unhexlify(b(
+            '045b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8'
+            '55981f2803fc3c07edfc2435fbf2326d65d3f237f0bcc2399514255b8d4285c5')),
+            curve=SECP256k1)
+        self.assertEqual(
+            pkey2.to_sec(compressed=True), unhexlify(b(
+              '035b9dfc2af65bd5fb0bd01103ab21e9cfeb1eeafa10795d6801b14e09beadd7f8')))
+
     def test_deterministic(self):
         data = b("blahblah")
         secexp = int("9d0219792467d7d37b4d43298a7d0c05", 16)
@@ -252,6 +267,16 @@ class ECDSA(unittest.TestCase):
         self.assertRaises(der.UnexpectedDER,
                           VerifyingKey.from_der, pub1_der + b("junk"))
         badpub = VerifyingKey.from_der(pub1_der)
+
+        pub1_sec = pub1.to_sec(compressed=False)
+        self.assertEqual(type(pub1_sec), binary_type)
+        pub2 = VerifyingKey.from_sec(pub1_sec, curve=NIST256p)
+        self.assertTruePubkeysEqual(pub1, pub2)
+
+        pub1_sec = pub1.to_sec(compressed=True)
+        self.assertEqual(type(pub1_sec), binary_type)
+        pub2 = VerifyingKey.from_sec(pub1_sec, curve=NIST256p)
+        self.assertTruePubkeysEqual(pub1, pub2)
 
         class FakeGenerator:
             def order(self):

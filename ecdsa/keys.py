@@ -1,13 +1,15 @@
 import binascii
 
 from . import ecdsa
+from . import ellipticcurve
 from . import der
 from . import rfc6979
 from .curves import NIST192p, find_curve
+from .numbertheory import square_root_mod_prime
+from .six import PY3, b
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey
-from .six import PY3, b
 from hashlib import sha1
 
 
@@ -78,6 +80,32 @@ class VerifyingKey:
         assert point_str.startswith(b("\x00\x04"))
         return klass.from_string(point_str[2:], curve)
 
+    @classmethod
+    def from_sec(klass, string, curve=NIST192p, hashfunc=sha1,
+                 validate_point=True):
+        """Convert a public key in SEC binary format to a verifying key."""
+        # based on code from https://github.com/richardkiss/pycoin
+        if string.startswith(b('\x04')):
+            # uncompressed
+            return klass.from_string(string[1:], curve, hashfunc,
+                                     validate_point)
+        elif string.startswith(b('\x02')) or string.startswith(b('\x03')):
+            # compressed
+            is_even = string.startswith(b('\x02'))
+            x = string_to_number(string[1:])
+            order = curve.order
+            p = curve.curve.p()
+            alpha = (pow(x, 3, p) + (curve.curve.a() * x) + curve.curve.b()) % p
+            beta = square_root_mod_prime(alpha, p)
+            if is_even == bool(beta & 1):
+                y = p - beta
+            else:
+                y = beta
+            if validate_point:
+                assert ecdsa.point_is_valid(curve.generator, x, y)
+            point = ellipticcurve.Point(curve.curve, x, y, order)
+            return klass.from_public_point(point, curve, hashfunc)
+
     def to_string(self):
         # VerifyingKey.from_string(vk.to_string()) == vk as long as the
         # curves are the same: the curve itself is not included in the
@@ -98,6 +126,20 @@ class VerifyingKey:
         return der.encode_sequence(der.encode_sequence(encoded_oid_ecPublicKey,
                                                        self.curve.encoded_oid),
                                    der.encode_bitstring(point_str))
+
+    def to_sec(self, compressed=True):
+        """Convert verifying key to the SEC binary format (as used by OpenSSL)."""
+        # based on code from https://github.com/richardkiss/pycoin
+        order = self.pubkey.order
+        x_str = number_to_string(self.pubkey.point.x(), order)
+        if compressed:
+            if self.pubkey.point.y() & 1:
+                return b('\x03') + x_str
+            else:
+                return b('\x02') + x_str
+        else:
+            y_str = number_to_string(self.pubkey.point.y(), order)
+            return b('\x04') + x_str + y_str
 
     def verify(self, signature, data, hashfunc=None, sigdecode=sigdecode_string):
         hashfunc = hashfunc or self.default_hashfunc
