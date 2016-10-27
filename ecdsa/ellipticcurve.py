@@ -34,7 +34,7 @@
 
 from __future__ import division
 
-from .six import print_, python_2_unicode_compatible
+from six import print_, python_2_unicode_compatible
 from . import numbertheory
 
 @python_2_unicode_compatible

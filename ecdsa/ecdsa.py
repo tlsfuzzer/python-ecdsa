@@ -53,7 +53,7 @@ Revision history:
 Written in 2005 by Peter Pearson and placed in the public domain.
 """
 
-from .six import int2byte, b, print_
+from six import int2byte, b, print_
 from . import ellipticcurve
 from . import numbertheory
 import random

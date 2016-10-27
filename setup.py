@@ -6,6 +6,7 @@ except ImportError:
     # but most users really don't require it
     from distutils.core import setup, Command
 import timeit
+import six
 
 import versioneer
 versioneer.versionfile_source = "ecdsa/_version.py"
@@ -53,7 +54,7 @@ class Speed(Test):
 
         for curve in ["NIST192p", "NIST224p", "NIST256p", "SECP256k1",
                       "NIST384p", "NIST521p"]:
-            S1 = "from ecdsa import six, SigningKey, %s" % curve
+            S1 = "import six;from ecdsa import SigningKey, %s" % curve
             S2 = "sk = SigningKey.generate(%s)" % curve
             S3 = "msg = six.b('msg')"
             S4 = "sig = sk.sign(msg)"
@@ -68,7 +69,7 @@ class Speed(Test):
             verf = do([S1,S2,S3,S4,S5], S6)
             import ecdsa
             c = getattr(ecdsa, curve)
-            sig = ecdsa.SigningKey.generate(c).sign(ecdsa.six.b("msg"))
+            sig = ecdsa.SigningKey.generate(c).sign(six.b("msg"))
             print("%9s: siglen=%3d, keygen=%.3fs, sign=%.3fs, verify=%.3fs" \
                   % (curve, len(sig), keygen, sign, verf))
 
@@ -95,4 +96,5 @@ setup(name="ecdsa",
           "Programming Language :: Python :: 3.4",
           "Programming Language :: Python :: 3.5",
       ],
+      install_requires=['six'],
 )
