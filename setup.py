@@ -76,6 +76,7 @@ setup(name="ecdsa",
       author_email="warner@lothar.com",
       url="http://github.com/warner/python-ecdsa",
       packages=["ecdsa"],
+      package_dir={"": "src"},
       license="MIT",
       cmdclass=commands,
       classifiers=[
