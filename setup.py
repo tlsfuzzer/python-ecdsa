@@ -1,10 +1,6 @@
 #!/usr/bin/env python
-try:
-    # try setuptools, so devs can run bdist_wheel
-    from setuptools import setup, Command
-except ImportError:
-    # but most users really don't require it
-    from distutils.core import setup, Command
+
+from setuptools import setup
 import versioneer
 
 commands = versioneer.get_cmdclass().copy()
