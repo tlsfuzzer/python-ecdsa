@@ -124,7 +124,7 @@ def randrange_from_seed__truncate_bytes(seed, order, hashmod=sha256):
     # on average, four bits of entropy.
     bits, _bytes, extrabits = bits_and_bytes(order)
     if extrabits:
-        bytes += 1
+        _bytes += 1
     base = hashmod(seed).digest()[:_bytes]
     base = "\x00" * (_bytes - len(base)) + base
     number = 1 + int(binascii.hexlify(base), 16)
