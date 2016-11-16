@@ -18,3 +18,7 @@ script:
   - tox -e speed
 after_success:
   - coveralls
+
+matrix:
+  allow_failures:
+    - python: "pypy3"
