@@ -1,3 +1,4 @@
+import six
 import timeit
 
 def do(setup_statements, statement):
@@ -14,7 +15,7 @@ def do(setup_statements, statement):
 
 for curve in ["NIST192p", "NIST224p", "NIST256p", "SECP256k1",
               "NIST384p", "NIST521p"]:
-    S1 = "from ecdsa import six, SigningKey, %s" % curve
+    S1 = "import six; from ecdsa import SigningKey, %s" % curve
     S2 = "sk = SigningKey.generate(%s)" % curve
     S3 = "msg = six.b('msg')"
     S4 = "sig = sk.sign(msg)"
@@ -29,6 +30,6 @@ for curve in ["NIST192p", "NIST224p", "NIST256p", "SECP256k1",
     verf = do([S1,S2,S3,S4,S5], S6)
     import ecdsa
     c = getattr(ecdsa, curve)
-    sig = ecdsa.SigningKey.generate(c).sign(ecdsa.six.b("msg"))
+    sig = ecdsa.SigningKey.generate(c).sign(six.b("msg"))
     print("%9s: siglen=%3d, keygen=%.3fs, sign=%.3fs, verify=%.3fs" \
           % (curve, len(sig), keygen, sign, verf))
