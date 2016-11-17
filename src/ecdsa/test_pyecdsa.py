@@ -8,7 +8,7 @@ import subprocess
 from binascii import hexlify, unhexlify
 from hashlib import sha1, sha256, sha512
 
-from .six import b, print_, binary_type
+from six import b, print_, binary_type
 from .keys import SigningKey, VerifyingKey
 from .keys import BadSignatureError
 from . import util

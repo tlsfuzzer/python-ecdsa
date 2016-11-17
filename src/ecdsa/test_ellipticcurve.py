@@ -1,5 +1,5 @@
 from .ellipticcurve import CurveFp, INFINITY, Point
-from .six import print_
+from six import print_
 
 def test_ellipticcurve():
 

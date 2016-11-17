@@ -1,7 +1,7 @@
 from .ecdsa import (Private_key, Public_key, Signature,
                     curve_192, generator_192,
                     digest_integer, ellipticcurve, point_is_valid)
-from .six import print_
+from six import print_
 import random
 
 def test_ecdsa():

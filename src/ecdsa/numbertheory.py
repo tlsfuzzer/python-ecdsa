@@ -11,8 +11,8 @@
 
 from __future__ import division
 
-from .six import integer_types
-from .six.moves import reduce
+from six import integer_types
+from six.moves import reduce
 
 import math
 

@@ -2,7 +2,7 @@ from .numbertheory import (SquareRootError, factorization, gcd, lcm,
                            jacobi, inverse_mod,
                            is_prime, next_prime, smallprimes,
                            square_root_mod_prime)
-from .six import print_
+from six import print_
 
 def test_numbertheory():
 
