@@ -27,4 +27,4 @@ setup(name="ecdsa",
           "Programming Language :: Python :: 3.5",
       ],
       install_requires=['six'],
-)
+      )
