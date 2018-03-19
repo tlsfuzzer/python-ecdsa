@@ -24,9 +24,8 @@ it would not be too hard to add more.
 
 ## Dependencies
 
-This library uses only Python and the 'six' package. It requires python2.6 or
-later versions of the python2.x series. It is also compatible with python3.2
-and 3.3.
+This library uses only Python and the 'six' package. It is compatible with
+Python 2.6, 2.7, 3.3, 3.4, 3.5, and 3.6.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be on your
 $PATH. This release has been tested successfully against both OpenSSL 0.9.8o
