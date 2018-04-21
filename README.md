@@ -38,7 +38,7 @@ The following table shows how long this library takes to generate keypairs
 my 2008 Mac laptop. All times are in seconds. It also shows the length of a
 signature (in bytes): the verifying ("public") key is typically the same
 length as the signature, and the signing ("private") key is half that length.
-Use "python setup.py speed" to generate this table on your own computer.
+Use `tox -e speed` to generate this table on your own computer.
 
 * NIST192p: siglen= 48, keygen=0.160s, sign=0.058s, verify=0.116s
 * NIST224p: siglen= 56, keygen=0.230s, sign=0.086s, verify=0.165s
@@ -73,7 +73,7 @@ safer to use. You are looking at the README for this wrapper.
 There are four test suites, three for the original Pearson module, and one
 more for the wrapper. To run them all, do this:
 
-    python setup.py test
+    tox -e coverage
 
 On my 2014 Mac Mini, the combined tests take about 20 seconds to run. On a
 2.4GHz P4 Linux box, they take 81 seconds.
