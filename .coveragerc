@@ -2,8 +2,11 @@
 
 [run]
 include =
- ecdsa/*
+ src/ecdsa/*
 omit =
- ecdsa/six.py
- ecdsa/_version.py
- ecdsa/test_ecdsa.py
+ src/ecdsa/six.py
+ src/ecdsa/_version.py
+ src/ecdsa/test_ecdsa.py
+ src/ecdsa/test_ellipticcurve.py
+ src/ecdsa/test_numbertheory.py
+ src/ecdsa/test_pyecdsa.py
