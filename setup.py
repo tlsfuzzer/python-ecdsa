@@ -8,6 +8,7 @@ commands = versioneer.get_cmdclass().copy()
 setup(name="ecdsa",
       version=versioneer.get_version(),
       description="ECDSA cryptographic signature library (pure python)",
+      long_description_content_type='text/markdown',
       author="Brian Warner",
       author_email="warner@lothar.com",
       url="http://github.com/warner/python-ecdsa",
