@@ -19,7 +19,7 @@ def test_ecdsa():
   def test_signature_validity(Msg, Qx, Qy, R, S, expected):
     """Msg = message, Qx and Qy represent the base point on
        elliptic curve c192, R and S are the signature, and
-       "expected" is True iff the signature is expected to be valid."""
+       "expected" is True if the signature is expected to be valid."""
     pubk = Public_key(generator_192,
                       ellipticcurve.Point(curve_192, Qx, Qy))
     got = pubk.verifies(digest_integer(Msg), Signature(R, S))
