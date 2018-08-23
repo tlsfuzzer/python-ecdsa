@@ -56,7 +56,7 @@ def bits2octets(data, order):
 
 
 # https://tools.ietf.org/html/rfc6979#section-3.2
-def generate_k(order, secexp, hash_func, data):
+def generate_k(order, secexp, hash_func, data, extra_entropy=b('')):
     '''
         order - order of the DSA generator used in the signature
         secexp - secure exponent (private key) in numeric form
@@ -67,7 +67,7 @@ def generate_k(order, secexp, hash_func, data):
     qlen = bit_length(order)
     holen = hash_func().digest_size
     rolen = (qlen + 7) / 8
-    bx = number_to_string(secexp, order) + bits2octets(data, order)
+    bx = number_to_string(secexp, order) + bits2octets(data, order) + extra_entropy
 
     # Step B
     v = b('\x01') * holen
