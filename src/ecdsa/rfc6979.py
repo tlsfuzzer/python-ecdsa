@@ -56,12 +56,13 @@ def bits2octets(data, order):
 
 
 # https://tools.ietf.org/html/rfc6979#section-3.2
-def generate_k(order, secexp, hash_func, data, extra_entropy=b('')):
+def generate_k(order, secexp, hash_func, data, extra_entropy=b''):
     '''
         order - order of the DSA generator used in the signature
         secexp - secure exponent (private key) in numeric form
         hash_func - reference to the same hash function used for generating hash
         data - hash in binary form of the signing data
+        extra_entropy - extra added data in binary form as per section-3.6 of rfc6979
     '''
 
     qlen = bit_length(order)
