@@ -1,4 +1,4 @@
-import binascii
+import binascii, re
 
 from . import ecdsa
 from . import der
@@ -240,16 +240,20 @@ class SigningKey:
         secexp = self.privkey.secret_multiplier
 
         def simple_r_s(r, s, order):
-            return r, s
+            return r, s, order
 
         retry_gen = 0
         while True:
             k = rfc6979.generate_k(
                 self.curve.generator.order(), secexp, hashfunc, digest, retry_gen=retry_gen)
-            r, s = self.sign_digest(digest, sigencode=simple_r_s, k=k)
-            if r != 0 and s != 0:
+            try:
+                r, s, order = self.sign_digest(digest, sigencode=simple_r_s, k=k)
                 break
-            retry_gen += 1
+            except RuntimeError as e:
+                if re.match("^amazingly unlucky random number (r|s)$", str(e)):
+                    retry_gen += 1
+                else:
+                    raise e
 
         return sigencode(r, s, order)
 
