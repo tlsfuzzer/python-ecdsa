@@ -56,12 +56,13 @@ def bits2octets(data, order):
 
 
 # https://tools.ietf.org/html/rfc6979#section-3.2
-def generate_k(order, secexp, hash_func, data):
+def generate_k(order, secexp, hash_func, data, retry_gen=0):
     '''
         order - order of the DSA generator used in the signature
         secexp - secure exponent (private key) in numeric form
         hash_func - reference to the same hash function used for generating hash
         data - hash in binary form of the signing data
+        retry_gen - int - how many good 'k' values to skip before returning
     '''
 
     qlen = bit_length(order)
@@ -102,7 +103,10 @@ def generate_k(order, secexp, hash_func, data):
         secret = bits2int(t, qlen)
 
         if secret >= 1 and secret < order:
-            return secret
+            if retry_gen <= 0:
+                return secret
+            else:
+                retry_gen -= 1
 
         k = hmac.new(k, v + b('\x00'), hash_func).digest()
         v = hmac.new(k, v, hash_func).digest()
