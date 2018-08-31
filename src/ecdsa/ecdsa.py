@@ -58,6 +58,10 @@ from . import ellipticcurve
 from . import numbertheory
 
 
+class RSZeroError(RuntimeError):
+    pass
+
+
 class Signature(object):
   """ECDSA signature.
   """
@@ -142,11 +146,11 @@ class Private_key(object):
     p1 = k * G
     r = p1.x() % n
     if r == 0:
-      raise RuntimeError("amazingly unlucky random number r")
+      raise RSZeroError("amazingly unlucky random number r")
     s = (numbertheory.inverse_mod(k, n) *
          (hash + (self.secret_multiplier * r) % n)) % n
     if s == 0:
-      raise RuntimeError("amazingly unlucky random number s")
+      raise RSZeroError("amazingly unlucky random number s")
     return Signature(r, s)
 
 

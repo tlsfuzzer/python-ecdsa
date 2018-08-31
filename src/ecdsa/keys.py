@@ -1,9 +1,10 @@
-import binascii, re
+import binascii
 
 from . import ecdsa
 from . import der
 from . import rfc6979
 from .curves import NIST192p, find_curve
+from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey
@@ -249,11 +250,8 @@ class SigningKey:
             try:
                 r, s, order = self.sign_digest(digest, sigencode=simple_r_s, k=k)
                 break
-            except RuntimeError as e:
-                if re.match("^amazingly unlucky random number (r|s)$", str(e)):
-                    retry_gen += 1
-                else:
-                    raise e
+            except RSZeroError:
+                retry_gen += 1
 
         return sigencode(r, s, order)
 
