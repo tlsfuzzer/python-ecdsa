@@ -140,7 +140,7 @@ class Private_key(object):
     n = G.order()
     k = random_k % n
     p1 = k * G
-    r = p1.x()
+    r = p1.x() % n
     if r == 0:
       raise RuntimeError("amazingly unlucky random number r")
     s = (numbertheory.inverse_mod(k, n) *
@@ -274,4 +274,3 @@ _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
 curve_secp256k1 = ellipticcurve.CurveFp(_p, _a, _b)
 generator_secp256k1 = ellipticcurve.Point(curve_secp256k1, _Gx, _Gy, _r)
-

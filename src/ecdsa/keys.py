@@ -240,14 +240,14 @@ class SigningKey:
         secexp = self.privkey.secret_multiplier
 
         def simple_r_s(r, s, order):
-            return r, s, order
+            return r, s
 
         retry_gen = 0
         while True:
             k = rfc6979.generate_k(
                 self.curve.generator.order(), secexp, hashfunc, digest, retry_gen=retry_gen)
-            r, s, order = self.sign_digest(digest, sigencode=simple_r_s, k=k)
-            if r % order != 0 and s % order != 0:
+            r, s = self.sign_digest(digest, sigencode=simple_r_s, k=k)
+            if r != 0 and s != 0:
                 break
             retry_gen += 1
 
