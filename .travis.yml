@@ -3,23 +3,34 @@ language: python
 cache: pip
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
-python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5"
-  - "3.6"
-  - "pypy"
-  - "pypy3"
+matrix:
+  include:
+      - python: 2.6
+        env: TOX_ENV=py26
+      - python: 2.7
+        env: TOX_ENV=py27
+      - python: 3.3
+        env: TOX_ENV=py33
+      - python: 3.4
+        env: TOX_ENV=py34
+      - python: 3.5
+        env: TOX_ENV=py35
+      - python: 3.6
+        env: TOX_ENV=py36
+      - python: pypy
+        env: TOX_ENV=pypy
+      - python: pypy3
+        env: TOX_ENV=pypy3
+  allow_failures:
+    - python: "pypy3"
+
 install:
-  - pip install -U tox python-coveralls
+  - pip list
+  - if [[ -e build-requirements-${TRAVIS_PYTHON_VERSION}.txt ]]; then travis_retry pip install -r build-requirements-${TRAVIS_PYTHON_VERSION}.txt; else travis_retry pip install -r build-requirements.txt; fi
+  - pip list
 script:
-  - tox -e coverage
+  - tox -e $TOX_ENV
   - tox -e speed
 after_success:
   - coveralls
 
-matrix:
-  allow_failures:
-    - python: "pypy3"
