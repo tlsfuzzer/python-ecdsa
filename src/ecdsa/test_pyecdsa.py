@@ -103,9 +103,9 @@ class ECDSA(unittest.TestCase):
         if BENCH:
             print_()
         for curve in (NIST192p, NIST224p, NIST256p, NIST384p, NIST521p,
-                BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,
-                BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1,
-                BRAINPOOLP512r1):
+                      BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,
+                      BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1,
+                      BRAINPOOLP512r1):
             start = time.time()
             priv = SigningKey.generate(curve=curve)
             pub1 = priv.get_verifying_key()
@@ -819,6 +819,10 @@ class OpenSSL(unittest.TestCase):
     def do_test_from_openssl(self, curve):
         curvename = curve.openssl_name
         assert curvename
+
+        if curvename not in OpenSSL.supported_curves:
+            return
+
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
