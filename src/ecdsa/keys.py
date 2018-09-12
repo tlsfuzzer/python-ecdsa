@@ -4,6 +4,7 @@ from . import ecdsa
 from . import der
 from . import rfc6979
 from .curves import NIST192p, find_curve
+from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey
@@ -238,10 +239,21 @@ class SigningKey:
         See RFC 6979 for more details.
         """
         secexp = self.privkey.secret_multiplier
-        k = rfc6979.generate_k(
-            self.curve.generator.order(), secexp, hashfunc, digest)
 
-        return self.sign_digest(digest, sigencode=sigencode, k=k)
+        def simple_r_s(r, s, order):
+            return r, s, order
+
+        retry_gen = 0
+        while True:
+            k = rfc6979.generate_k(
+                self.curve.generator.order(), secexp, hashfunc, digest, retry_gen=retry_gen)
+            try:
+                r, s, order = self.sign_digest(digest, sigencode=simple_r_s, k=k)
+                break
+            except RSZeroError:
+                retry_gen += 1
+
+        return sigencode(r, s, order)
 
     def sign(self, data, entropy=None, hashfunc=None, sigencode=sigencode_string, k=None):
         """
