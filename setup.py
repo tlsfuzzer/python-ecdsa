@@ -1,13 +1,24 @@
 #!/usr/bin/env python
 
+import io
+import os
+
 from setuptools import setup
 import versioneer
 
 commands = versioneer.get_cmdclass().copy()
 
+# Use README.md to set markdown long_description
+directory = os.path.abspath(os.path.dirname(__file__))
+readme_path = os.path.join(directory, "README.md")
+with io.open(readme_path, encoding="utf-8") as read_file:
+    long_description = read_file.read()
+
 setup(name="ecdsa",
       version=versioneer.get_version(),
       description="ECDSA cryptographic signature library (pure python)",
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       author="Brian Warner",
       author_email="warner@lothar.com",
       url="http://github.com/warner/python-ecdsa",
