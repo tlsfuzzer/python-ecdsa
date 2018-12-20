@@ -102,8 +102,8 @@ signature string: it either returns True or raises BadSignatureError.
 from ecdsa import SigningKey
 sk = SigningKey.generate() # uses NIST192p
 vk = sk.get_verifying_key()
-signature = sk.sign("message".encode())
-assert vk.verify(signature, "message".encode())
+signature = sk.sign(b"message")
+assert vk.verify(signature, b"message")
 ```
 
 Each SigningKey/VerifyingKey is associated with a specific curve, like
