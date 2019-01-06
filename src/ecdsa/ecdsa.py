@@ -57,7 +57,6 @@ from six import int2byte, b
 from . import ellipticcurve
 from . import numbertheory
 
-
 class RSZeroError(RuntimeError):
     pass
 
@@ -69,6 +68,26 @@ class Signature(object):
     self.r = r
     self.s = s
 
+  def recover_public_keys(self, hash, curve, g, n):
+    r = self.r
+    s = self.s
+    e = hash
+    x = r
+
+    # Compute the curve point with x as x-coordinate
+    alpha = ((x * x * x) + (curve.a() * x) + curve.b()) % curve.p()
+    beta = numbertheory.square_root_mod_prime(alpha, curve.p())
+    y = beta if beta % 2 == 0 else curve.p() - beta
+
+    # Compute the public key
+    R1 = ellipticcurve.Point(curve, x, y, n)
+    Q1 = numbertheory.inverse_mod(r, n) * (s * R1 + (-e % n) * g)
+
+
+    R2 = ellipticcurve.Point(curve, x, -y, n)
+    Q2 = numbertheory.inverse_mod(r, n) * (s * R2 + (-e % n) * g)
+
+    return [Q1, Q2]
 
 class Public_key(object):
   """Public key for ECDSA.
