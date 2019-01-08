@@ -33,7 +33,7 @@ def test_ecdsa():
   def test_pk_recovery(Msg, R, S, Qx, Qy):
     
     sign = Signature(R,S)
-    pks = sign.recover_public_keys(digest_integer(Msg), curve_192, generator_192, generator_192.order())
+    pks = sign.recover_public_keys(digest_integer(Msg), generator_192)
 
     print_("Test pk recover")
 
@@ -41,15 +41,17 @@ def test_ecdsa():
 
       # Test if the signature is valid for all found public keys
       for pk in pks:
-        print_("Recovered pk: %s" % pk)
-        test_signature_validity(Msg, pk.x(), pk.y(), R, S, True)
+        q = pk.point
+        print_("Recovered q: %s" % q)
+        test_signature_validity(Msg, q.x(), q.y(), R, S, True)
 
       # Test if the original public key is in the set of found keys
-      original_pk = ellipticcurve.Point(curve_192, Qx, Qy)
-      if original_pk in pks:
-        print_("Original pk was found")
+      original_q = ellipticcurve.Point(curve_192, Qx, Qy)
+      points = map(lambda pk: pk.point ,pks)
+      if original_q in points:
+        print_("Original q was found")
       else:
-        raise TestFailure("Original public key was not recovered")
+        raise TestFailure("Original q is not in the list of recovered public keys")
 
     else:
       raise TestFailure("*** NO valid public key returned")
