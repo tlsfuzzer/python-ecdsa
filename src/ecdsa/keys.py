@@ -81,16 +81,16 @@ class VerifyingKey:
 
     @classmethod
     def from_public_key_recovery(klass, signature, data, curve, hashfunc=sha1, sigdecode=sigdecode_string):
-        # Given a signature and correponding message this function
-        # returns a list of verifiying keys for this signature and message
+        # Given a signature and corresponding message this function
+        # returns a list of verifying keys for this signature and message
         
         digest = hashfunc(data).digest()
         return klass.from_public_key_recovery_with_digest(signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode_string)
 
     @classmethod
     def from_public_key_recovery_with_digest(klass, signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode_string):
-        # Given a signature and correponding digest this function
-        # returns a list of verifiying keys for this signature and message
+        # Given a signature and corresponding digest this function
+        # returns a list of verifying keys for this signature and message
         
         generator = curve.generator
         r, s = sigdecode(signature, generator.order())
@@ -99,7 +99,7 @@ class VerifyingKey:
         digest_as_number = string_to_number(digest)
         pks = sig.recover_public_keys(digest_as_number, generator)
 
-        # Transform the ecdsa.Public_key object into a VerifyingKey
+        # Transforms the ecdsa.Public_key object into a VerifyingKey
         verifying_keys = [klass.from_public_point(pk.point, curve, hashfunc) for pk in pks]
         return verifying_keys
 
