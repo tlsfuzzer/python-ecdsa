@@ -336,8 +336,7 @@ class ECDSA(unittest.TestCase):
 
         # Test if original vk is the list of recovered keys
         self.assertTrue(
-            vk.pubkey.point in
-            map(lambda recovered_vk: recovered_vk.pubkey.point, recovered_vks))
+            vk.pubkey.point in [recovered_vk.pubkey.point for recovered_vk in recovered_vks])
         
 
 class OpenSSL(unittest.TestCase):
