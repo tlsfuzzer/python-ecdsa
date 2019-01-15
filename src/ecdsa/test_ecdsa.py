@@ -47,7 +47,7 @@ def test_ecdsa():
 
       # Test if the original public key is in the set of found keys
       original_q = ellipticcurve.Point(curve_192, Qx, Qy)
-      points = map(lambda pk: pk.point ,pks)
+      points = [pk.point for pk in pks]
       if original_q in points:
         print_("Original q was found")
       else:
