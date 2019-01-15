@@ -37,7 +37,7 @@ def test_ecdsa():
 
     print_("Test pk recover")
 
-    if len(pks) > 0:
+    if pks:
 
       # Test if the signature is valid for all found public keys
       for pk in pks:
