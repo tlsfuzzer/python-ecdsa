@@ -330,7 +330,7 @@ class ECDSA(unittest.TestCase):
             # Test if recovered vk is valid for the data
             self.assertTrue(recovered_vk.verify(signature, data))
 
-            # Test if properties are equal
+            # Test if properties are equal
             self.assertEqual(vk.curve, recovered_vk.curve)
             self.assertEqual(vk.default_hashfunc, recovered_vk.default_hashfunc)
 
