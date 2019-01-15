@@ -69,6 +69,34 @@ class Signature(object):
     self.r = r
     self.s = s
 
+  def recover_public_keys(self, hash, generator):
+    """Returns two public keys for which the signature is valid
+    hash is signed hash
+    generator is the used generator of the signature
+    """
+    curve = generator.curve()
+    n = generator.order()
+    r = self.r
+    s = self.s
+    e = hash
+    x = r
+
+    # Compute the curve point with x as x-coordinate
+    alpha = (pow(x, 3, curve.p()) + (curve.a() * x) + curve.b()) % curve.p()
+    beta = numbertheory.square_root_mod_prime(alpha, curve.p())
+    y = beta if beta % 2 == 0 else curve.p() - beta
+
+    # Compute the public key
+    R1 = ellipticcurve.Point(curve, x, y, n)
+    Q1 = numbertheory.inverse_mod(r, n) * (s * R1 + (-e % n) * generator)
+    Pk1 = Public_key(generator, Q1)
+
+    # And the second solution
+    R2 = ellipticcurve.Point(curve, x, -y, n)
+    Q2 = numbertheory.inverse_mod(r, n) * (s * R2 + (-e % n) * generator)
+    Pk2 = Public_key(generator, Q2)
+
+    return [Pk1, Pk2]
 
 class Public_key(object):
   """Public key for ECDSA.

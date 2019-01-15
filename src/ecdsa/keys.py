@@ -79,6 +79,30 @@ class VerifyingKey:
         assert point_str.startswith(b("\x00\x04"))
         return klass.from_string(point_str[2:], curve)
 
+    @classmethod
+    def from_public_key_recovery(klass, signature, data, curve, hashfunc=sha1, sigdecode=sigdecode_string):
+        # Given a signature and corresponding message this function
+        # returns a list of verifying keys for this signature and message
+        
+        digest = hashfunc(data).digest()
+        return klass.from_public_key_recovery_with_digest(signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode_string)
+
+    @classmethod
+    def from_public_key_recovery_with_digest(klass, signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode_string):
+        # Given a signature and corresponding digest this function
+        # returns a list of verifying keys for this signature and message
+        
+        generator = curve.generator
+        r, s = sigdecode(signature, generator.order())
+        sig = ecdsa.Signature(r, s)
+
+        digest_as_number = string_to_number(digest)
+        pks = sig.recover_public_keys(digest_as_number, generator)
+
+        # Transforms the ecdsa.Public_key object into a VerifyingKey
+        verifying_keys = [klass.from_public_point(pk.point, curve, hashfunc) for pk in pks]
+        return verifying_keys
+
     def to_string(self):
         # VerifyingKey.from_string(vk.to_string()) == vk as long as the
         # curves are the same: the curve itself is not included in the

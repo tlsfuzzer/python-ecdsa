@@ -30,6 +30,33 @@ def test_ecdsa():
       raise TestFailure("*** Signature test failed: got %s, expected %s." % \
                         (got, expected))
 
+  def test_pk_recovery(Msg, R, S, Qx, Qy):
+    
+    sign = Signature(R,S)
+    pks = sign.recover_public_keys(digest_integer(Msg), generator_192)
+
+    print_("Test pk recover")
+
+    if pks:
+
+      # Test if the signature is valid for all found public keys
+      for pk in pks:
+        q = pk.point
+        print_("Recovered q: %s" % q)
+        test_signature_validity(Msg, q.x(), q.y(), R, S, True)
+
+      # Test if the original public key is in the set of found keys
+      original_q = ellipticcurve.Point(curve_192, Qx, Qy)
+      points = [pk.point for pk in pks]
+      if original_q in points:
+        print_("Original q was found")
+      else:
+        raise TestFailure("Original q is not in the list of recovered public keys")
+
+    else:
+      raise TestFailure("*** NO valid public key returned")
+
+
   print_("NIST Curve P-192:")
 
   p192 = generator_192
@@ -165,6 +192,7 @@ def test_ecdsa():
   R = 0x64dca58a20787c488d11d6dd96313f1b766f2d8efe122916
   S = 0x1ecba28141e84ab4ecad92f56720e2cc83eb3d22dec72479
   test_signature_validity(Msg, Qx, Qy, R, S, True)
+  test_pk_recovery(Msg, R, S, Qx, Qy)
 
   Msg = 0x94bb5bacd5f8ea765810024db87f4224ad71362a3c28284b2b9f39fab86db12e8beb94aae899768229be8fdb6c4f12f28912bb604703a79ccff769c1607f5a91450f30ba0460d359d9126cbd6296be6d9c4bb96c0ee74cbb44197c207f6db326ab6f5a659113a9034e54be7b041ced9dcf6458d7fb9cbfb2744d999f7dfd63f4
   Qx = 0x3e53ef8d3112af3285c0e74842090712cd324832d4277ae7
@@ -172,6 +200,7 @@ def test_ecdsa():
   R = 0x8285261607283ba18f335026130bab31840dcfd9c3e555af
   S = 0x356d89e1b04541afc9704a45e9c535ce4a50929e33d7e06c
   test_signature_validity(Msg, Qx, Qy, R, S, True)
+  test_pk_recovery(Msg, R, S, Qx, Qy)
 
   Msg = 0xf6227a8eeb34afed1621dcc89a91d72ea212cb2f476839d9b4243c66877911b37b4ad6f4448792a7bbba76c63bdd63414b6facab7dc71c3396a73bd7ee14cdd41a659c61c99b779cecf07bc51ab391aa3252386242b9853ea7da67fd768d303f1b9b513d401565b6f1eb722dfdb96b519fe4f9bd5de67ae131e64b40e78c42dd
   Qx = 0x16335dbe95f8e8254a4e04575d736befb258b8657f773cb7
