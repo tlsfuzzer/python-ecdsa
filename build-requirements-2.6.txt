@@ -1,0 +1,3 @@
+tox
+coveralls<1.3.0
+idna<2.8
