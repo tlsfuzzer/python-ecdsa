@@ -1,3 +1,7 @@
+* Release 0.13.2 (17 Apr 2019)
+
+Restore compatibility of setup.py with Python 2.6 and 2.7.
+
 * Release 0.13.1 (17 Apr 2019)
 
 Fix the PyPI wheel - the old version included .pyc files.
