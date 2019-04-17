@@ -7,6 +7,7 @@ except ImportError:
     from distutils.core import setup, Command
 import timeit
 import os
+import io
 
 import versioneer
 versioneer.versionfile_source = "ecdsa/_version.py"
@@ -76,7 +77,7 @@ class Speed(Test):
 commands["speed"] = Speed
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, "README.md"), encoding='utf-8') as f:
+with io.open(os.path.join(here, "README.md"), encoding='utf-8') as f:
     long_desc = f.read()
 
 setup(name="ecdsa",
