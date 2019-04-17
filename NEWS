@@ -1,3 +1,7 @@
+* Release 0.13.1 (17 Apr 2019)
+
+Fix the PyPI wheel - the old version included .pyc files.
+
 * Release 0.13 (07 Feb 2015)
 
 Fix the argument order for Curve constructor (put openssl_name= at the end,
