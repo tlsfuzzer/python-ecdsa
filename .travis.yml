@@ -8,7 +8,7 @@ python:
   - "pypy"
   - "pypy3"
 install:
-  - pip install python-coveralls
+  - if [[ -e build-requirements-${TRAVIS_PYTHON_VERSION}.txt ]]; then travis_retry pip install -r build-requirements-${TRAVIS_PYTHON_VERSION}.txt; else travis_retry pip install -r build-requirements.txt; fi
 script:
   - coverage run setup.py test
   - python setup.py speed

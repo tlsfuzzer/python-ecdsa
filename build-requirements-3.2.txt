@@ -1,0 +1,9 @@
+coveralls<1
+pylint<2.0
+coverage<4
+requests<2.11
+urllib3<1.11
+PyYAML<3.13
+tox<3.0
+wheel<0.30
+virtualenv==15.2.0
