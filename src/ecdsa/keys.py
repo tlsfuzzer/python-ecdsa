@@ -23,7 +23,8 @@ class BadDigestError(Exception):
 class VerifyingKey:
     def __init__(self, _error__please_use_generate=None):
         if not _error__please_use_generate:
-            raise TypeError("Please use SigningKey.generate() to construct me")
+            raise TypeError("Please use VerifyingKey.generate() to "
+                            "construct me")
 
     @classmethod
     def from_public_point(klass, point, curve=NIST192p, hashfunc=sha1):
