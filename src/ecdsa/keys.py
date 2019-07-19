@@ -86,7 +86,7 @@ class VerifyingKey:
         # returns a list of verifying keys for this signature and message
         
         digest = hashfunc(data).digest()
-        return klass.from_public_key_recovery_with_digest(signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode_string)
+        return klass.from_public_key_recovery_with_digest(signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode)
 
     @classmethod
     def from_public_key_recovery_with_digest(klass, signature, digest, curve, hashfunc=sha1, sigdecode=sigdecode_string):
