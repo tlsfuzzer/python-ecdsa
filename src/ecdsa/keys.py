@@ -136,11 +136,14 @@ class VerifyingKey:
                                  "for your digest (%d)" % (self.curve.name,
                                                            8 * len(digest)))
         number = string_to_number(digest)
-        r, s = sigdecode(signature, self.pubkey.order)
+        try:
+            r, s = sigdecode(signature, self.pubkey.order)
+        except der.UnexpectedDER as e:
+            raise BadSignatureError("Malformed formatting of signature", e)
         sig = ecdsa.Signature(r, s)
         if self.pubkey.verifies(number, sig):
             return True
-        raise BadSignatureError
+        raise BadSignatureError("Signature verification failed")
 
 
 class SigningKey:
