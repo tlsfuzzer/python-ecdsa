@@ -169,6 +169,8 @@ def encode_length(l):
 
 
 def read_length(string):
+    if not string:
+        raise UnexpectedDER("Empty string can't encode valid length value")
     num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
     if not (num & 0x80):
         # short form
@@ -176,6 +178,8 @@ def read_length(string):
     # else long-form: b0&0x7f is number of additional base256 length bytes,
     # big-endian
     llen = num & 0x7f
+    if not llen:
+        raise UnexpectedDER("Invalid length encoding, length byte is 0")
     if llen > len(string)-1:
         raise UnexpectedDER("ran out of length bytes")
     return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
