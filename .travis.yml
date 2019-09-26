@@ -1,3 +1,6 @@
+# workaround for 3.7 not available in default configuration
+# travis-ci/travis-ci#9815
+dist: trusty
 language: python
 python:
   - "2.6"
