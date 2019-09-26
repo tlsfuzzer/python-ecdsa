@@ -6,7 +6,7 @@ from . import rfc6979
 from .curves import NIST192p, find_curve
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
-from .util import oid_ecPublicKey, encoded_oid_ecPublicKey
+from .util import oid_ecPublicKey, encoded_oid_ecPublicKey, MalformedSignature
 from .six import PY3, b
 from hashlib import sha1
 
@@ -108,7 +108,7 @@ class VerifyingKey:
         number = string_to_number(digest)
         try:
             r, s = sigdecode(signature, self.pubkey.order)
-        except der.UnexpectedDER as e:
+        except (der.UnexpectedDER, MalformedSignature) as e:
             raise BadSignatureError("Malformed formatting of signature", e)
         sig = ecdsa.Signature(r, s)
         if self.pubkey.verifies(number, sig):

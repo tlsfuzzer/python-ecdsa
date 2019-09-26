@@ -216,18 +216,38 @@ def sigencode_der_canonize(r, s, order):
     return sigencode_der(r, s, order)
 
 
+class MalformedSignature(Exception):
+    pass
+
+
 def sigdecode_string(signature, order):
     l = orderlen(order)
-    assert len(signature) == 2*l, (len(signature), 2*l)
+    if not len(signature) == 2 * l:
+        raise MalformedSignature(
+                "Invalid length of signature, expected {0} bytes long, "
+                "provided string is {1} bytes long"
+                .format(2 * l, len(signature)))
     r = string_to_number_fixedlen(signature[:l], order)
     s = string_to_number_fixedlen(signature[l:], order)
     return r, s
 
 def sigdecode_strings(rs_strings, order):
+    if not len(rs_strings) == 2:
+        raise MalformedSignature(
+                "Invalid number of strings provided: {0}, expected 2"
+                .format(len(rs_strings)))
     (r_str, s_str) = rs_strings
     l = orderlen(order)
-    assert len(r_str) == l, (len(r_str), l)
-    assert len(s_str) == l, (len(s_str), l)
+    if not len(r_str) == l:
+        raise MalformedSignature(
+                "Invalid length of first string ('r' parameter), "
+                "expected {0} bytes long, provided string is {1} bytes long"
+                .format(l, len(r_str)))
+    if not len(s_str) == l:
+        raise MalformedSignature(
+                "Invalid length of second string ('s' parameter), "
+                "expected {0} bytes long, provided string is {1} bytes long"
+                .format(l, len(s_str)))
     r = string_to_number_fixedlen(r_str, order)
     s = string_to_number_fixedlen(s_str, order)
     return r, s
