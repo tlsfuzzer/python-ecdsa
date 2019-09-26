@@ -65,8 +65,8 @@ def encode_number(n):
 def remove_constructed(string):
     s0 = string[0] if isinstance(string[0], integer_types) else ord(string[0])
     if (s0 & 0xe0) != 0xa0:
-        raise UnexpectedDER("wanted constructed tag (0xa0-0xbf), got 0x%02x"
-                            % s0)
+        raise UnexpectedDER("wanted type 'constructed tag' (0xa0-0xbf), "
+                            "got 0x%02x" % s0)
     tag = s0 & 0x1f
     length, llen = read_length(string[1:])
     body = string[1+llen:1+llen+length]
@@ -91,7 +91,7 @@ def remove_sequence(string):
 def remove_octet_string(string):
     if not string.startswith(b("\x04")):
         n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
-        raise UnexpectedDER("wanted octetstring (0x04), got 0x%02x" % n)
+        raise UnexpectedDER("wanted type 'octetstring' (0x04), got 0x%02x" % n)
     length, llen = read_length(string[1:])
     body = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
@@ -101,7 +101,7 @@ def remove_octet_string(string):
 def remove_object(string):
     if not string.startswith(b("\x06")):
         n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
-        raise UnexpectedDER("wanted object (0x06), got 0x%02x" % n)
+        raise UnexpectedDER("wanted type 'object' (0x06), got 0x%02x" % n)
     length, lengthlength = read_length(string[1:])
     body = string[1+lengthlength:1+lengthlength+length]
     rest = string[1+lengthlength+length:]
