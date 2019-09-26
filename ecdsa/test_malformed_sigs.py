@@ -17,7 +17,7 @@ example_data = b("some data to sign")
 # few thousand slow test cases; execute the most interesting only
 
 #for curve in curves:
-for curve in [NIST256p]:
+for curve in [NIST521p]:
     #for hash_alg in ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"]:
     for hash_alg in ["sha256"]:
         key = SigningKey.generate(curve)
