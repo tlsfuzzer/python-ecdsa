@@ -75,10 +75,15 @@ def remove_constructed(string):
 
 
 def remove_sequence(string):
+    if not string:
+        raise UnexpectedDER("Empty string does not encode a sequence")
     if not string.startswith(b("\x30")):
-        n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
-        raise UnexpectedDER("wanted sequence (0x30), got 0x%02x" % n)
+        n = string[0] if isinstance(string[0], integer_types) else \
+                ord(string[0])
+        raise UnexpectedDER("wanted type 'sequence' (0x30), got 0x%02x" % n)
     length, lengthlength = read_length(string[1:])
+    if length > len(string) - 1 - lengthlength:
+        raise UnexpectedDER("Length longer than the provided buffer")
     endseq = 1+lengthlength+length
     return string[1+lengthlength:endseq], string[endseq:]
 
@@ -114,14 +119,24 @@ def remove_object(string):
 
 
 def remove_integer(string):
+    if not string:
+        raise UnexpectedDER("Empty string is an invalid encoding of an "
+                            "integer")
     if not string.startswith(b("\x02")):
-        n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
-        raise UnexpectedDER("wanted integer (0x02), got 0x%02x" % n)
+        n = string[0] if isinstance(string[0], integer_types) \
+                else ord(string[0])
+        raise UnexpectedDER("wanted type 'integer' (0x02), got 0x%02x" % n)
     length, llen = read_length(string[1:])
+    if length > len(string) - 1 - llen:
+        raise UnexpectedDER("Length longer than provided buffer")
+    if length == 0:
+        raise UnexpectedDER("0-byte long encoding of integer")
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
-    nbytes = numberbytes[0] if isinstance(numberbytes[0], integer_types) else ord(numberbytes[0])
-    assert nbytes < 0x80  # can't support negative numbers yet
+    nbytes = numberbytes[0] if isinstance(numberbytes[0], integer_types) \
+            else ord(numberbytes[0])
+    if not nbytes < 0x80:
+        raise UnexpectedDER("Negative integers are not supported")
     return int(binascii.hexlify(numberbytes), 16), rest
 
 
