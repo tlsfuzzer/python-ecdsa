@@ -137,6 +137,15 @@ def remove_integer(string):
             else ord(numberbytes[0])
     if not msb < 0x80:
         raise UnexpectedDER("Negative integers are not supported")
+    # check if the encoding is the minimal one (DER requirement)
+    if length > 1 and not msb:
+        # leading zero byte is allowed if the integer would have been
+        # considered a negative number otherwise
+        smsb = numberbytes[1] if isinstance(numberbytes[1], integer_types) \
+                else ord(numberbytes[1])
+        if smsb < 0x80:
+            raise UnexpectedDER("Invalid encoding of integer, unnecessary "
+                                "zero padding bytes")
     return int(binascii.hexlify(numberbytes), 16), rest
 
 
@@ -179,9 +188,13 @@ def read_length(string):
     # big-endian
     llen = num & 0x7f
     if not llen:
-        raise UnexpectedDER("Invalid length encoding, length byte is 0")
+        raise UnexpectedDER("Invalid length encoding, length of length is 0")
     if llen > len(string)-1:
-        raise UnexpectedDER("ran out of length bytes")
+        raise UnexpectedDER("Length of length longer than provided buffer")
+    # verify that the encoding is minimal possible (DER requirement)
+    msb = string[1] if isinstance(string[1], integer_types) else ord(string[1])
+    if not msb or llen == 1 and msb < 0x80:
+        raise UnexpectedDER("Not minimal encoding of length")
     return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
 
 
