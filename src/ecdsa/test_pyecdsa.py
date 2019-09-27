@@ -337,7 +337,36 @@ class ECDSA(unittest.TestCase):
         # Test if original vk is the list of recovered keys
         self.assertTrue(
             vk.pubkey.point in [recovered_vk.pubkey.point for recovered_vk in recovered_vks])
-        
+
+    def test_public_key_recovery_with_custom_hash(self):
+        # Create keys
+        curve = NIST256p
+
+        sk = SigningKey.generate(curve=curve, hashfunc=sha256)
+        vk = sk.get_verifying_key()
+
+        # Sign a message
+        data = b("blahblah")
+        signature = sk.sign(data)
+
+        # Recover verifying keys
+        recovered_vks = VerifyingKey.\
+                from_public_key_recovery(signature, data, curve,
+                                         hashfunc=sha256)
+
+        # Test if each pk is valid
+        for recovered_vk in recovered_vks:
+            # Test if recovered vk is valid for the data
+            self.assertTrue(recovered_vk.verify(signature, data))
+
+            # Test if properties are equal
+            self.assertEqual(vk.curve, recovered_vk.curve)
+            self.assertEqual(sha256, recovered_vk.default_hashfunc)
+
+        # Test if original vk is the list of recovered keys
+        self.assertTrue(vk.pubkey.point in
+                [recovered_vk.pubkey.point for recovered_vk in recovered_vks])
+
 
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
