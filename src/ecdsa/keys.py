@@ -12,6 +12,9 @@ from six import PY3, b
 from hashlib import sha1
 
 
+__all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey"]
+
+
 class BadSignatureError(Exception):
     pass
 
