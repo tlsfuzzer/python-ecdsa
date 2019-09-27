@@ -48,8 +48,13 @@ Primary classes for performing signing and verification operations.
         comments. The actual object stored is base64 encoded.
 
     DER
-        Distinguished Encoding Rules, the way to encode ASN.1 objects
+        Distinguished Encoding Rules, the way to encode :term:`ASN.1` objects
         deterministically and uniquely into byte strings.
+
+    ASN.1
+        Abstract Syntax Notation 1 is a standard description language for
+        specifying serialisation and deserialisation of data structures in a
+        portable and cross-platform way.
 """
 
 import binascii
