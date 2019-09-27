@@ -596,23 +596,78 @@ class VerifyingKey(object):
 
 
 class SigningKey(object):
+    """
+    Class for handling keys that can create signatures (private keys).
+
+    :ivar ecdsa.curves.Curve curve: The Curve over which all the cryptographic
+        operations will take place
+    :ivar default_hashfunc: the function that will be used for hashing the
+        data. Should implement the same API as hashlib.sha1
+    :ivar int baselen: the length of a :term:`raw encoding` of private key
+    :ivar ecdsa.keys.VerifyingKey verifying_key: the public key
+        associated with this private key
+    :ivar ecdsa.ecdsa.Private_key privkey: the actual private key
+    """
+
     def __init__(self, _error__please_use_generate=None):
+        """Unsupported, please use one of the classmethods to initialise."""
         if not _error__please_use_generate:
             raise TypeError("Please use SigningKey.generate() to construct me")
+        self.curve = None
+        self.default_hashfunc = None
+        self.baselen = None
+        self.verifying_key = None
+        self.privkey = None
 
     @classmethod
-    def generate(klass, curve=NIST192p, entropy=None, hashfunc=sha1):
+    def generate(cls, curve=NIST192p, entropy=None, hashfunc=sha1):
+        """
+        Generate a random private key.
+
+        :param curve: The curve on which the point needs to reside, defaults
+            to NIST192p
+        :type curve: ecdsa.curves.Curve
+        :param entropy: Source of randomness for generating the private keys,
+            should provide cryptographically secure random numbers if the keys
+            need to be secure. Uses os.urandom() by default.
+        :type entropy: callable
+        :param hashfunc: The default hash function that will be used for
+            signing, needs to implement the same interface
+            as hashlib.sha1
+        :type hashfunc: callable
+
+        :return: Initialised SigningKey object
+        :rtype: SigningKey
+        """
         secexp = randrange(curve.order, entropy)
-        return klass.from_secret_exponent(secexp, curve, hashfunc)
-
-    # to create a signing key from a short (arbitrary-length) seed, convert
-    # that seed into an integer with something like
-    # secexp=util.randrange_from_seed__X(seed, curve.order), and then pass
-    # that integer into SigningKey.from_secret_exponent(secexp, curve)
+        return cls.from_secret_exponent(secexp, curve, hashfunc)
 
     @classmethod
-    def from_secret_exponent(klass, secexp, curve=NIST192p, hashfunc=sha1):
-        self = klass(_error__please_use_generate=True)
+    def from_secret_exponent(cls, secexp, curve=NIST192p, hashfunc=sha1):
+        """
+        Create a private key from a random integer.
+
+        Note: it's a low level method, it's recommended to use the
+        :func:`~SigningKey.generate` method to create private keys.
+
+        :param int secexp: secret multiplier (the actual private key in ECDSA).
+            Needs to be an integer between 1 and the curve order.
+        :param curve: The curve on which the point needs to reside
+        :type curve: ecdsa.curves.Curve
+        :param hashfunc: The default hash function that will be used for
+            signing, needs to implement the same interface
+            as hashlib.sha1
+        :type hashfunc: callable
+
+        :raises MalformedPointError: when the provided secexp is too large
+            or too small for the curve selected
+        :raises RuntimeError: if the generation of public key from private
+            key failed
+
+        :return: Initialised SigningKey object
+        :rtype: SigningKey
+        """
+        self = cls(_error__please_use_generate=True)
         self.curve = curve
         self.default_hashfunc = hashfunc
         self.baselen = curve.baselen
@@ -631,27 +686,123 @@ class SigningKey(object):
         return self
 
     @classmethod
-    def from_string(klass, string, curve=NIST192p, hashfunc=sha1):
+    def from_string(cls, string, curve=NIST192p, hashfunc=sha1):
+        """
+        Decode the private key from :term:`raw encoding`.
+
+        Note: the name of this method is a misnomer coming from days of
+        Python 2, when binary strings and character strings shared a type.
+        In Python 3, the expected type is `bytes`.
+
+        :param string: the raw encoding of the private key
+        :type string: bytes like object
+        :param curve: The curve on which the point needs to reside
+        :type curve: ecdsa.curves.Curve
+        :param hashfunc: The default hash function that will be used for
+            signing, needs to implement the same interface
+            as hashlib.sha1
+        :type hashfunc: callable
+
+        :raises MalformedPointError: if the length of encoding doesn't match
+            the provided curve or the encoded values is too large
+        :raises RuntimeError: if the generation of public key from private
+            key failed
+
+        :return: Initialised SigningKey object
+        :rtype: SigningKey
+        """
         if len(string) != curve.baselen:
             raise MalformedPointError(
                 "Invalid length of private key, received {0}, expected {1}"
                 .format(len(string), curve.baselen))
         secexp = string_to_number(string)
-        return klass.from_secret_exponent(secexp, curve, hashfunc)
+        return cls.from_secret_exponent(secexp, curve, hashfunc)
 
     @classmethod
-    def from_pem(klass, string, hashfunc=sha1):
-        # the privkey pem file has two sections: "EC PARAMETERS" and "EC
-        # PRIVATE KEY". The first is redundant.
+    def from_pem(cls, string, hashfunc=sha1):
+        """
+        Initialise from key stored in :term:`PEM` format.
+
+        Note, the only PEM format supported is the un-encrypted RFC5915
+        (the sslay format) supported by OpenSSL, the more common PKCS#8 format
+        is NOT supported (see:
+        https://github.com/warner/python-ecdsa/issues/113 )
+
+        ``openssl ec -in pkcs8.pem -out sslay.pem`` can be used to
+        convert PKCS#8 file to this legacy format.
+
+        The legacy format files have the header with the string
+        ``BEGIN EC PRIVATE KEY``.
+        Encrypted files (ones that include the string
+        ``Proc-Type: 4,ENCRYPTED``
+        right after the PEM header) are not supported.
+
+        See :func:`~SigningKey.from_der` for ASN.1 syntax of the objects in
+        this files.
+
+        :param string: text with PEM-encoded private ECDSA key
+        :type string: str
+
+        :raises MalformedPointError: if the length of encoding doesn't match
+            the provided curve or the encoded values is too large
+        :raises RuntimeError: if the generation of public key from private
+            key failed
+        :raises UnexpectedDER: if the encoding of the PEM file is incorrect
+
+        :return: Initialised VerifyingKey object
+        :rtype: VerifyingKey
+        """
+        # the privkey pem may have multiple sections, commonly it also has
+        # "EC PARAMETERS", we need just "EC PRIVATE KEY".
         if PY3 and isinstance(string, str):
             string = string.encode()
         privkey_pem = string[string.index(b("-----BEGIN EC PRIVATE KEY-----")):]
-        return klass.from_der(der.unpem(privkey_pem), hashfunc)
+        return cls.from_der(der.unpem(privkey_pem), hashfunc)
 
     @classmethod
-    def from_der(klass, string, hashfunc=sha1):
-        # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),
-        #      cont[1],bitstring])
+    def from_der(cls, string, hashfunc=sha1):
+        """
+        Initialise from key stored in :term:`DER` format.
+
+        Note, the only DER format supported is the RFC5915
+        (the sslay format) supported by OpenSSL, the more common PKCS#8 format
+        is NOT supported (see:
+        https://github.com/warner/python-ecdsa/issues/113 )
+
+        ``openssl ec -in pkcs8.pem -outform der -out sslay.der`` can be
+        used to convert PKCS#8 file to this legacy format.
+
+        The encoding of the ASN.1 object in those files follows following
+        syntax specified in RFC5915::
+
+            ECPrivateKey ::= SEQUENCE {
+              version        INTEGER { ecPrivkeyVer1(1) }} (ecPrivkeyVer1),
+              privateKey     OCTET STRING,
+              parameters [0] ECParameters {{ NamedCurve }} OPTIONAL,
+              publicKey  [1] BIT STRING OPTIONAL
+            }
+
+        The only format supported for the `parameters` field is the named
+        curve method. Explicit encoding of curve parameters is not supported.
+
+        While `parameters` field is defined as optional, this implementation
+        requires its presence for correct parsing of the keys.
+
+        `publicKey` field is ignored completely (errors, if any, in it will
+        be undetected).
+
+        :param string: binary string with DER-encoded private ECDSA key
+        :type string: bytes like object
+
+        :raises MalformedPointError: if the length of encoding doesn't match
+            the provided curve or the encoded values is too large
+        :raises RuntimeError: if the generation of public key from private
+            key failed
+        :raises UnexpectedDER: if the encoding of the DER file is incorrect
+
+        :return: Initialised VerifyingKey object
+        :rtype: VerifyingKey
+        """
         s, empty = der.remove_sequence(string)
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after DER privkey: %s" %
@@ -685,18 +836,56 @@ class SigningKey(object):
         # our from_string method likes fixed-length privkey strings
         if len(privkey_str) < curve.baselen:
             privkey_str = b("\x00") * (curve.baselen - len(privkey_str)) + privkey_str
-        return klass.from_string(privkey_str, curve, hashfunc)
+        return cls.from_string(privkey_str, curve, hashfunc)
 
     def to_string(self):
+        """
+        Convert the private key to :term:`raw encoding`.
+
+        Note: while the method is named "to_string", its name comes from
+        Python 2 days, when binary and character strings used the same type.
+        The type used in Python 3 is `bytes`.
+
+        :return: raw encoding of private key
+        :rtype: bytes
+        """
         secexp = self.privkey.secret_multiplier
         s = number_to_string(secexp, self.privkey.order)
         return s
 
-    def to_pem(self):
+    def to_pem(self, point_encoding="uncompressed"):
+        """
+        Convert the private key to the :term:`PEM` format.
+
+        See :func:`~SigningKey.from_pem` method for format description.
+
+        Only the named curve format is supported.
+        The public key will be included in generated string.
+
+        The PEM header will specify ``BEGIN EC PRIVATE KEY``
+
+        :param str point_encoding: format to use for encoding public point
+
+        :return: PEM encoded private key
+        :rtype: str
+        """
         # TODO: "BEGIN ECPARAMETERS"
-        return der.topem(self.to_der(), "EC PRIVATE KEY")
+        return der.topem(self.to_der(point_encoding), "EC PRIVATE KEY")
 
     def to_der(self, point_encoding="uncompressed"):
+        """
+        Convert the private key to the :term:`DER` format.
+
+        See :func:`~SigningKey.from_der` method for format specification.
+
+        Only the named curve format is supported.
+        The public key will be included in the generated string.
+
+        :param str point_encoding: format to use for encoding public point
+
+        :return: DER encoded private key
+        :rtype: bytes
+        """
         # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),
         #      cont[1],bitstring])
         if point_encoding == "raw":
@@ -712,11 +901,50 @@ class SigningKey(object):
             )
 
     def get_verifying_key(self):
+        """
+        Return the VerifyingKey associated with this private key.
+
+        Equivalent to reading the `verifying_key` field of an instance.
+
+        :return: a public key that can be used to verify the signatures made
+            with this SigningKey
+        :rtype: VerifyingKey
+        """
         return self.verifying_key
 
     def sign_deterministic(self, data, hashfunc=None,
                            sigencode=sigencode_string,
                            extra_entropy=b''):
+        """
+        Create signature over data using the deterministic RFC6679 algorithm.
+
+        The data will be hashed using the `hashfunc` function before signing.
+
+        This is the recommended method for performing signatures when hashing
+        of data is necessary.
+
+        :param data: data to be hashed and computed signature over
+        :type data: bytes like object
+        :param hashfunc: hash function to use for computing the signature,
+            if unspecified, the default hash function selected during
+            object initialisation will be used (see
+            `VerifyingKey.default_hashfunc`). The object needs to implement
+            the same interface as hashlib.sha1.
+        :type hashfunc: callable
+        :param sigencode: function used to encode the signature.
+            The function needs to accept three parameters: the two integers
+            that are the signature and the order of the curve over which the
+            signature was computed. It needs to return an encoded signature.
+            See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
+            as examples of such functions.
+        :type sigencode: callable
+        :param extra_entropy: additional data that will be fed into the random
+            number generator used in the RFC6979 process. Entirely optional.
+        :type extra_entropy: bytes like object
+
+        :return: encoded signature over `data`
+        :rtype: bytes or sigencode function dependant type
+        """
         hashfunc = hashfunc or self.default_hashfunc
         digest = hashfunc(data).digest()
 
@@ -728,9 +956,36 @@ class SigningKey(object):
                                   sigencode=sigencode_string,
                                   extra_entropy=b''):
         """
-        Calculates 'k' from data itself, removing the need for strong
-        random generator and producing deterministic (reproducible) signatures.
-        See RFC 6979 for more details.
+        Create signature for digest using the deterministic RFC6679 algorithm.
+
+        `digest` should be the output of cryptographically secure hash function
+        like SHA256 or SHA-3-256.
+
+        This is the recommended method for performing signatures when no
+        hashing of data is necessary.
+
+        :param digest: hash of data that will be signed
+        :type digest: bytes like object
+        :param hashfunc: hash function to use for computing the random "k"
+            value from RFC6979 process,
+            if unspecified, the default hash function selected during
+            object initialisation will be used (see
+            `VerifyingKey.default_hashfunc`). The object needs to implement
+            the same interface as hashlib.sha1.
+        :type hashfunc: callable
+        :param sigencode: function used to encode the signature.
+            The function needs to accept three parameters: the two integers
+            that are the signature and the order of the curve over which the
+            signature was computed. It needs to return an encoded signature.
+            See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
+            as examples of such functions.
+        :type sigencode: callable
+        :param extra_entropy: additional data that will be fed into the random
+            number generator used in the RFC6979 process. Entirely optional.
+        :type extra_entropy: bytes like object
+
+        :return: encoded signature for the `digest` hash
+        :rtype: bytes or sigencode function dependant type
         """
         secexp = self.privkey.secret_multiplier
 
@@ -750,24 +1005,90 @@ class SigningKey(object):
 
         return sigencode(r, s, order)
 
-    def sign(self, data, entropy=None, hashfunc=None, sigencode=sigencode_string, k=None):
+    def sign(self, data, entropy=None, hashfunc=None,
+             sigencode=sigencode_string, k=None):
         """
-        hashfunc= should behave like hashlib.sha1 . The output length of the
-        hash (in bytes) must not be longer than the length of the curve order
-        (rounded up to the nearest byte), so using SHA256 with nist256p is
-        ok, but SHA256 with nist192p is not. (In the 2**-96ish unlikely event
-        of a hash output larger than the curve order, the hash will
-        effectively be wrapped mod n).
+        Create signature over data using the probabilistic ECDSA algorithm.
 
-        Use hashfunc=hashlib.sha1 to match openssl's -ecdsa-with-SHA1 mode,
-        or hashfunc=hashlib.sha256 for openssl-1.0.0's -ecdsa-with-SHA256.
+        This method uses the standard ECDSA algorithm that requires a
+        cryptographically secure random number generator.
+
+        It's recommended to use the :func:`~SigningKey.sign_deterministic`
+        method instead of this one.
+
+        :param data: data that will be hashed for signing
+        :type data: bytes like object
+        :param callable entropy: randomness source, os.urandom by default
+        :param hashfunc: hash function to use for hashing the provided `data`.
+            If unspecified the default hash function selected during
+            object initialisation will be used (see
+            `VerifyingKey.default_hashfunc`).
+            Should behave like hashlib.sha1. The output length of the
+            hash (in bytes) must not be longer than the length of the curve
+            order (rounded up to the nearest byte), so using SHA256 with
+            NIST256p is ok, but SHA256 with NIST192p is not. (In the 2**-96ish
+            unlikely event of a hash output larger than the curve order, the
+            hash will effectively be wrapped mod n).
+            Use hashfunc=hashlib.sha1 to match openssl's -ecdsa-with-SHA1 mode,
+            or hashfunc=hashlib.sha256 for openssl-1.0.0's -ecdsa-with-SHA256.
+        :type hashfunc: callable
+        :param sigencode: function used to encode the signature.
+            The function needs to accept three parameters: the two integers
+            that are the signature and the order of the curve over which the
+            signature was computed. It needs to return an encoded signature.
+            See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
+            as examples of such functions.
+        :type sigencode: callable
+        :param int k: a pre-selected nonce for calculating the signature.
+            In typical use cases, it should be set to None (the default) to
+            allow its generation from an entropy source.
+
+        :raises RSZeroError: in the unlikely event when "r" parameter or
+            "s" parameter is equal 0 as that would leak the key. Calee should
+            try a better entropy source or different 'k' in such case.
+
+        :return: encoded signature of the hash of `data`
+        :rtype: bytes or sigencode function dependant type
         """
-
         hashfunc = hashfunc or self.default_hashfunc
         h = hashfunc(data).digest()
         return self.sign_digest(h, entropy, sigencode, k)
 
-    def sign_digest(self, digest, entropy=None, sigencode=sigencode_string, k=None):
+    def sign_digest(self, digest, entropy=None, sigencode=sigencode_string,
+                    k=None):
+        """
+        Create signature over digest using the probabilistic ECDSA algorithm.
+
+        This method uses the standard ECDSA algorithm that requires a
+        cryptographically secure random number generator.
+
+        This method does not hash the input.
+
+        It's recommended to use the
+        :func:`~SigningKey.sign_digest_deterministic` method
+        instead of this one.
+
+        :param digest: hash value that will be signed
+        :type digest: bytes like object
+        :param callable entropy: randomness source, os.urandom by default
+        :param sigencode: function used to encode the signature.
+            The function needs to accept three parameters: the two integers
+            that are the signature and the order of the curve over which the
+            signature was computed. It needs to return an encoded signature.
+            See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
+            as examples of such functions.
+        :type sigencode: callable
+        :param int k: a pre-selected nonce for calculating the signature.
+            In typical use cases, it should be set to None (the default) to
+            allow its generation from an entropy source.
+
+        :raises RSZeroError: in the unlikely event when "r" parameter or
+            "s" parameter is equal 0 as that would leak the key. Calee should
+            try a better entropy source in such case.
+
+        :return: encoded signature for the `digest` hash
+        :rtype: bytes or sigencode function dependant type
+        """
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,
@@ -777,15 +1098,28 @@ class SigningKey(object):
         return sigencode(r, s, self.privkey.order)
 
     def sign_number(self, number, entropy=None, k=None):
-        # returns a pair of numbers
-        order = self.privkey.order
-        # privkey.sign() may raise RuntimeError in the amazingly unlikely
-        # (2**-192) event that r=0 or s=0, because that would leak the key.
-        # We could re-try with a different 'k', but we couldn't test that
-        # code, so I choose to allow the signature to fail instead.
+        """
+        Sign an integer directly.
 
-        # If k is set, it is used directly. In other cases
-        # it is generated using entropy function
+        Note, this is a low level method, usually you will want to use
+        :func:`~SigningKey.sign_deterministic` or
+        :func:`~SigningKey.sign_digest_deterministic`.
+
+        :param int number: number to sign using the probabilistic ECDSA
+            algorithm.
+        :param callable entropy: entropy source, os.urandom by default
+        :param int k: pre-selected nonce for signature operation. If unset
+            it will be selected at random using the entropy source.
+
+        :raises RSZeroError: in the unlikely event when "r" parameter or
+            "s" parameter is equal 0 as that would leak the key. Calee should
+            try a different 'k' in such case.
+
+        :return: the "r" and "s" parameters of the signature
+        :rtype: tuple of ints
+        """
+        order = self.privkey.order
+
         if k is not None:
             _k = k
         else:
