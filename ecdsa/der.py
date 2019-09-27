@@ -115,9 +115,9 @@ def remove_integer(string):
         raise UnexpectedDER("0-byte long encoding of integer")
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
-    nbytes = numberbytes[0] if isinstance(numberbytes[0], integer_types) \
+    msb = numberbytes[0] if isinstance(numberbytes[0], integer_types) \
             else ord(numberbytes[0])
-    if not nbytes < 0x80:
+    if not msb < 0x80:
         raise UnexpectedDER("Negative integers are not supported")
     return int(binascii.hexlify(numberbytes), 16), rest
 
