@@ -122,14 +122,20 @@ class VerifyingKey:
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after DER pubkey objects: %s" %
                                     binascii.hexlify(empty))
-        assert oid_pk == oid_ecPublicKey, (oid_pk, oid_ecPublicKey)
+        if not oid_pk == oid_ecPublicKey:
+            raise der.UnexpectedDER("Unexpected object identifier in DER "
+                                    "encoding: {0!r}".format(oid_pk))
         curve = find_curve(oid_curve)
         point_str, empty = der.remove_bitstring(point_str_bitstring)
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after pubkey pointstring: %s" %
                                     binascii.hexlify(empty))
-        assert point_str.startswith(b("\x00\x04"))
-        return klass.from_string(point_str[2:], curve)
+        # the point encoding is padded with a zero byte
+        # raw encoding of point is invalid in DER files
+        if not point_str.startswith(b("\x00")) or \
+                len(point_str[1:]) == curve.verifying_key_length:
+            raise der.UnexpectedDER("Malformed encoding of public point")
+        return klass.from_string(point_str[1:], curve)
 
     @classmethod
     def from_public_key_recovery(cls, signature, data, curve, hashfunc=sha1,
@@ -187,11 +193,11 @@ class VerifyingKey:
     def to_pem(self):
         return der.topem(self.to_der(), "PUBLIC KEY")
 
-    def to_der(self):
+    def to_der(self, point_encoding="uncompressed"):
         order = self.pubkey.order
         x_str = number_to_string(self.pubkey.point.x(), order)
         y_str = number_to_string(self.pubkey.point.y(), order)
-        point_str = b("\x00\x04") + x_str + y_str
+        point_str = b("\x00") + self.to_string(point_encoding)
         return der.encode_sequence(der.encode_sequence(encoded_oid_ecPublicKey,
                                                        self.curve.encoded_oid),
                                    der.encode_bitstring(point_str))
@@ -312,10 +318,11 @@ class SigningKey:
         # TODO: "BEGIN ECPARAMETERS"
         return der.topem(self.to_der(), "EC PRIVATE KEY")
 
-    def to_der(self):
+    def to_der(self, point_encoding="uncompressed"):
         # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),
         #      cont[1],bitstring])
-        encoded_vk = b("\x00\x04") + self.get_verifying_key().to_string()
+        encoded_vk = b("\x00") + \
+                self.get_verifying_key().to_string(point_encoding)
         return der.encode_sequence(der.encode_integer(1),
                                    der.encode_octet_string(self.to_string()),
                                    der.encode_constructed(0, self.curve.encoded_oid),
