@@ -55,8 +55,9 @@ class VerifyingKey:
         assert len(ys) == curve.baselen, (len(ys), curve.baselen)
         x = string_to_number(xs)
         y = string_to_number(ys)
-        if validate_point:
-            assert ecdsa.point_is_valid(curve.generator, x, y)
+        if validate_point and not ecdsa.point_is_valid(curve.generator, x, y):
+            raise MalformedPointError("Point does not lie on the curve")
+
         return ellipticcurve.Point(curve.curve, x, y, order)
 
     @staticmethod

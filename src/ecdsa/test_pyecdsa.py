@@ -416,6 +416,14 @@ class ECDSA(unittest.TestCase):
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b('\x01') + enc[:24])
 
+    def test_decoding_with_point_not_on_curve(self):
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(enc[:47] + b('\x00'))
+
     def test_decoding_with_point_at_infinity(self):
         # decoding it is unsupported, as it's not necessary to encode it
         with self.assertRaises(MalformedPointError):
