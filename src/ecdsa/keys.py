@@ -3,7 +3,9 @@ import binascii
 from . import ecdsa
 from . import der
 from . import rfc6979
+from . import ellipticcurve
 from .curves import NIST192p, find_curve
+from .numbertheory import square_root_mod_prime, SquareRootError
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
@@ -23,6 +25,10 @@ class BadDigestError(Exception):
     pass
 
 
+class MalformedPointError(AssertionError):
+    pass
+
+
 class VerifyingKey:
     def __init__(self, _error__please_use_generate=None):
         if not _error__please_use_generate:
@@ -38,9 +44,8 @@ class VerifyingKey:
         self.pubkey.order = curve.order
         return self
 
-    @classmethod
-    def from_string(klass, string, curve=NIST192p, hashfunc=sha1,
-                    validate_point=True):
+    @staticmethod
+    def _from_raw_encoding(string, curve, validate_point):
         order = curve.order
         assert (len(string) == curve.verifying_key_length), \
                (len(string), curve.verifying_key_length)
@@ -52,8 +57,50 @@ class VerifyingKey:
         y = string_to_number(ys)
         if validate_point:
             assert ecdsa.point_is_valid(curve.generator, x, y)
-        from . import ellipticcurve
-        point = ellipticcurve.Point(curve.curve, x, y, order)
+        return ellipticcurve.Point(curve.curve, x, y, order)
+
+    @staticmethod
+    def _from_compressed(string, curve, validate_point):
+        if string[:1] not in (b('\x02'), b('\x03')):
+            raise MalformedPointError("Malformed compressed point encoding")
+
+        is_even = string[:1] == b('\x02')
+        x = string_to_number(string[1:])
+        order = curve.order
+        p = curve.curve.p()
+        alpha = (pow(x, 3, p) + (curve.curve.a() * x) + curve.curve.b()) % p
+        try:
+            beta = square_root_mod_prime(alpha, p)
+        except SquareRootError as e:
+            raise MalformedPointError(
+                "Encoding does not correspond to a point on curve", e)
+        if is_even == bool(beta & 1):
+            y = p - beta
+        else:
+            y = beta
+        if validate_point and not ecdsa.point_is_valid(curve.generator, x, y):
+            raise MalformedPointError("Point does not lie on curve")
+        return ellipticcurve.Point(curve.curve, x, y, order)
+
+    @classmethod
+    def from_string(klass, string, curve=NIST192p, hashfunc=sha1,
+                    validate_point=True):
+        sig_len = len(string)
+        if sig_len == curve.verifying_key_length:
+            point = klass._from_raw_encoding(string, curve, validate_point)
+        elif sig_len == curve.verifying_key_length + 1:
+            if string[:1] != b('\x04'):
+                raise MalformedPointError(
+                    "Invalid uncompressed encoding of the public point")
+            point = klass._from_raw_encoding(string[1:], curve, validate_point)
+        elif sig_len == curve.baselen + 1:
+            point = klass._from_compressed(string, curve, validate_point)
+        else:
+            raise MalformedPointError(
+                "Length of string does not match lengths of "
+                "any of the supported encodings of {0} "
+                "curve.".format(curve.name))
+
         return klass.from_public_point(point, curve, hashfunc)
 
     @classmethod
@@ -110,14 +157,31 @@ class VerifyingKey:
         verifying_keys = [klass.from_public_point(pk.point, curve, hashfunc) for pk in pks]
         return verifying_keys
 
-    def to_string(self):
-        # VerifyingKey.from_string(vk.to_string()) == vk as long as the
-        # curves are the same: the curve itself is not included in the
-        # serialized form
+    def _raw_encode(self):
         order = self.pubkey.order
         x_str = number_to_string(self.pubkey.point.x(), order)
         y_str = number_to_string(self.pubkey.point.y(), order)
         return x_str + y_str
+
+    def _compressed_encode(self):
+        order = self.pubkey.order
+        x_str = number_to_string(self.pubkey.point.x(), order)
+        if self.pubkey.point.y() & 1:
+            return b('\x03') + x_str
+        else:
+            return b('\x02') + x_str
+
+    def to_string(self, encoding="raw"):
+        # VerifyingKey.from_string(vk.to_string()) == vk as long as the
+        # curves are the same: the curve itself is not included in the
+        # serialized form
+        assert encoding in ("raw", "uncompressed", "compressed")
+        if encoding == "raw":
+            return self._raw_encode()
+        elif encoding == "uncompressed":
+            return b('\x04') + self._raw_encode()
+        else:
+            return self._compressed_encode()
 
     def to_pem(self):
         return der.topem(self.to_der(), "PUBLIC KEY")

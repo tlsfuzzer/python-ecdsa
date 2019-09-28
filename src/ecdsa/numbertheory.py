@@ -11,8 +11,12 @@
 
 from __future__ import division
 
-from six import integer_types
+from six import integer_types, PY3
 from six.moves import reduce
+try:
+    xrange
+except NameError:
+    xrange = range
 
 import math
 
@@ -62,7 +66,7 @@ def polynomial_reduce_mod(poly, polymod, p):
 
   while len(poly) >= len(polymod):
     if poly[-1] != 0:
-      for i in range(2, len(polymod) + 1):
+      for i in xrange(2, len(polymod) + 1):
         poly[-i] = (poly[-i] - poly[-1] * polymod[-i]) % p
     poly = poly[0:-1]
 
@@ -86,8 +90,8 @@ def polynomial_multiply_mod(m1, m2, polymod, p):
 
   # Add together all the cross-terms:
 
-  for i in range(len(m1)):
-    for j in range(len(m2)):
+  for i in xrange(len(m1)):
+    for j in xrange(len(m2)):
       prod[i + j] = (prod[i + j] + m1[i] * m2[j]) % p
 
   return polynomial_reduce_mod(prod, polymod, p)
@@ -187,7 +191,12 @@ def square_root_mod_prime(a, p):
       return (2 * a * modular_exp(4 * a, (p - 5) // 8, p)) % p
     raise RuntimeError("Shouldn't get here.")
 
-  for b in range(2, p):
+  if PY3:
+    range_top = p
+  else:
+    # xrange on python2 can take integers representable as C long only
+    range_top = min(0x7fffffff, p)
+  for b in xrange(2, range_top):
     if jacobi(b * b - 4 * a, p) == -1:
       f = (a, -b, 1)
       ff = polynomial_exp_mod((0, 1), (p + 1) // 2, f, p)
@@ -355,7 +364,7 @@ def carmichael_of_factorized(f_list):
     return 1
 
   result = carmichael_of_ppower(f_list[0])
-  for i in range(1, len(f_list)):
+  for i in xrange(1, len(f_list)):
     result = lcm(result, carmichael_of_ppower(f_list[i]))
 
   return result
@@ -477,7 +486,7 @@ def is_prime(n):
   while (r % 2) == 0:
     s = s + 1
     r = r // 2
-  for i in range(t):
+  for i in xrange(t):
     a = smallprimes[i]
     y = modular_exp(a, r, n)
     if y != 1 and y != n - 1:
