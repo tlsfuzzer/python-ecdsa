@@ -380,8 +380,10 @@ class ECDSA(unittest.TestCase):
                 '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
                 'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
         self.assertEqual(vk.to_string(), exp)
+        self.assertEqual(vk.to_string('raw'), exp)
         self.assertEqual(vk.to_string('uncompressed'), b('\x04') + exp)
         self.assertEqual(vk.to_string('compressed'), b('\x02') + exp[:24])
+        self.assertEqual(vk.to_string('hybrid'), b('\x06') + exp)
 
     def test_decoding(self):
         sk = SigningKey.from_secret_exponent(123456789)
@@ -400,6 +402,9 @@ class ECDSA(unittest.TestCase):
         from_compressed = VerifyingKey.from_string(b('\x02') + enc[:24])
         self.assertEqual(from_compressed.pubkey.point, vk.pubkey.point)
 
+        from_uncompressed = VerifyingKey.from_string(b('\x06') + enc)
+        self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
+
     def test_decoding_with_malformed_uncompressed(self):
         enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
                 '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
@@ -415,6 +420,14 @@ class ECDSA(unittest.TestCase):
 
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b('\x01') + enc[:24])
+
+    def test_decoding_with_inconsistent_hybrid(self):
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b('\x07') + enc)
 
     def test_decoding_with_point_not_on_curve(self):
         enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
@@ -457,7 +470,7 @@ def test_VerifyingKey_decode_with_small_values(val, even):
 
 params = []
 for curve in curves:
-    for enc in ["raw", "uncompressed", "compressed"]:
+    for enc in ["raw", "uncompressed", "compressed", "hybrid"]:
         params.append(pytest.param(curve, enc, id="{0}-{1}".format(
             curve.name, enc)))
 

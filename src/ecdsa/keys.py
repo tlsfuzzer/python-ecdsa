@@ -84,16 +84,35 @@ class VerifyingKey:
         return ellipticcurve.Point(curve.curve, x, y, order)
 
     @classmethod
+    def _from_hybrid(cls, string, curve, validate_point):
+        assert string[:1] in (b('\x06'), b('\x07'))
+
+        # primarily use the uncompressed as it's easiest to handle
+        point = cls._from_raw_encoding(string[1:], curve, validate_point)
+
+        # but validate if it's self-consistent if we're asked to do that
+        if validate_point and \
+                (point.y() & 1 and string[:1] != b('\x07') or
+                 (not point.y() & 1) and string[:1] != b('\x06')):
+            raise MalformedPointError("Inconsistent hybrid point encoding")
+
+        return point
+
+    @classmethod
     def from_string(klass, string, curve=NIST192p, hashfunc=sha1,
                     validate_point=True):
         sig_len = len(string)
         if sig_len == curve.verifying_key_length:
             point = klass._from_raw_encoding(string, curve, validate_point)
         elif sig_len == curve.verifying_key_length + 1:
-            if string[:1] != b('\x04'):
+            if string[:1] in (b('\x06'), b('\x07')):
+                point = klass._from_hybrid(string, curve, validate_point)
+            elif string[:1] == b('\x04'):
+                point = klass._from_raw_encoding(string[1:], curve,
+                        validate_point)
+            else:
                 raise MalformedPointError(
-                    "Invalid uncompressed encoding of the public point")
-            point = klass._from_raw_encoding(string[1:], curve, validate_point)
+                    "Invalid X9.62 encoding of the public point")
         elif sig_len == curve.baselen + 1:
             point = klass._from_compressed(string, curve, validate_point)
         else:
@@ -178,15 +197,24 @@ class VerifyingKey:
         else:
             return b('\x02') + x_str
 
+    def _hybrid_encode(self):
+        raw_enc = self._raw_encode()
+        if self.pubkey.point.y() & 1:
+            return b('\x07') + raw_enc
+        else:
+            return b('\x06') + raw_enc
+
     def to_string(self, encoding="raw"):
         # VerifyingKey.from_string(vk.to_string()) == vk as long as the
         # curves are the same: the curve itself is not included in the
         # serialized form
-        assert encoding in ("raw", "uncompressed", "compressed")
+        assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
         if encoding == "raw":
             return self._raw_encode()
         elif encoding == "uncompressed":
             return b('\x04') + self._raw_encode()
+        elif encoding == "hybrid":
+            return self._hybrid_encode()
         else:
             return self._compressed_encode()
 
