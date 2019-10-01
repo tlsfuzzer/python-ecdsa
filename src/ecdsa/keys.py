@@ -14,7 +14,8 @@ from six import PY3, b
 from hashlib import sha1
 
 
-__all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey"]
+__all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey",
+           "MalformedPointError"]
 
 
 class BadSignatureError(Exception):
