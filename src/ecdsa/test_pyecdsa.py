@@ -1,6 +1,9 @@
 from __future__ import with_statement, division
 
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import os
 import time
 import shutil
@@ -11,12 +14,14 @@ from hashlib import sha1, sha256, sha512
 
 from six import b, print_, binary_type
 from .keys import SigningKey, VerifyingKey
-from .keys import BadSignatureError
+from .keys import BadSignatureError, MalformedPointError
 from . import util
 from .util import sigencode_der, sigencode_strings
 from .util import sigdecode_der, sigdecode_strings
+from .util import number_to_string
 from .curves import Curve, UnknownCurveError
-from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p, SECP256k1
+from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p, \
+        SECP256k1, curves
 from .ellipticcurve import Point
 from . import der
 from . import rfc6979
@@ -366,6 +371,120 @@ class ECDSA(unittest.TestCase):
         # Test if original vk is the list of recovered keys
         self.assertTrue(vk.pubkey.point in
                 [recovered_vk.pubkey.point for recovered_vk in recovered_vks])
+
+    def test_encoding(self):
+        sk = SigningKey.from_secret_exponent(123456789)
+        vk = sk.verifying_key
+
+        exp = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+        self.assertEqual(vk.to_string(), exp)
+        self.assertEqual(vk.to_string('raw'), exp)
+        self.assertEqual(vk.to_string('uncompressed'), b('\x04') + exp)
+        self.assertEqual(vk.to_string('compressed'), b('\x02') + exp[:24])
+        self.assertEqual(vk.to_string('hybrid'), b('\x06') + exp)
+
+    def test_decoding(self):
+        sk = SigningKey.from_secret_exponent(123456789)
+        vk = sk.verifying_key
+
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        from_raw = VerifyingKey.from_string(enc)
+        self.assertEqual(from_raw.pubkey.point, vk.pubkey.point)
+
+        from_uncompressed = VerifyingKey.from_string(b('\x04') + enc)
+        self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
+
+        from_compressed = VerifyingKey.from_string(b('\x02') + enc[:24])
+        self.assertEqual(from_compressed.pubkey.point, vk.pubkey.point)
+
+        from_uncompressed = VerifyingKey.from_string(b('\x06') + enc)
+        self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
+
+    def test_decoding_with_malformed_uncompressed(self):
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b('\x02') + enc)
+
+    def test_decoding_with_malformed_compressed(self):
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b('\x01') + enc[:24])
+
+    def test_decoding_with_inconsistent_hybrid(self):
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b('\x07') + enc)
+
+    def test_decoding_with_point_not_on_curve(self):
+        enc = b('\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3'
+                '\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4'
+                'z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*')
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(enc[:47] + b('\x00'))
+
+    def test_decoding_with_point_at_infinity(self):
+        # decoding it is unsupported, as it's not necessary to encode it
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b('\x00'))
+
+    def test_not_lying_on_curve(self):
+        enc = number_to_string(NIST192p.order, NIST192p.order+1)
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b('\x02') + enc)
+
+
+@pytest.mark.parametrize("val,even",
+        [(i, j) for i in range(256) for j in [True, False]])
+def test_VerifyingKey_decode_with_small_values(val, even):
+    enc = number_to_string(val, NIST192p.order)
+
+    if even:
+        enc = b('\x02') + enc
+    else:
+        enc = b('\x03') + enc
+
+    # small values can both be actual valid public keys and not, verify that
+    # only expected exceptions are raised if they are not
+    try:
+        vk = VerifyingKey.from_string(enc)
+        assert isinstance(vk, VerifyingKey)
+    except MalformedPointError:
+        assert True
+
+
+params = []
+for curve in curves:
+    for enc in ["raw", "uncompressed", "compressed", "hybrid"]:
+        params.append(pytest.param(curve, enc, id="{0}-{1}".format(
+            curve.name, enc)))
+
+
+@pytest.mark.parametrize("curve,encoding", params)
+def test_VerifyingKey_encode_decode(curve, encoding):
+    sk = SigningKey.generate(curve=curve)
+    vk = sk.verifying_key
+
+    encoded = vk.to_string(encoding)
+
+    from_enc = VerifyingKey.from_string(encoded, curve=curve)
+
+    assert vk.pubkey.point == from_enc.pubkey.point
 
 
 class OpenSSL(unittest.TestCase):
