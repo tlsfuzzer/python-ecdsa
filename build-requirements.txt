@@ -1,1 +1,4 @@
 python-coveralls
+pytest>3.0.7
+pytest-cov<2.7.0
+tox

@@ -6,7 +6,7 @@ try:
 except ImportError:
     import unittest
 from .der import remove_integer, UnexpectedDER, read_length
-from six import b
+from .six import b
 
 class TestRemoveInteger(unittest.TestCase):
     # DER requires the integers to be 0-padded only if they would be

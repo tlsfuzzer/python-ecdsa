@@ -3,7 +3,7 @@ from __future__ import with_statement, division
 import pytest
 import hashlib
 
-from six import b, binary_type
+from .six import b, binary_type
 from .keys import SigningKey, VerifyingKey
 from .keys import BadSignatureError
 from .util import sigencode_der, sigencode_string

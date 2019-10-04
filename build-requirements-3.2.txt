@@ -7,3 +7,4 @@ PyYAML<3.13
 tox<3.0
 wheel<0.30
 virtualenv==15.2.0
+pytest>2.7.3

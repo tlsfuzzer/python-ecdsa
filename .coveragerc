@@ -7,3 +7,5 @@ omit =
  ecdsa/six.py
  ecdsa/_version.py
  ecdsa/test_ecdsa.py
+ ecdsa/test_der.py
+ ecdsa/test_malformed_sigs.py
