@@ -3,6 +3,7 @@ import binascii
 from . import ecdsa
 from . import der
 from . import rfc6979
+from . import ellipticcurve
 from .curves import NIST192p, find_curve
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
@@ -14,6 +15,11 @@ class BadSignatureError(Exception):
     pass
 class BadDigestError(Exception):
     pass
+
+
+class MalformedPointError(AssertionError):
+    pass
+
 
 class VerifyingKey:
     def __init__(self, _error__please_use_generate=None):
@@ -33,17 +39,21 @@ class VerifyingKey:
     def from_string(klass, string, curve=NIST192p, hashfunc=sha1,
                     validate_point=True):
         order = curve.order
-        assert len(string) == curve.verifying_key_length, \
-               (len(string), curve.verifying_key_length)
+        if len(string) != curve.verifying_key_length:
+            raise MalformedPointError(
+                "Malformed encoding of public point. Expected string {0} bytes"
+                " long, received {1} bytes long string".format(
+                    curve.verifying_key_length, len(string)))
         xs = string[:curve.baselen]
         ys = string[curve.baselen:]
-        assert len(xs) == curve.baselen, (len(xs), curve.baselen)
-        assert len(ys) == curve.baselen, (len(ys), curve.baselen)
+        if len(xs) != curve.baselen:
+            raise MalformedPointError("Unexpected length of encoded x")
+        if len(ys) != curve.baselen:
+            raise MalformedPointError("Unexpected length of encoded y")
         x = string_to_number(xs)
         y = string_to_number(ys)
-        if validate_point:
-            assert ecdsa.point_is_valid(curve.generator, x, y)
-        from . import ellipticcurve
+        if validate_point and not ecdsa.point_is_valid(curve.generator, x, y):
+            raise MalformedPointError("Point does not lie on the curve")
         point = ellipticcurve.Point(curve.curve, x, y, order)
         return klass.from_public_point(point, curve, hashfunc)
 
@@ -65,13 +75,18 @@ class VerifyingKey:
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after DER pubkey objects: %s" %
                                     binascii.hexlify(empty))
-        assert oid_pk == oid_ecPublicKey, (oid_pk, oid_ecPublicKey)
+        if oid_pk != oid_ecPublicKey:
+            raise der.UnexpectedDER(
+                "Unexpected OID in encoding, received {0}, expected {1}"
+                .format(oid_pk, oid_ecPublicKey))
         curve = find_curve(oid_curve)
         point_str, empty = der.remove_bitstring(point_str_bitstring)
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after pubkey pointstring: %s" %
                                     binascii.hexlify(empty))
-        assert point_str.startswith(b("\x00\x04"))
+        if not point_str.startswith(b("\x00\x04")):
+            raise der.UnexpectedDER(
+                    "Unsupported or invalid encoding of pubcli key")
         return klass.from_string(point_str[2:], curve)
 
     def to_string(self):
@@ -137,7 +152,10 @@ class SigningKey:
         self.default_hashfunc = hashfunc
         self.baselen = curve.baselen
         n = curve.order
-        assert 1 <= secexp < n
+        if not 1 <= secexp < n:
+            raise MalformedPointError(
+                "Invalid value for secexp, expected integer between 1 and {0}"
+                .format(n))
         pubkey_point = curve.generator*secexp
         pubkey = ecdsa.Public_key(curve.generator, pubkey_point)
         pubkey.order = n
@@ -149,7 +167,10 @@ class SigningKey:
 
     @classmethod
     def from_string(klass, string, curve=NIST192p, hashfunc=sha1):
-        assert len(string) == curve.baselen, (len(string), curve.baselen)
+        if len(string) != curve.baselen:
+            raise MalformedPointError(
+                "Invalid length of private key, received {0}, expected {1}"
+                .format(len(string), curve.baselen))
         secexp = string_to_number(string)
         return klass.from_secret_exponent(secexp, curve, hashfunc)
 
