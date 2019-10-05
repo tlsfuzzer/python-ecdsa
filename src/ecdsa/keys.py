@@ -48,12 +48,14 @@ class VerifyingKey:
     @staticmethod
     def _from_raw_encoding(string, curve, validate_point):
         order = curve.order
-        assert (len(string) == curve.verifying_key_length), \
-               (len(string), curve.verifying_key_length)
+        # real assert, from_string() should not call us with different length
+        assert len(string) == curve.verifying_key_length
         xs = string[:curve.baselen]
         ys = string[curve.baselen:]
-        assert len(xs) == curve.baselen, (len(xs), curve.baselen)
-        assert len(ys) == curve.baselen, (len(ys), curve.baselen)
+        if len(xs) != curve.baselen:
+            raise MalformedPointError("Unexpected length of encoded x")
+        if len(ys) != curve.baselen:
+            raise MalformedPointError("Unexpected length of encoded y")
         x = string_to_number(xs)
         y = string_to_number(ys)
         if validate_point and not ecdsa.point_is_valid(curve.generator, x, y):
@@ -86,6 +88,7 @@ class VerifyingKey:
 
     @classmethod
     def _from_hybrid(cls, string, curve, validate_point):
+        # real assert, from_string() should not call us with different types
         assert string[:1] in (b('\x06'), b('\x07'))
 
         # primarily use the uncompressed as it's easiest to handle
@@ -271,7 +274,10 @@ class SigningKey:
         self.default_hashfunc = hashfunc
         self.baselen = curve.baselen
         n = curve.order
-        assert 1 <= secexp < n
+        if not 1 <= secexp < n:
+            raise MalformedPointError(
+                "Invalid value for secexp, expected integer between 1 and {0}"
+                .format(n))
         pubkey_point = curve.generator * secexp
         pubkey = ecdsa.Public_key(curve.generator, pubkey_point)
         pubkey.order = n
@@ -283,7 +289,10 @@ class SigningKey:
 
     @classmethod
     def from_string(klass, string, curve=NIST192p, hashfunc=sha1):
-        assert len(string) == curve.baselen, (len(string), curve.baselen)
+        if len(string) != curve.baselen:
+            raise MalformedPointError(
+                "Invalid length of private key, received {0}, expected {1}"
+                .format(len(string), curve.baselen))
         secexp = string_to_number(string)
         return klass.from_secret_exponent(secexp, curve, hashfunc)
 

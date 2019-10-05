@@ -4,9 +4,5 @@
 include =
  src/ecdsa/*
 omit =
- src/ecdsa/six.py
  src/ecdsa/_version.py
- src/ecdsa/test_ecdsa.py
- src/ecdsa/test_ellipticcurve.py
- src/ecdsa/test_numbertheory.py
- src/ecdsa/test_pyecdsa.py
+ src/ecdsa/test_*
