@@ -86,6 +86,9 @@ class Point(object):
     else:
       return False
 
+  def __neg__(self):
+    return Point(self.__curve, self.__x, self.__curve.p() - self.__y)
+
   def __add__(self, other):
     """Add one point to another point."""
 
@@ -123,13 +126,12 @@ class Point(object):
       return result // 2
 
     e = other
-    if self.__order:
-      e = e % self.__order
-    if e == 0:
+    if e == 0 or (self.__order and e % self.__order == 0):
       return INFINITY
     if self == INFINITY:
       return INFINITY
-    assert e > 0
+    if e < 0:
+      return (-self) * (-e)
 
     # From X9.62 D.3.2:
 
