@@ -123,8 +123,8 @@ is to call `s=sk.to_string()`, and then re-create it with
 `SigningKey.from_string(s, curve)` . This short form does not record the
 curve, so you must be sure to tell from_string() the same curve you used for
 the original key. The short form of a NIST192p-based signing key is just 24
-bytes long. If the point encoding is invalid or it does not lie on the
-specified curve, `from_string()` will raise MalformedPointError.
+bytes long. If a point encoding is invalid or it does not lie on the specified
+curve, `from_string()` will raise MalformedPointError.
 
 ```python
 from ecdsa import SigningKey, NIST384p
