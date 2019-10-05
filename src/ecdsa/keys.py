@@ -223,9 +223,6 @@ class VerifyingKey:
         return der.topem(self.to_der(), "PUBLIC KEY")
 
     def to_der(self, point_encoding="uncompressed"):
-        order = self.pubkey.order
-        x_str = number_to_string(self.pubkey.point.x(), order)
-        y_str = number_to_string(self.pubkey.point.y(), order)
         point_str = b("\x00") + self.to_string(point_encoding)
         return der.encode_sequence(der.encode_sequence(encoded_oid_ecPublicKey,
                                                        self.curve.encoded_oid),
