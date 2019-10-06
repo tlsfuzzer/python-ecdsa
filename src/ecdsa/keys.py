@@ -168,6 +168,8 @@ class VerifyingKey(object):
         :rtype: VerifyingKey
         """
         self = cls(_error__please_use_generate=True)
+        if not isinstance(point, ellipticcurve.PointJacobi):
+            point = ellipticcurve.PointJacobi.from_affine(point)
         self.curve = curve
         self.default_hashfunc = hashfunc
         self.pubkey = ecdsa.Public_key(curve.generator, point)
@@ -723,6 +725,7 @@ class SigningKey(object):
                 "Invalid value for secexp, expected integer between 1 and {0}"
                 .format(n))
         pubkey_point = curve.generator * secexp
+        pubkey_point = pubkey_point.scale()
         self.verifying_key = VerifyingKey.from_public_point(pubkey_point,
                                                             curve,
                                                             hashfunc)
