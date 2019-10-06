@@ -165,6 +165,20 @@ class TestJacobi(unittest.TestCase):
         pj = pj * mul
 
         self.assertEqual((pj.x(), pj.y()), (pw.x(), pw.y()))
+        self.assertEqual(pj, pw)
+
+    @settings(max_examples=10)
+    @given(st.integers(min_value=0, max_value=generator_256.order()))
+    @example(0)
+    @example(generator_256.order())
+    def test_precompute(self, mul):
+        precomp = PointJacobi.from_affine(generator_256, True)
+        pj = PointJacobi.from_affine(generator_256)
+
+        a = precomp * mul
+        b = pj * mul
+
+        self.assertEqual(a, b)
 
     @settings(max_examples=10)
     @given(st.integers(min_value=1, max_value=generator_256.order()),

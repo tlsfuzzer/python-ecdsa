@@ -82,12 +82,29 @@ class PointJacobi(object):
   x = X / Z²
   y = Y / Z³
   """
-  def __init__(self, curve, x, y, z, order=None):
+  def __init__(self, curve, x, y, z, order=None, generator=False):
+      """
+      :param bool generator: the point provided is a curve generator, as
+        such, it will be commonly used with scalar multiplication. This will
+        cause to precompute multiplication table for it
+      """
       self.__curve = curve
       self.__x = x
       self.__y = y
       self.__z = z
       self.__order = order
+      self.__precompute={}
+      if generator:
+          assert order
+          i = 1
+          order *= 2
+          doubler = PointJacobi(curve, x, y, z, order)
+          self.__precompute[i] = doubler
+
+          while i < order:
+              i *= 2
+              doubler = doubler.double().scale()
+              self.__precompute[i] = doubler
 
   def __eq__(self, other):
       """Compare two points with each-other."""
@@ -131,6 +148,10 @@ class PointJacobi(object):
       z = numbertheory.inverse_mod(self.__z, p)
       return self.__y * z**3 % p
 
+  def scale(self):
+      """Return point scaled so that z == 1."""
+      return self.from_affine(self.to_affine())
+
   def to_affine(self):
       """Return point in affine form."""
       p = self.__curve.p()
@@ -139,10 +160,10 @@ class PointJacobi(object):
                    self.__y * z**3 % p, self.__order)
 
   @staticmethod
-  def from_affine(point):
+  def from_affine(point, generator=False):
       """Create from an affine point."""
       return PointJacobi(point.curve(), point.x(), point.y(), 1,
-                         point.order())
+                         point.order(), generator)
 
   # plese note that all the methods that use the equations from hyperelliptic
   # are formatted in a way to maximise performance.
@@ -295,15 +316,26 @@ class PointJacobi(object):
       """Multiply point by an integer."""
       return self * other
 
+  def _mul_precompute(self, other):
+      i = 1
+      result = INFINITY
+      while i <= other:
+          if i & other:
+              result = result + self.__precompute[i]
+          i *= 2
+      return result
+
   def __mul__(self, other):
       """Multiply point by an integer."""
       if not self.__y or not other:
           return INFINITY
       if other == 1:
           return self
-      # makes vulnerable to Minerva
-      # if self.__order:
-      #     other = other % self.__order
+      if self.__order:
+          # order*2 as a protection for Minerva
+          other = other % (self.__order*2)
+      if self.__precompute:
+          return self._mul_precompute(other)
 
       def leftmost_bit(x):
         assert x > 0
