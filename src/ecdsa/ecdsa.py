@@ -88,12 +88,12 @@ class Signature(object):
     y = beta if beta % 2 == 0 else curve.p() - beta
 
     # Compute the public key
-    R1 = ellipticcurve.Point(curve, x, y, n)
+    R1 = ellipticcurve.PointJacobi(curve, x, y, 1, n)
     Q1 = numbertheory.inverse_mod(r, n) * (s * R1 + (-e % n) * generator)
     Pk1 = Public_key(generator, Q1)
 
     # And the second solution
-    R2 = ellipticcurve.Point(curve, x, -y, n)
+    R2 = ellipticcurve.PointJacobi(curve, x, -y, 1, n)
     Q2 = numbertheory.inverse_mod(r, n) * (s * R2 + (-e % n) * generator)
     Pk2 = Public_key(generator, Q2)
 
