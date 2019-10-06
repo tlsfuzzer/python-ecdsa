@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Implementation of elliptic curves, for cryptographic applications.
 #
@@ -69,6 +70,258 @@ class CurveFp(object):
 
   def __str__(self):
     return "CurveFp(p=%d, a=%d, b=%d)" % (self.__p, self.__a, self.__b)
+
+
+class PointJacobi(object):
+  """
+  Point on an elliptic curve. Uses Jacobi coordinates.
+
+  In Jacobian coordinates, there are three parameters, X, Y and Z.
+  They correspond to affine parameters 'x' and 'y' like so:
+
+  x = X / Z²
+  y = Y / Z³
+  """
+  def __init__(self, curve, x, y, z, order=None):
+      self.__curve = curve
+      self.__x = x
+      self.__y = y
+      self.__z = z
+      self.__order = order
+
+  def __eq__(self, other):
+      """Compare two points with each-other."""
+      if (not self.__y or not self.__z) and other is INFINITY:
+          return True
+      if isinstance(other, Point):
+          return self.to_affine() == other
+      return self.x() == other.x() and self.y() == other.y()
+
+  def order(self):
+      return self.__order
+
+  def curve(self):
+      return self.__curve
+
+  def x(self):
+      """
+      Return affine x coordinate.
+
+      This method should be used only when the 'y' coordinate is not needed.
+      It's computationally more efficient to use `to_affine()` and then
+      call x() and y() on the returned instance.
+      """
+      if self.__z == 1:
+          return self.__x
+      p = self.__curve.p()
+      z = numbertheory.inverse_mod(self.__z, p)
+      return self.__x * z**2 % p
+
+  def y(self):
+      """
+      Return affine y coordinate.
+
+      This method should be used only when the 'x' coordinate is not needed.
+      It's computationally more efficient to use `to_affine()` and then
+      call x() and y() on the returned instance.
+      """
+      if self.__z == 1:
+          return self.__y
+      p = self.__curve.p()
+      z = numbertheory.inverse_mod(self.__z, p)
+      return self.__y * z**3 % p
+
+  def to_affine(self):
+      """Return point in affine form."""
+      p = self.__curve.p()
+      z = numbertheory.inverse_mod(self.__z, p)
+      return Point(self.__curve, self.__x * z**2 % p,
+                   self.__y * z**3 % p, self.__order)
+
+  @staticmethod
+  def from_affine(point):
+      """Create from an affine point."""
+      return PointJacobi(point.curve(), point.x(), point.y(), 1,
+                         point.order())
+
+  # plese note that all the methods that use the equations from hyperelliptic
+  # are formatted in a way to maximise performance.
+  # Things that make code faster: multiplying instead of taking to the power
+  # (`xx = x * x; xxxx = xx * xx % p` is faster than `xxxx = x**4 % p` and
+  # `pow(x, 4, p)`),
+  # multiple assignments at the same time (`x1, x2 = self.x1, self.x2` is
+  # faster than `x1 = self.x1; x2 = self.x2`),
+  # similarly, sometimes the `% p` is skipped if it makes the calculation
+  # faster and the result of calculation is later reduced modulo `p`
+
+  def double(self):
+      """Add a point to itself."""
+      if not self.__y:
+          return INFINITY
+
+      p = self.__curve.p()
+      a = self.__curve.a()
+
+      X1, Y1, Z1 = self.__x, self.__y, self.__z
+
+      # after:
+      # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
+
+      XX, YY = X1 * X1 % p, Y1 * Y1 % p
+      if not YY:
+          return INFINITY
+      YYYY = YY * YY % p
+      ZZ = Z1 * Z1 % p
+      S = 2 * ((X1 + YY)**2 - XX - YYYY) % p
+      M = (3 * XX + a * ZZ * ZZ) % p
+      T = (M * M - 2 * S) % p
+      # X3 = T
+      Y3 = (M * (S - T) - 8 * YYYY) % p
+      Z3 = ((Y1 + Z1)**2 - YY - ZZ) % p
+
+      return PointJacobi(self.__curve, T, Y3, Z3, self.__order)
+
+  def _add_with_z_1(self, X1, Y1, X2, Y2):
+      """add points when both Z1 and Z2 equal 1"""
+      # after:
+      # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-mmadd-2007-bl
+      p = self.__curve.p()
+      H = X2 - X1
+      HH = H * H
+      I = 4 * HH % p
+      J = H * I
+      r = 2 * (Y2 - Y1)
+      if not H and not r:
+          return self.double()
+      V = X1 * I
+      X3 = (r**2 - J - 2 * V) % p
+      Y3 = (r * (V - X3) - 2 * Y1 * J) % p
+      Z3 = 2 * H % p
+      if not Y3 or not Z3:
+          return INFINITY
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+
+  def _add_with_z_eq(self, X1, Y1, Z1, X2, Y2):
+      """add points when Z1 == Z2"""
+      # after:
+      # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-zadd-2007-m
+      p = self.__curve.p()
+      A = (X2 - X1)**2 % p
+      B = X1 * A % p
+      C = X2 * A
+      D = (Y2 - Y1)**2 % p
+      if not A and not D:
+          return self.double()
+      X3 = (D - B - C) % p
+      Y3 = ((Y2 - Y1) * (B - X3) - Y1 * (C - B)) % p
+      Z3 = Z1 * (X2 - X1) % p
+      if not Y3 or not Z3:
+          return INFINITY
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+
+  def _add_with_z2_1(self, X1, Y1, Z1, X2, Y2):
+      """add points when Z2 == 1"""
+      # after:
+      # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-madd-2007-bl
+      p = self.__curve.p()
+      Z1Z1 = Z1 * Z1 % p
+      U2, S2 = X2 * Z1Z1 % p, Y2 * Z1 * Z1Z1 % p
+      H = (U2 - X1) % p
+      HH = H * H % p
+      I = 4 * HH % p
+      J = H * I
+      r = 2 * (S2 - Y1) % p
+      if not r and not H:
+          return self.double()
+      V = X1 * I
+      X3 = (r * r - J - 2 * V) % p
+      Y3 = (r * (V - X3) - 2 * Y1 * J) % p
+      Z3 = ((Z1 + H)**2 - Z1Z1 - HH) % p
+      if not Y3 or not Z3:
+          return INFINITY
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+
+  def __radd__(self, other):
+      return self + other
+
+  def __add__(self, other):
+      """Add two points on elliptic curve."""
+      if self == INFINITY:
+          return other
+      if other == INFINITY:
+          return self
+      if isinstance(other, Point):
+          other = PointJacobi.from_affine(other)
+      if self.__curve != other.__curve:
+          raise ValueError("The other point is on different curve")
+
+      p = self.__curve.p()
+      X1, Y1, Z1 = self.__x, self.__y, self.__z
+      X2, Y2, Z2 = other.__x, other.__y, other.__z
+      if Z1 == Z2:
+          if Z1 == 1:
+              return self._add_with_z_1(X1, Y1, X2, Y2)
+          return self._add_with_z_eq(X1, Y1, Z1, X2, Y2)
+      if Z1 == 1:
+          return self._add_with_z2_1(X2, Y2, Z2, X1, Y1)
+      if Z2 == 1:
+          return self._add_with_z2_1(X1, Y1, Z1, X2, Y2)
+
+      # after:
+      # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
+      Z1Z1 = Z1 * Z1 % p
+      Z2Z2 = Z2 * Z2 % p
+      U1 = X1 * Z2Z2 % p
+      U2 = X2 * Z1Z1 % p
+      S1 = Y1 * Z2 * Z2Z2 % p
+      S2 = Y2 * Z1 * Z1Z1 % p
+      H = U2 - U1
+      I = 4 * H * H % p
+      J = H * I % p
+      r = 2 * (S2 - S1) % p
+      if not H and not r:
+          return self.double()
+      V = U1 * I
+      X3 = (r * r - J - 2 * V) % p
+      Y3 = (r * (V - X3) - 2 * S1 * J) % p
+      Z3 = ((Z1 + Z2)**2 - Z1Z1 - Z2Z2) * H % p
+
+      if not Y3 or not Z3:
+          return INFINITY
+
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+
+  def __rmul__(self, other):
+      """Multiply point by an integer."""
+      return self * other
+
+  def __mul__(self, other):
+      """Multiply point by an integer."""
+      if not self.__y or not other:
+          return INFINITY
+      if other == 1:
+          return self
+      # makes vulnerable to Minerva
+      # if self.__order:
+      #     other = other % self.__order
+
+      def leftmost_bit(x):
+        assert x > 0
+        result = 1
+        while result <= x:
+          result = 2 * result
+        return result // 2
+
+      e = other
+      i = leftmost_bit(e)
+      result = self
+      while i > 1:
+          result = result.double()
+          i = i // 2
+          if e & i != 0:
+              result = result + self
+      return result
+
 
 class Point(object):
   """A point on an elliptic curve. Altering x and y is forbidding,
