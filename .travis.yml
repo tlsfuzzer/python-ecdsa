@@ -1,4 +1,11 @@
+# workaround for 3.7 not available in default configuration
+# travis-ci/travis-ci#9815
+dist: trusty
+sudo: false
 language: python
+cache: pip
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
 python:
   - "2.6"
   - "2.7"
@@ -11,6 +18,8 @@ install:
   - if [[ -e build-requirements-${TRAVIS_PYTHON_VERSION}.txt ]]; then travis_retry pip install -r build-requirements-${TRAVIS_PYTHON_VERSION}.txt; else travis_retry pip install -r build-requirements.txt; fi
 script:
   - coverage run setup.py test
+  - if [[ $TRAVIS_PYTHON_VERSION != 3.2 && ! $TRAVIS_PYTHON_VERSION =~ py ]]; then tox -e py${TRAVIS_PYTHON_VERSION/./}; fi
+  - if [[ $TRAVIS_PYTHON_VERSION =~ py ]]; then tox -e $TRAVIS_PYTHON_VERSION; fi
   - python setup.py speed
 after_success:
   - coveralls

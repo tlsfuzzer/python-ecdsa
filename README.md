@@ -73,6 +73,7 @@ There are four test suites, three for the original Pearson module, and one
 more for the wrapper. To run them all, do this:
 
     python setup.py test
+    tox -e coverage
 
 On my 2014 Mac Mini, the combined tests take about 20 seconds to run. On a
 2.4GHz P4 Linux box, they take 81 seconds.
@@ -118,7 +119,8 @@ is to call `s=sk.to_string()`, and then re-create it with
 `SigningKey.from_string(s, curve)` . This short form does not record the
 curve, so you must be sure to tell from_string() the same curve you used for
 the original key. The short form of a NIST192p-based signing key is just 24
-bytes long.
+bytes long. If the point encoding is invalid or it does not lie on the
+specified curve, `from_string()` will raise MalformedPointError.
 
     from ecdsa import SigningKey, NIST384p
     sk = SigningKey.generate(curve=NIST384p)
@@ -132,7 +134,8 @@ formats that OpenSSL uses. The PEM file looks like the familiar ASCII-armored
 is a shorter binary form of the same data.
 `SigningKey.from_pem()/.from_der()` will undo this serialization. These
 formats include the curve name, so you do not need to pass in a curve
-identifier to the deserializer.
+identifier to the deserializer. In case the file is malformed `from_der()`
+and `from_pem()` will raise UnexpectedDER or MalformedPointError.
 
     from ecdsa import SigningKey, NIST384p
     sk = SigningKey.generate(curve=NIST384p)
