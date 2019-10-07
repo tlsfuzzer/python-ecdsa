@@ -1,3 +1,10 @@
+* Release 0.13.3 (07 Oct 2019)
+
+Fix CVE-2019-14853 - possible DoS caused by malformed signature decoding and
+signature malleability.
+
+Also harden key decoding from string and DER encodings.
+
 * Release 0.13.2 (17 Apr 2019)
 
 Restore compatibility of setup.py with Python 2.6 and 2.7.
