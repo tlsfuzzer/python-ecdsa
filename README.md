@@ -123,7 +123,8 @@ is to call `s=sk.to_string()`, and then re-create it with
 `SigningKey.from_string(s, curve)` . This short form does not record the
 curve, so you must be sure to tell from_string() the same curve you used for
 the original key. The short form of a NIST192p-based signing key is just 24
-bytes long.
+bytes long. If the point encoding is invalid or it does not lie on the
+specified curve, `from_string()` will raise MalformedPointError.
 
 ```python
 from ecdsa import SigningKey, NIST384p
@@ -139,7 +140,8 @@ formats that OpenSSL uses. The PEM file looks like the familiar ASCII-armored
 is a shorter binary form of the same data.
 `SigningKey.from_pem()/.from_der()` will undo this serialization. These
 formats include the curve name, so you do not need to pass in a curve
-identifier to the deserializer.
+identifier to the deserializer. In case the file is malformed `from_der()`
+and `from_pem()` will raise UnexpectedDER or MalformedPointError.
 
 ```python
 from ecdsa import SigningKey, NIST384p
