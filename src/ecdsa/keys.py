@@ -725,7 +725,8 @@ class SigningKey(object):
                 "Invalid value for secexp, expected integer between 1 and {0}"
                 .format(n))
         pubkey_point = curve.generator * secexp
-        pubkey_point = pubkey_point.scale()
+        if hasattr(pubkey_point, "scale"):
+            pubkey_point = pubkey_point.scale()
         self.verifying_key = VerifyingKey.from_public_point(pubkey_point,
                                                             curve,
                                                             hashfunc)

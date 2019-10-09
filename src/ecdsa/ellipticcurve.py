@@ -149,15 +149,26 @@ class PointJacobi(object):
       return self.__y * z**3 % p
 
   def scale(self):
-      """Return point scaled so that z == 1."""
-      return self.from_affine(self.to_affine())
+      """
+      Return point scaled so that z == 1.
+
+      Modifies point in place, returns self.
+      """
+      p = self.__curve.p()
+      z_inv = numbertheory.inverse_mod(self.__z, p)
+      zz_inv = z_inv * z_inv % p
+      self.__x = self.__x * zz_inv % p
+      self.__y = self.__y * zz_inv * z_inv % p
+      self.__z = 1
+      return self
 
   def to_affine(self):
       """Return point in affine form."""
-      p = self.__curve.p()
-      z = numbertheory.inverse_mod(self.__z, p)
-      return Point(self.__curve, self.__x * z**2 % p,
-                   self.__y * z**3 % p, self.__order)
+      if not self.__y or not self.__z:
+          return INFINITY
+      self.scale()
+      return Point(self.__curve, self.__x,
+                   self.__y, self.__order)
 
   @staticmethod
   def from_affine(point, generator=False):
@@ -346,6 +357,7 @@ class PointJacobi(object):
 
       e = other
       i = leftmost_bit(e)
+      self = self.scale()
       result = self
       while i > 1:
           result = result.double()
