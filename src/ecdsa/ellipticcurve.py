@@ -110,9 +110,26 @@ class PointJacobi(object):
       """Compare two points with each-other."""
       if (not self.__y or not self.__z) and other is INFINITY:
           return True
+      if self.__y and self.__z and other is INFINITY:
+          return False
       if isinstance(other, Point):
-          return self.to_affine() == other
-      return self.x() == other.x() and self.y() == other.y()
+          x2, y2, z2 = other.x(), other.y(), 1
+      elif isinstance(other, PointJacobi):
+          x2, y2, z2 = other.__x, other.__y, other.__z
+      else:
+          return NotImplemented
+      if self.__curve != other.curve():
+          return False
+      x1, y1, z1 = self.__x, self.__y, self.__z
+      p = self.__curve.p()
+
+      zz1 = z1 * z1 % p
+      zz2 = z2 * z2 % p
+
+      # compare the fractions by bringing them to the same denominator
+      # depend on short-circuit to save 4 multiplications in case of inequality
+      return (x1 * zz2 - x2 * zz1) % p == 0 and \
+              (y1 * zz2 * z2 - y2 * zz1 * z1) % p == 0
 
   def order(self):
       return self.__order

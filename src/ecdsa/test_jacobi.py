@@ -32,6 +32,9 @@ class TestJacobi(unittest.TestCase):
         with self.assertRaises(ValueError):
             p_a + p_b
 
+    def test_compare_different_curves(self):
+        self.assertNotEqual(generator_256, generator_224)
+
     def test_conversion(self):
         pj = PointJacobi.from_affine(generator_256)
         pw = pj.to_affine()
