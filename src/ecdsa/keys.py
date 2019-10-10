@@ -176,6 +176,10 @@ class VerifyingKey(object):
         self.pubkey.order = curve.order
         return self
 
+    def precompute(self):
+        self.pubkey.point = ellipticcurve.PointJacobi.from_affine(
+            self.pubkey.point, True)
+
     @staticmethod
     def _from_raw_encoding(string, curve, validate_point):
         """
