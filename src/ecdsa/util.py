@@ -5,7 +5,6 @@ import math
 import binascii
 from hashlib import sha256
 from . import der
-from .curves import orderlen
 from six import PY3, int2byte, b, next
 
 # RFC5480:
@@ -15,6 +14,17 @@ from six import PY3, int2byte, b, next
 
 oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
+
+
+def bit_length(num):
+    # http://docs.python.org/dev/library/stdtypes.html#int.bit_length
+    s = bin(num)  # binary representation:  bin(-37) --> '-0b100101'
+    s = s.lstrip('-0b')  # remove leading zeros and minus sign
+    return len(s)  # len('100101') --> 6
+
+
+def orderlen(order):
+    return (1+len("%x" % order))//2  # bytes
 
 
 def randrange(order, entropy=None):

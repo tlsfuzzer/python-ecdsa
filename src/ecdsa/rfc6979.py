@@ -11,15 +11,13 @@ Many thanks to Coda Hale for his implementation in Go language:
 
 import hmac
 from binascii import hexlify
-from .util import number_to_string, number_to_string_crop
+from .util import number_to_string, number_to_string_crop, bit_length
 from six import b
 
 
-def bit_length(num):
-    # http://docs.python.org/dev/library/stdtypes.html#int.bit_length
-    s = bin(num)  # binary representation:  bin(-37) --> '-0b100101'
-    s = s.lstrip('-0b')  # remove leading zeros and minus sign
-    return len(s)  # len('100101') --> 6
+# bit_length was defined in this module previously so keep it for backwards
+# compatibility, will need to deprecate and remove it later
+__all__ = ["bit_length", "bits2int", "bits2octets", "generate_k"]
 
 
 def bits2int(data, qlen):
