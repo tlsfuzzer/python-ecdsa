@@ -19,6 +19,7 @@ except NameError:
     xrange = range
 
 import math
+import warnings
 
 
 class Error(Exception):
@@ -326,8 +327,13 @@ def factorization(n):
   return result
 
 
-def phi(n):
+def phi(n):  # pragma: no cover
   """Return the Euler totient function of n."""
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   assert isinstance(n, integer_types)
 
@@ -345,20 +351,30 @@ def phi(n):
   return result
 
 
-def carmichael(n):
+def carmichael(n):  # pragma: no cover
   """Return Carmichael function of n.
 
   Carmichael(n) is the smallest integer x such that
   m**x = 1 mod n for all m relatively prime to n.
   """
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   return carmichael_of_factorized(factorization(n))
 
 
-def carmichael_of_factorized(f_list):
+def carmichael_of_factorized(f_list):  # pragma: no cover
   """Return the Carmichael function of a number that is
   represented as a list of (prime,exponent) pairs.
   """
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   if len(f_list) < 1:
     return 1
@@ -370,9 +386,14 @@ def carmichael_of_factorized(f_list):
   return result
 
 
-def carmichael_of_ppower(pp):
+def carmichael_of_ppower(pp):  # pragma: no cover
   """Carmichael function of the given power of the given prime.
   """
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   p, a = pp
   if p == 2 and a > 2:
@@ -381,9 +402,14 @@ def carmichael_of_ppower(pp):
     return (p - 1) * p**(a - 1)
 
 
-def order_mod(x, m):
+def order_mod(x, m):  # pragma: no cover
   """Return the order of x in the multiplicative group mod m.
   """
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   # Warning: this implementation is not very clever, and will
   # take a long time if m is very large.
@@ -401,9 +427,14 @@ def order_mod(x, m):
   return result
 
 
-def largest_factor_relatively_prime(a, b):
+def largest_factor_relatively_prime(a, b):  # pragma: no cover
   """Return the largest factor of a relatively prime to b.
   """
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   while 1:
     d = gcd(a, b)
@@ -418,10 +449,15 @@ def largest_factor_relatively_prime(a, b):
   return a
 
 
-def kinda_order_mod(x, m):
+def kinda_order_mod(x, m):  # pragma: no cover
   """Return the order of x in the multiplicative group mod m',
   where m' is the largest factor of m relatively prime to x.
   """
+  # deprecated in 0.14
+  warnings.warn("Function is unused by library code. If you use this code, "
+                "please open an issue in "
+                "https://github.com/warner/python-ecdsa",
+                DeprecationWarning)
 
   return order_mod(x, largest_factor_relatively_prime(m, x))
 
