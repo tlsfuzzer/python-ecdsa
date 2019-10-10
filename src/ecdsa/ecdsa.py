@@ -56,6 +56,7 @@ Written in 2005 by Peter Pearson and placed in the public domain.
 from six import int2byte, b
 from . import ellipticcurve
 from . import numbertheory
+from .util import bit_length
 
 
 class RSZeroError(RuntimeError):
@@ -171,7 +172,15 @@ class Private_key(object):
     G = self.public_key.generator
     n = G.order()
     k = random_k % n
-    p1 = k * G
+    # Fix the bit-length of the random nonce,
+    # so that it doesn't leak via timing.
+    # This does not change that ks = k mod n
+    ks = k + n
+    kt = ks + n
+    if bit_length(ks) == bit_length(n):
+      p1 = kt * G
+    else:
+      p1 = ks * G
     r = p1.x() % n
     if r == 0:
       raise RSZeroError("amazingly unlucky random number r")

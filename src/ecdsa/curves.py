@@ -1,14 +1,18 @@
 from __future__ import division
 
 from . import der, ecdsa
+from .util import orderlen
+
+
+# orderlen was defined in this module previously, so keep it in __all__,
+# will need to mark it as deprecated later
+__all__ = ["UnknownCurveError", "orderlen", "Curve", "NIST192p",
+           "NIST224p", "NIST256p", "NIST384p", "NIST521p", "curves",
+           "find_curve"]
 
 
 class UnknownCurveError(Exception):
     pass
-
-
-def orderlen(order):
-    return (1+len("%x" % order))//2  # bytes
 
 
 # the NIST curves
