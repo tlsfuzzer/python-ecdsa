@@ -63,6 +63,10 @@ class RSZeroError(RuntimeError):
     pass
 
 
+class InvalidPointError(RuntimeError):
+    pass
+
+
 class Signature(object):
   """ECDSA signature.
   """
@@ -99,25 +103,35 @@ class Signature(object):
 
     return [Pk1, Pk2]
 
+
 class Public_key(object):
   """Public key for ECDSA.
   """
 
-  def __init__(self, generator, point):
-    """generator is the Point that generates the group,
-    point is the Point that defines the public key.
+  def __init__(self, generator, point, verify=True):
+    """
+    Low level ECDSA public key object.
+
+    :param generator: the Point that generates the group
+    :param point: the Point that defines the public key
+    :param bool verify: if True check if point is valid point on curve
+
+    :raises InvalidPointError: if the point parameters are invalid or
+        point does not lie on the curve
     """
 
     self.curve = generator.curve()
     self.generator = generator
     self.point = point
     n = generator.order()
-    if not n:
-      raise RuntimeError("Generator point must have order.")
-    if not n * point == ellipticcurve.INFINITY:
-      raise RuntimeError("Generator point order is bad.")
     if point.x() < 0 or n <= point.x() or point.y() < 0 or n <= point.y():
-      raise RuntimeError("Generator point has x or y out of range.")
+      raise InvalidPointError("Generator point has x or y out of range.")
+    if verify and not self.curve.contains_point(point.x(), point.y()):
+        raise InvalidPointError("Point does not lie on the curve")
+    if not n:
+      raise InvalidPointError("Generator point must have order.")
+    if verify and not n * point == ellipticcurve.INFINITY:
+      raise InvalidPointError("Generator point order is bad.")
 
   def __eq__(self, other):
     if isinstance(other, Public_key):    

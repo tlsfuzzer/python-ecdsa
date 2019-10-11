@@ -148,7 +148,8 @@ class VerifyingKey(object):
         return NotImplemented
 
     @classmethod
-    def from_public_point(cls, point, curve=NIST192p, hashfunc=sha1):
+    def from_public_point(cls, point, curve=NIST192p, hashfunc=sha1,
+                          validate_point=True):
         """
         Initialise the object from a Point object.
 
@@ -163,6 +164,12 @@ class VerifyingKey(object):
             verification, needs to implement the same interface
             as hashlib.sha1
         :type hashfunc: callable
+        :type bool validate_point: whether to check if the point lies on curve
+            should always be used if the public point is not a result
+            of our own calculation
+
+        :raises MalformedPointError: if the public point does not lie on the
+            curve
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
@@ -172,7 +179,11 @@ class VerifyingKey(object):
             point = ellipticcurve.PointJacobi.from_affine(point)
         self.curve = curve
         self.default_hashfunc = hashfunc
-        self.pubkey = ecdsa.Public_key(curve.generator, point)
+        try:
+            self.pubkey = ecdsa.Public_key(curve.generator, point,
+                                           validate_point)
+        except ecdsa.InvalidPointError:
+            raise MalformedPointError("Point does not lie on the curve")
         self.pubkey.order = curve.order
         return self
 
@@ -181,7 +192,7 @@ class VerifyingKey(object):
             self.pubkey.point, True)
 
     @staticmethod
-    def _from_raw_encoding(string, curve, validate_point):
+    def _from_raw_encoding(string, curve):
         """
         Decode public point from :term:`raw encoding`.
 
@@ -199,13 +210,11 @@ class VerifyingKey(object):
             raise MalformedPointError("Unexpected length of encoded y")
         x = string_to_number(xs)
         y = string_to_number(ys)
-        if validate_point and not ecdsa.point_is_valid(curve.generator, x, y):
-            raise MalformedPointError("Point does not lie on the curve")
 
-        return ellipticcurve.Point(curve.curve, x, y, order)
+        return ellipticcurve.PointJacobi(curve.curve, x, y, 1, order)
 
     @staticmethod
-    def _from_compressed(string, curve, validate_point):
+    def _from_compressed(string, curve):
         """Decode public point from compressed encoding."""
         if string[:1] not in (b('\x02'), b('\x03')):
             raise MalformedPointError("Malformed compressed point encoding")
@@ -224,9 +233,7 @@ class VerifyingKey(object):
             y = p - beta
         else:
             y = beta
-        if validate_point and not ecdsa.point_is_valid(curve.generator, x, y):
-            raise MalformedPointError("Point does not lie on curve")
-        return ellipticcurve.Point(curve.curve, x, y, order)
+        return ellipticcurve.PointJacobi(curve.curve, x, y, 1, order)
 
     @classmethod
     def _from_hybrid(cls, string, curve, validate_point):
@@ -235,7 +242,7 @@ class VerifyingKey(object):
         assert string[:1] in (b('\x06'), b('\x07'))
 
         # primarily use the uncompressed as it's easiest to handle
-        point = cls._from_raw_encoding(string[1:], curve, validate_point)
+        point = cls._from_raw_encoding(string[1:], curve)
 
         # but validate if it's self-consistent if we're asked to do that
         if validate_point and \
@@ -270,30 +277,33 @@ class VerifyingKey(object):
             provided curve or not, defaults to True
         :type validate_point: bool
 
+        :raises MalformedPointError: if the public point does not lie on the
+            curve or the encoding is invalid
+
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
         string = normalise_bytes(string)
         sig_len = len(string)
         if sig_len == curve.verifying_key_length:
-            point = cls._from_raw_encoding(string, curve, validate_point)
+            point = cls._from_raw_encoding(string, curve)
         elif sig_len == curve.verifying_key_length + 1:
             if string[:1] in (b('\x06'), b('\x07')):
                 point = cls._from_hybrid(string, curve, validate_point)
             elif string[:1] == b('\x04'):
-                point = cls._from_raw_encoding(string[1:], curve,
-                                               validate_point)
+                point = cls._from_raw_encoding(string[1:], curve)
             else:
                 raise MalformedPointError(
                     "Invalid X9.62 encoding of the public point")
         elif sig_len == curve.baselen + 1:
-            point = cls._from_compressed(string, curve, validate_point)
+            point = cls._from_compressed(string, curve)
         else:
             raise MalformedPointError(
                 "Length of string does not match lengths of "
                 "any of the supported encodings of {0} "
                 "curve.".format(curve.name))
-        return cls.from_public_point(point, curve, hashfunc)
+        return cls.from_public_point(point, curve, hashfunc,
+                                     validate_point)
 
     @classmethod
     def from_pem(cls, string):
@@ -731,9 +741,8 @@ class SigningKey(object):
         pubkey_point = curve.generator * secexp
         if hasattr(pubkey_point, "scale"):
             pubkey_point = pubkey_point.scale()
-        self.verifying_key = VerifyingKey.from_public_point(pubkey_point,
-                                                            curve,
-                                                            hashfunc)
+        self.verifying_key = VerifyingKey.from_public_point(pubkey_point, curve,
+                                                            hashfunc, False)
         pubkey = self.verifying_key.pubkey
         self.privkey = ecdsa.Private_key(pubkey, secexp)
         self.privkey.order = n
