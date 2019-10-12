@@ -357,6 +357,20 @@ class PointJacobi(object):
               other //= 2
       return result
 
+  def _naf(self, mult):
+      ret = []
+      while mult:
+          if mult % 2:
+              nd = mult % 4
+              if nd >= 2:
+                  nd = nd - 4
+              ret += [nd]
+              mult -= nd
+          else:
+              ret += [0]
+          mult //= 2
+      return ret
+
   def __mul__(self, other):
       """Multiply point by an integer."""
       if not self.__y or not other:
@@ -369,21 +383,15 @@ class PointJacobi(object):
       if self.__precompute:
           return self._mul_precompute(other)
 
-      def leftmost_bit(x):
-        assert x > 0
-        result = 1
-        while result <= x:
-          result = 2 * result
-        return result // 2
-
-      e = other
-      i = leftmost_bit(e)
       self = self.scale()
-      result = self
-      while i > 1:
+      result = INFINITY
+      # since adding points when at least one of them is scaled
+      # is quicker, reverse the NAF order
+      for i in reversed(self._naf(other)):
           result = result.double()
-          i = i // 2
-          if e & i != 0:
+          if i < 0:
+              result = result + (-self)
+          elif i > 0:
               result = result + self
       return result
 
