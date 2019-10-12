@@ -158,7 +158,10 @@ class Public_key(object):
     c = numbertheory.inverse_mod(s, n)
     u1 = (hash * c) % n
     u2 = (r * c) % n
-    xy = u1 * G + u2 * self.point
+    if hasattr(G, "mul_add"):
+        xy = G.mul_add(u1, self.point, u2)
+    else:
+        xy = u1 * G + u2 * self.point
     v = xy.x() % n
     return v == r
 

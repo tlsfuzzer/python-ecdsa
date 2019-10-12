@@ -413,6 +413,8 @@ class PointJacobi(object):
           return self * self_mul
       if self_mul == 0:
           return other * other_mul
+      if not isinstance(other, PointJacobi):
+          other = PointJacobi.from_affine(other)
       if self.__precompute and other.__precompute:
           return self._mul_add_precompute(self_mul, other, other_mul)
 
