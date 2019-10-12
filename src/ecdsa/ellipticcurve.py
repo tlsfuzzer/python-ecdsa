@@ -93,18 +93,19 @@ class PointJacobi(object):
       self.__y = y
       self.__z = z
       self.__order = order
-      self.__precompute={}
+      self.__precompute=[]
       if generator:
           assert order
           i = 1
           order *= 2
           doubler = PointJacobi(curve, x, y, z, order)
-          self.__precompute[i] = doubler
+          order *= 2
+          self.__precompute.append(doubler)
 
           while i < order:
               i *= 2
               doubler = doubler.double().scale()
-              self.__precompute[i] = doubler
+              self.__precompute.append(doubler)
 
   def __eq__(self, other):
       """Compare two points with each-other."""
@@ -345,12 +346,15 @@ class PointJacobi(object):
       return self * other
 
   def _mul_precompute(self, other):
-      i = 1
       result = INFINITY
-      while i <= other:
-          if i & other:
-              result = result + self.__precompute[i]
-          i *= 2
+      for precomp in self.__precompute:
+          if other % 2:
+              if other % 4 >= 2:
+                  other, result = (other + 1)//2, result + (-precomp)
+              else:
+                  other, result = (other - 1)//2, result + precomp
+          else:
+              other //= 2
       return result
 
   def __mul__(self, other):
@@ -383,18 +387,6 @@ class PointJacobi(object):
               result = result + self
       return result
 
-  def _mul_add_precompute(self, self_mul, other, other_mul):
-      i = 1
-      result = INFINITY
-      m = max(self_mul, other_mul)
-      while i <= m:
-          if i & self_mul:
-              result = result + self.__precompute[i]
-          if i & other_mul:
-              result = result + other.__precompute[i]
-          i *= 2
-      return result
-
   @staticmethod
   def _leftmost_bit(x):
     assert x > 0
@@ -415,8 +407,6 @@ class PointJacobi(object):
           return other * other_mul
       if not isinstance(other, PointJacobi):
           other = PointJacobi.from_affine(other)
-      if self.__precompute and other.__precompute:
-          return self._mul_add_precompute(self_mul, other, other_mul)
 
       i = self._leftmost_bit(max(self_mul, other_mul))*2
       result = INFINITY
@@ -433,6 +423,10 @@ class PointJacobi(object):
           elif other_mul & i:
               result = result + other
       return result
+
+  def __neg__(self):
+      return PointJacobi(self.__curve, self.__x, -self.__y, self.__z,
+                         self.__order)
 
 
 class Point(object):
