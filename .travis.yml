@@ -28,8 +28,6 @@ matrix:
         env: TOX_ENV=pypy
       - python: pypy3
         env: TOX_ENV=pypy3
-  allow_failures:
-    - python: "pypy3"
 
 install:
   - pip list
