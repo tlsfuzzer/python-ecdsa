@@ -2,6 +2,7 @@ from __future__ import division
 
 import binascii
 import base64
+import warnings
 from six import int2byte, b, integer_types, text_type
 
 
@@ -29,8 +30,65 @@ def encode_integer(r):
         return b("\x02") + int2byte(len(s)+1) + b("\x00") + s
 
 
-def encode_bitstring(s):
-    return b("\x03") + encode_length(len(s)) + s
+# sentry object to check if an argument was specified (used to detect
+# deprecated calling convention)
+_sentry = object()
+
+
+def encode_bitstring(s, unused=_sentry):
+    """
+    Encode a binary string as a BIT STRING using :term:`DER` encoding.
+
+    Note, because there is no native Python object that can encode an actual
+    bit string, this function only accepts byte strings as the `s` argument.
+    The byte string is the actual bit string that will be encoded, padded
+    on the right (least significant bits, looking from big endian perspective)
+    to the first full byte. If the bit string has a bit length that is multiple
+    of 8, then the padding should not be included. For correct DER encoding
+    the padding bits MUST be set to 0.
+
+    Number of bits of padding need to be provided as the `unused` parameter.
+    In case they are specified as None, it means the number of unused bits
+    is already encoded in the string as the first byte.
+
+    The deprecated call convention specifies just the `s` parameters and
+    encodes the number of unused bits as first parameter (same convention
+    as with None).
+
+    Empty string must be encoded with `unused` specified as 0.
+
+    Future version of python-ecdsa will make specifying the `unused` argument
+    mandatory.
+
+    :param s: bytes to encode
+    :type s: bytes like object
+    :param unused: number of bits at the end of `s` that are unused, must be
+        between 0 and 7 (inclusive)
+    :type unused: int or None
+
+    :raises ValueError: when `unused` is too large or too small
+
+    :return: `s` encoded using DER
+    :rtype: bytes
+    """
+    encoded_unused = b''
+    len_extra = 0
+    if unused is _sentry:
+        warnings.warn("Legacy call convention used, unused= needs to be "
+                      "specified",
+                      DeprecationWarning)
+    elif unused is not None:
+        if not 0 <= unused <= 7:
+            raise ValueError("unused must be integer between 0 and 7")
+        if unused:
+            if not s:
+                raise ValueError("unused is non-zero but s is empty")
+            last = s[-1] if isinstance(s[-1], integer_types) else ord(s[-1])
+            if last & (2 ** unused - 1):
+                raise ValueError("unused bits must be zeros in DER")
+        encoded_unused = int2byte(unused)
+        len_extra = 1
+    return b("\x03") + encode_length(len(s) + len_extra) + encoded_unused + s
 
 
 def encode_octet_string(s):
@@ -198,13 +256,77 @@ def read_length(string):
     return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
 
 
-def remove_bitstring(string):
+def remove_bitstring(string, expect_unused=_sentry):
+    """
+    Remove a BIT STRING object from `string` following :term:`DER`.
+
+    The `expect_unused` can be used to specify if the bit string should
+    have the amount of unused bits decoded or not. If it's an integer, any
+    read BIT STRING that has number of unused bits different from specified
+    value will cause UnexpectedDER exception to be raised (this is especially
+    useful when decoding BIT STRINGS that have DER encoded object in them;
+    DER encoding is byte oriented, so the unused bits will always equal 0).
+
+    If the `expect_unused` is specified as None, the first element returned
+    will be a tuple, with the first value being the extracted bit string
+    while the second value will be the decoded number of unused bits.
+
+    If the `expect_unused` is unspecified, the decoding of byte with
+    number of unused bits will not be attempted and the bit string will be
+    returned as-is, the callee will be required to decode it and verify its
+    correctness.
+
+    Future version of python will require the `expected_unused` parameter
+    to be specified.
+
+    :param string: string of bytes to extract the BIT STRING from
+    :type string: bytes like object
+    :param expect_unused: number of bits that should be unused in the BIT
+        STRING, or None, to return it to caller
+    :type expect_unused: int or None
+
+    :raises UnexpectedDER: when the encoding does not follow DER.
+
+    :return: a tuple with first element being the extracted bit string and
+        the second being the remaining bytes in the string (if any); if the
+        `expect_unused` is specified as None, the first element of the returned
+        tuple will be a tuple itself, with first element being the bit string
+        as bytes and the second element being the number of unused bits at the
+        end of the byte array as an integer
+    :rtype: tuple
+    """
+    if not string:
+        raise UnexpectedDER("Empty string does not encode a bitstring")
+    if expect_unused is _sentry:
+        warnings.warn("Legacy call convention used, expect_unused= needs to be"
+                      " specified",
+                      DeprecationWarning)
     num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
     if not string.startswith(b("\x03")):
         raise UnexpectedDER("wanted bitstring (0x03), got 0x%02x" % num)
     length, llen = read_length(string[1:])
+    if not length:
+        raise UnexpectedDER("Invalid length of bit string, can't be 0")
     body = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
+    if expect_unused is not _sentry:
+        unused = body[0] if isinstance(body[0], integer_types) \
+            else ord(body[0])
+        if not 0 <= unused <= 7:
+            raise UnexpectedDER("Invalid encoding of unused bits")
+        if expect_unused is not None and expect_unused != unused:
+            raise UnexpectedDER("Unexpected number of unused bits")
+        body = body[1:]
+        if unused:
+            if not body:
+                raise UnexpectedDER("Invalid encoding of empty bit string")
+            last = body[-1] if isinstance(body[-1], integer_types) else \
+                ord(body[-1])
+            # verify that all the unused bits are set to zero (DER requirement)
+            if last & (2 ** unused - 1):
+                raise UnexpectedDER("Non zero padding bits in bit string")
+        if expect_unused is None:
+            body = (body, unused)
     return body, rest
 
 # SEQUENCE([1, STRING(secexp), cont[0], OBJECT(curvename), cont[1], BINTSTRING)

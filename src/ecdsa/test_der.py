@@ -5,8 +5,11 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-from .der import remove_integer, UnexpectedDER, read_length
+from .der import remove_integer, UnexpectedDER, read_length, encode_bitstring,\
+        remove_bitstring
 from six import b
+import pytest
+import warnings
 
 class TestRemoveInteger(unittest.TestCase):
     # DER requires the integers to be 0-padded only if they would be
@@ -92,3 +95,137 @@ class TestReadLength(unittest.TestCase):
     def test_length_overflow(self):
         with self.assertRaises(UnexpectedDER):
             read_length(b('\x83\x01\x00'))
+
+
+class TestEncodeBitstring(unittest.TestCase):
+    # DER requires BIT STRINGS to include a number of padding bits in the
+    # encoded byte string, that padding must be between 0 and 7
+
+    def test_old_call_convention(self):
+        """This is the old way to use the function."""
+        warnings.simplefilter('always')
+        with pytest.warns(DeprecationWarning) as warns:
+            der = encode_bitstring(b'\x00\xff')
+
+        self.assertEqual(len(warns), 1)
+        self.assertIn("unused= needs to be specified",
+            warns[0].message.args[0])
+
+        self.assertEqual(der, b'\x03\x02\x00\xff')
+
+    def test_new_call_convention(self):
+        """This is how it should be called now."""
+        warnings.simplefilter('always')
+        with pytest.warns(None) as warns:
+            der = encode_bitstring(b'\xff', 0)
+
+        # verify that new call convention doesn't raise Warnings
+        self.assertEqual(len(warns), 0)
+
+        self.assertEqual(der, b'\x03\x02\x00\xff')
+
+    def test_implicit_unused_bits(self):
+        """
+        Writing bit string with already included the number of unused bits.
+        """
+        warnings.simplefilter('always')
+        with pytest.warns(None) as warns:
+            der = encode_bitstring(b'\x00\xff', None)
+
+        # verify that new call convention doesn't raise Warnings
+        self.assertEqual(len(warns), 0)
+
+        self.assertEqual(der, b'\x03\x02\x00\xff')
+
+    def test_explicit_unused_bits(self):
+        der = encode_bitstring(b'\xff\xf0', 4)
+
+        self.assertEqual(der, b'\x03\x03\x04\xff\xf0')
+
+    def test_empty_string(self):
+        self.assertEqual(encode_bitstring(b'', 0), b'\x03\x01\x00')
+
+    def test_invalid_unused_count(self):
+        with self.assertRaises(ValueError):
+            encode_bitstring(b'\xff\x00', 8)
+
+    def test_invalid_unused_with_empty_string(self):
+        with self.assertRaises(ValueError):
+            encode_bitstring(b'', 1)
+
+    def test_non_zero_padding_bits(self):
+        with self.assertRaises(ValueError):
+            encode_bitstring(b'\xff', 2)
+
+
+class TestRemoveBitstring(unittest.TestCase):
+    def test_old_call_convention(self):
+        """This is the old way to call the function."""
+        warnings.simplefilter('always')
+        with pytest.warns(DeprecationWarning) as warns:
+            bits, rest = remove_bitstring(b'\x03\x02\x00\xff')
+
+        self.assertEqual(len(warns), 1)
+        self.assertIn("expect_unused= needs to be specified",
+                      warns[0].message.args[0])
+
+        self.assertEqual(bits, b'\x00\xff')
+        self.assertEqual(rest, b'')
+
+    def test_new_call_convention(self):
+        warnings.simplefilter('always')
+        with pytest.warns(None) as warns:
+            bits, rest = remove_bitstring(b'\x03\x02\x00\xff', 0)
+
+        self.assertEqual(len(warns), 0)
+
+        self.assertEqual(bits, b'\xff')
+        self.assertEqual(rest, b'')
+
+    def test_implicit_unexpected_unused(self):
+        warnings.simplefilter('always')
+        with pytest.warns(None) as warns:
+            bits, rest = remove_bitstring(b'\x03\x02\x00\xff', None)
+
+        self.assertEqual(len(warns), 0)
+
+        self.assertEqual(bits, (b'\xff', 0))
+        self.assertEqual(rest, b'')
+
+    def test_with_padding(self):
+        ret, rest = remove_bitstring(b'\x03\x02\x04\xf0', None)
+
+        self.assertEqual(ret, (b'\xf0', 4))
+        self.assertEqual(rest, b'')
+
+    def test_not_a_bitstring(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x02\x02\x00\xff', None)
+
+    def test_empty_encoding(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x03\x00', None)
+
+    def test_empty_string(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'', None)
+
+    def test_no_length(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x03', None)
+
+    def test_unexpected_number_of_unused_bits(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x03\x02\x00\xff', 1)
+
+    def test_invalid_encoding_of_unused_bits(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x03\x03\x08\xff\x00', None)
+
+    def test_invalid_encoding_of_empty_string(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x03\x01\x01', None)
+
+    def test_invalid_padding_bits(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_bitstring(b'\x03\x02\x01\xff', None)
