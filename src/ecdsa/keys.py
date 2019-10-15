@@ -149,16 +149,14 @@ class VerifyingKey:
             raise der.UnexpectedDER("Unexpected object identifier in DER "
                                     "encoding: {0!r}".format(oid_pk))
         curve = find_curve(oid_curve)
-        point_str, empty = der.remove_bitstring(point_str_bitstring)
+        point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after pubkey pointstring: %s" %
                                     binascii.hexlify(empty))
-        # the point encoding is padded with a zero byte
         # raw encoding of point is invalid in DER files
-        if not point_str.startswith(b("\x00")) or \
-                len(point_str[1:]) == curve.verifying_key_length:
+        if len(point_str) == curve.verifying_key_length:
             raise der.UnexpectedDER("Malformed encoding of public point")
-        return klass.from_string(point_str[1:], curve)
+        return klass.from_string(point_str, curve)
 
     @classmethod
     def from_public_key_recovery(cls, signature, data, curve, hashfunc=sha1,
@@ -228,10 +226,12 @@ class VerifyingKey:
     def to_der(self, point_encoding="uncompressed"):
         if point_encoding == "raw":
             raise ValueError("raw point_encoding not allowed in DER")
-        point_str = b("\x00") + self.to_string(point_encoding)
+        point_str = self.to_string(point_encoding)
         return der.encode_sequence(der.encode_sequence(encoded_oid_ecPublicKey,
                                                        self.curve.encoded_oid),
-                                   der.encode_bitstring(point_str))
+                                   # 0 is the number of unused bits in the
+                                   # bit string
+                                   der.encode_bitstring(point_str, 0))
 
     def verify(self, signature, data, hashfunc=None, sigdecode=sigdecode_string):
         hashfunc = hashfunc or self.default_hashfunc
@@ -336,7 +336,7 @@ class SigningKey:
         # if tag != 1:
         #     raise der.UnexpectedDER("expected tag 1 in DER privkey, got %d"
         #                             % tag)
-        # pubkey_str = der.remove_bitstring(pubkey_bitstring)
+        # pubkey_str = der.remove_bitstring(pubkey_bitstring, 0)
         # if empty != "":
         #     raise der.UnexpectedDER("trailing junk after DER privkey "
         #                             "pubkeystr: %s" % binascii.hexlify(empty))
@@ -360,13 +360,15 @@ class SigningKey:
         #      cont[1],bitstring])
         if point_encoding == "raw":
             raise ValueError("raw encoding not allowed in DER")
-        encoded_vk = b("\x00") + \
-                self.get_verifying_key().to_string(point_encoding)
-        return der.encode_sequence(der.encode_integer(1),
-                                   der.encode_octet_string(self.to_string()),
-                                   der.encode_constructed(0, self.curve.encoded_oid),
-                                   der.encode_constructed(1, der.encode_bitstring(encoded_vk)),
-                                   )
+        encoded_vk = self.get_verifying_key().to_string(point_encoding)
+        # the 0 in encode_bitstring specifies the number of unused bits
+        # in the `encoded_vk` string
+        return der.encode_sequence(
+            der.encode_integer(1),
+            der.encode_octet_string(self.to_string()),
+            der.encode_constructed(0, self.curve.encoded_oid),
+            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
+            )
 
     def get_verifying_key(self):
         return self.verifying_key
