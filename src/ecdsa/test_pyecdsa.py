@@ -277,6 +277,19 @@ class ECDSA(unittest.TestCase):
         pub2 = VerifyingKey.from_pem(pem)
         self.assertTruePubkeysEqual(pub1, pub2)
 
+    def test_vk_to_der_with_invalid_point_encoding(self):
+        sk = SigningKey.generate()
+        vk = sk.verifying_key
+
+        with self.assertRaises(ValueError):
+            vk.to_der("raw")
+
+    def test_sk_to_der_with_invalid_point_encoding(self):
+        sk = SigningKey.generate()
+
+        with self.assertRaises(ValueError):
+            sk.to_der("raw")
+
     def test_vk_from_der_garbage_after_curve_oid(self):
         type_oid_der = encoded_oid_ecPublicKey
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + \
