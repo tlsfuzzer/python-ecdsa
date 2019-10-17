@@ -226,6 +226,8 @@ class VerifyingKey:
         return der.topem(self.to_der(), "PUBLIC KEY")
 
     def to_der(self, point_encoding="uncompressed"):
+        if point_encoding == "raw":
+            raise ValueError("raw point_encoding not allowed in DER")
         point_str = b("\x00") + self.to_string(point_encoding)
         return der.encode_sequence(der.encode_sequence(encoded_oid_ecPublicKey,
                                                        self.curve.encoded_oid),
@@ -356,6 +358,8 @@ class SigningKey:
     def to_der(self, point_encoding="uncompressed"):
         # SEQ([int(1), octetstring(privkey),cont[0], oid(secp224r1),
         #      cont[1],bitstring])
+        if point_encoding == "raw":
+            raise ValueError("raw encoding not allowed in DER")
         encoded_vk = b("\x00") + \
                 self.get_verifying_key().to_string(point_encoding)
         return der.encode_sequence(der.encode_integer(1),
