@@ -4,8 +4,8 @@ import os
 import math
 import binascii
 from hashlib import sha256
-from . import der
 from six import PY3, int2byte, b, next
+from . import der
 
 # RFC5480:
 #   The "unrestricted" algorithm identifier is:
@@ -212,6 +212,20 @@ def sigencode_strings(r, s, order):
 
 
 def sigencode_string(r, s, order):
+    """
+    Encode the signature to raw format (:term:`raw encoding`)
+
+    It's expected that this function will be used as a `sigencode=` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: raw encoding of ECDSA signature
+    :rtype: bytes
+    """
     # for any given curve, the size of the signature numbers is
     # fixed, so just use simple concatenation
     r_str, s_str = sigencode_strings(r, s, order)
@@ -219,6 +233,27 @@ def sigencode_string(r, s, order):
 
 
 def sigencode_der(r, s, order):
+    """
+    Encode the signature into the ECDSA-Sig-Value structure using :term:`DER`.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        Ecdsa-Sig-Value ::= SEQUENCE {
+            r       INTEGER,
+            s       INTEGER
+        }
+
+    It's expected that this function will be used as a `sigencode=` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: DER encoding of ECDSA signature
+    :rtype: bytes
+    """
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
 
 
@@ -244,44 +279,115 @@ def sigencode_der_canonize(r, s, order):
 
 
 class MalformedSignature(Exception):
+    """
+    Raised by decoding functions when the signature is malformed.
+
+    Malformed in this context means that the relevant strings or integers
+    do not match what a signature over provided curve would create. Either
+    because the byte strings have incorrect lengths or because the encoded
+    values are too large.
+    """
+
     pass
 
 
 def sigdecode_string(signature, order):
+    """
+    Decoder for :term:`raw encoding`  of ECDSA signatures.
+
+    raw encoding is a simple concatenation of the two integers that comprise
+    the signature, with each encoded using the same amount of bytes depending
+    on curve size/order.
+
+    It's expected that this function will be used as the `sigdecode=`
+    parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
+
+    :param signature: encoded signature
+    :type signature: bytes like object
+    :param order: order of the curve over which the signature was computed
+    :type order: int
+
+    :raises MalformedSignature: when the encoding of the signature is invalid
+
+    :return: tuple with decoded 'r' and 's' values of signature
+    :rtype: tuple of ints
+    """
     l = orderlen(order)
     if not len(signature) == 2 * l:
         raise MalformedSignature(
-                "Invalid length of signature, expected {0} bytes long, "
-                "provided string is {1} bytes long"
-                .format(2 * l, len(signature)))
+            "Invalid length of signature, expected {0} bytes long, "
+            "provided string is {1} bytes long"
+            .format(2 * l, len(signature)))
     r = string_to_number_fixedlen(signature[:l], order)
     s = string_to_number_fixedlen(signature[l:], order)
     return r, s
 
 
 def sigdecode_strings(rs_strings, order):
+    """
+    Decode the signature from two strings.
+
+    First string needs to be a big endian encoding of 'r', second needs to
+    be a big endian encoding of the 's' parameter of an ECDSA signature.
+
+    It's expected that this function will be used as the `sigdecode=`
+    parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
+
+    :param list rs_strings: list of two bytes-like objects, each encoding one
+        parameter of signature
+    :param int order: order of the curve over which the signature was computed
+
+    :raises MalformedSignature: when the encoding of the signature is invalid
+
+    :return: tuple with decoded 'r' and 's' values of signature
+    :rtype: tuple of ints
+    """
     if not len(rs_strings) == 2:
         raise MalformedSignature(
-                "Invalid number of strings provided: {0}, expected 2"
-                .format(len(rs_strings)))
+            "Invalid number of strings provided: {0}, expected 2"
+            .format(len(rs_strings)))
     (r_str, s_str) = rs_strings
     l = orderlen(order)
     if not len(r_str) == l:
         raise MalformedSignature(
-                "Invalid length of first string ('r' parameter), "
-                "expected {0} bytes long, provided string is {1} bytes long"
-                .format(l, len(r_str)))
+            "Invalid length of first string ('r' parameter), "
+            "expected {0} bytes long, provided string is {1} bytes long"
+            .format(l, len(r_str)))
     if not len(s_str) == l:
         raise MalformedSignature(
-                "Invalid length of second string ('s' parameter), "
-                "expected {0} bytes long, provided string is {1} bytes long"
-                .format(l, len(s_str)))
+            "Invalid length of second string ('s' parameter), "
+            "expected {0} bytes long, provided string is {1} bytes long"
+            .format(l, len(s_str)))
     r = string_to_number_fixedlen(r_str, order)
     s = string_to_number_fixedlen(s_str, order)
     return r, s
 
 
 def sigdecode_der(sig_der, order):
+    """
+    Decoder for DER format of ECDSA signatures.
+
+    DER format of signature is one that uses the :term:`ASN.1` :term:`DER`
+    rules to encode it as a sequence of two integers::
+
+        Ecdsa-Sig-Value ::= SEQUENCE {
+            r       INTEGER,
+            s       INTEGER
+        }
+
+    It's expected that this function will be used as as the `sigdecode=`
+    parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
+
+    :param sig_der: encoded signature
+    :type sig_der: bytes like object
+    :param order: order of the curve over which the signature was computed
+    :type order: int
+
+    :raises UnexpectedDER: when the encoding of signature is invalid
+
+    :return: tuple with decoded 'r' and 's' values of signature
+    :rtype: tuple of ints
+    """
     # return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
     rs_strings, empty = der.remove_sequence(sig_der)
     if empty != b(""):
