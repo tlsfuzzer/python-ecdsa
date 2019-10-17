@@ -295,7 +295,7 @@ class ECDSA(unittest.TestCase):
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + \
             b('garbage')
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
-        point_der = der.encode_bitstring(b'\x00\xff')
+        point_der = der.encode_bitstring(b'\x00\xff', None)
         to_decode = der.encode_sequence(enc_type_der, point_der)
 
         with self.assertRaises(der.UnexpectedDER):
@@ -305,7 +305,7 @@ class ECDSA(unittest.TestCase):
         type_oid_der = der.encode_oid(*(1, 2, 3))
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
-        point_der = der.encode_bitstring(b'\x00\xff')
+        point_der = der.encode_bitstring(b'\x00\xff', None)
         to_decode = der.encode_sequence(enc_type_der, point_der)
 
         with self.assertRaises(der.UnexpectedDER):
@@ -315,7 +315,7 @@ class ECDSA(unittest.TestCase):
         type_oid_der = encoded_oid_ecPublicKey
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
-        point_der = der.encode_bitstring(b'\x00\xff') + b('garbage')
+        point_der = der.encode_bitstring(b'\x00\xff', None) + b('garbage')
         to_decode = der.encode_sequence(enc_type_der, point_der)
 
         with self.assertRaises(der.UnexpectedDER):
@@ -325,7 +325,27 @@ class ECDSA(unittest.TestCase):
         type_oid_der = encoded_oid_ecPublicKey
         curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
-        point_der = der.encode_bitstring(b'\x08\xff')
+        point_der = der.encode_bitstring(b'\x08\xff', None)
+        to_decode = der.encode_sequence(enc_type_der, point_der)
+
+        with self.assertRaises(der.UnexpectedDER):
+            VerifyingKey.from_der(to_decode)
+
+    def test_vk_from_der_with_invalid_length_of_encoding(self):
+        type_oid_der = encoded_oid_ecPublicKey
+        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
+        enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
+        point_der = der.encode_bitstring(b'\xff'*64, 0)
+        to_decode = der.encode_sequence(enc_type_der, point_der)
+
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_der(to_decode)
+
+    def test_vk_from_der_with_raw_encoding(self):
+        type_oid_der = encoded_oid_ecPublicKey
+        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1))
+        enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
+        point_der = der.encode_bitstring(b'\xff'*48, 0)
         to_decode = der.encode_sequence(enc_type_der, point_der)
 
         with self.assertRaises(der.UnexpectedDER):
