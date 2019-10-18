@@ -35,27 +35,44 @@ and 1.0.0a .
 ## Speed
 
 The following table shows how long this library takes to generate keypairs
-(keygen=), to sign data (sign=), and to verify those signatures (verify=), on
-my 2008 Mac laptop. All times are in seconds. It also shows the length of a
-signature (in bytes): the verifying ("public") key is typically the same
-length as the signature, and the signing ("private") key is half that length.
+(`keygen`), to sign data (`sign`), and to verify those signatures (`verify`).
+All those values are in seconds.
+For convenience, the inverses of those values are also provided:
+how many keys per second can be generated (`keygen/s`), how many signatures
+can be made per second (`sign/s`) and how many signatures can be verified
+per second (`verify/s`). The size of raw signature (generally the smallest
+way a signature can be encoded) is also provided in the `siglen` column.
 Use `tox -e speed` to generate this table on your own computer.
+On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
-* NIST192p: siglen= 48, keygen=0.160s, sign=0.058s, verify=0.116s
-* NIST224p: siglen= 56, keygen=0.230s, sign=0.086s, verify=0.165s
-* NIST256p: siglen= 64, keygen=0.305s, sign=0.112s, verify=0.220s
-* NIST384p: siglen= 96, keygen=0.801s, sign=0.289s, verify=0.558s
-* NIST521p: siglen=132, keygen=1.582s, sign=0.584s, verify=1.152s
+```
+            siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
+  NIST192p:     48   0.03183s     31.42   0.01127s     88.70   0.02253s     44.39
+  NIST224p:     56   0.04304s     23.24   0.01548s     64.59   0.03122s     32.03
+  NIST256p:     64   0.05720s     17.48   0.02055s     48.67   0.04075s     24.54
+  NIST384p:     96   0.13216s      7.57   0.04696s     21.29   0.09400s     10.64
+  NIST521p:    132   0.25805s      3.88   0.09329s     10.72   0.18841s      5.31
+ SECP256k1:     64   0.05677s     17.61   0.02073s     48.23   0.04067s     24.59
+```
 
-For comparison, a quality C++ implementation of ECDSA (Crypto++) typically
-computes a NIST256p signature in 2.88ms and a verification in 8.53ms, about
-30-40x faster.
+For comparison, a highly optimised implementation (including curve-specific
+assemply) like OpenSSL provides following performance numbers on the same
+machine. Run `openssl speed`:
+```
+                              sign    verify    sign/s verify/s
+ 192 bits ecdsa (nistp192)   0.0002s   0.0002s   4785.6   5380.7
+ 224 bits ecdsa (nistp224)   0.0000s   0.0001s  22475.6   9822.0
+ 256 bits ecdsa (nistp256)   0.0000s   0.0001s  45069.6  14166.6
+ 384 bits ecdsa (nistp384)   0.0008s   0.0006s   1265.6   1648.1
+ 521 bits ecdsa (nistp521)   0.0003s   0.0005s   3753.1   1819.5
+```
 
 Keys and signature can be serialized in different ways (see Usage, below).
 For a NIST192p key, the three basic representations require strings of the
 following lengths (in bytes):
 
     to_string:  signkey= 24, verifykey= 48, signature=48
+    compressed: signkey=n/a, verifykey= 25, signature=n/a
     DER:        signkey=106, verifykey= 80, signature=55
     PEM:        signkey=278, verifykey=162, (no support for PEM signatures)
 
@@ -76,13 +93,12 @@ more for the wrapper. To run them all, do this:
 
     tox -e coverage
 
-On my 2014 Mac Mini, the combined tests take about 20 seconds to run. On a
-2.4GHz P4 Linux box, they take 81 seconds.
+On an Intel Core i7 4790K @ 4.0GHz, the combined tests take about 8 minutes to
+run.
 
 One component of `test_pyecdsa.py` checks compatibility with OpenSSL, by
-running the "openssl" CLI tool. If this tool is not on your $PATH, you may
-want to comment out this test (the easiest way is to add a line that says
-"del OpenSSL" to the end of test_pyecdsa.py).
+running the "openssl" CLI tool, make sure it's in your `PATH` if you want
+to test it.
 
 ## Security
 
