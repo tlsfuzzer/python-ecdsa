@@ -103,10 +103,37 @@ to test it.
 
 ## Security
 
-This library does not protect against timing attacks. Do not allow attackers
-to measure how long it takes you to generate a keypair or sign a message.
+This library was not designed with security in mind. If you are processing
+data that needs to be protected we suggest you use a quality wrapper around
+OpenSSL. [pyca/cryptography](https://cryptography.io) is one example of such
+a wrapper. The primary use-case of this library is as a portable library for
+interoperability testing and as a teaching tool.
+
+**This library does not protect against side channel attacks.**
+
+Do not allow attackers to measure how long it takes you to generate a keypair
+or sign a message. Do not allow attackers to run code on the same physical
+machine when keypair generation or signing is taking place (this includes
+virtual machines). Do not allow attackers to measure how much power your
+computer uses while generating the keypair or signing a message. Do not allow
+attackers to measure RF interference coming from your computer while generating
+a keypair or signing a message. Note: just loading the private key will cause
+keypair generation. Other operations or attack vectors may also be
+vulnerable to attacks. **For a sophisticated attacker observing just one
+operation with a private key will be sufficient to completely
+reconstruct the private key**.
+
+Please also note that any Pure-python cryptographic library will be vulnerable
+to the same side channel attacks. This is because Python does not provide
+side-channel secure primitives (with the exception of
+[`hmac.compare_digest()`][3]), making side-channel secure programming
+impossible.
+
 This library depends upon a strong source of random numbers. Do not use it on
-a system where os.urandom() is weak.
+a system where `os.urandom()` does not provide cryptographically secure
+random numbers.
+
+[3]: https://docs.python.org/3/library/hmac.html#hmac.compare_digest
 
 ## Usage
 
