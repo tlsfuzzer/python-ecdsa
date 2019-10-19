@@ -326,20 +326,21 @@ with open("vk.pem", "wb") as f:
 ## Entropy
 
 Creating a signing key with `SigningKey.generate()` requires some form of
-entropy (as opposed to `from_secret_exponent/from_string/from_der/from_pem`,
+entropy (as opposed to
+`from_secret_exponent`/`from_string`/`from_der`/`from_pem`,
 which are deterministic and do not require an entropy source). The default
 source is `os.urandom()`, but you can pass any other function that behaves
-like os.urandom as the entropy= argument to do something different. This may
-be useful in unit tests, where you want to achieve repeatable results. The
-ecdsa.util.PRNG utility is handy here: it takes a seed and produces a strong
+like `os.urandom` as the `entropy=` argument to do something different. This
+may be useful in unit tests, where you want to achieve repeatable results. The
+`ecdsa.util.PRNG` utility is handy here: it takes a seed and produces a strong
 pseudo-random stream from it:
 
 ```python
 from ecdsa.util import PRNG
 from ecdsa import SigningKey
-rng1 = PRNG("seed")
+rng1 = PRNG(b"seed")
 sk1 = SigningKey.generate(entropy=rng1)
-rng2 = PRNG("seed")
+rng2 = PRNG(b"seed")
 sk2 = SigningKey.generate(entropy=rng2)
 # sk1 and sk2 are the same key
 ```
@@ -347,7 +348,7 @@ sk2 = SigningKey.generate(entropy=rng2)
 Likewise, ECDSA signature generation requires a random number, and each
 signature must use a different one (using the same number twice will
 immediately reveal the private signing key). The `sk.sign()` method takes an
-entropy= argument which behaves the same as `SigningKey.generate(entropy=)`.
+`entropy=` argument which behaves the same as `SigningKey.generate(entropy=)`.
 
 ## Deterministic Signatures
 
