@@ -270,24 +270,57 @@ To produce signatures that can be verified by OpenSSL tools, or to verify
 signatures that were produced by those tools, use:
 
 ```python
-# openssl ecparam -name secp224r1 -genkey -out sk.pem
+# openssl ecparam -name prime256v1 -genkey -out sk.pem
 # openssl ec -in sk.pem -pubout -out vk.pem
-# openssl dgst -ecdsa-with-SHA1 -sign sk.pem -out data.sig data
-# openssl dgst -ecdsa-with-SHA1 -verify vk.pem -signature data.sig data
-# openssl dgst -ecdsa-with-SHA1 -prverify sk.pem -signature data.sig data
+# echo "data for signing" > data
+# openssl dgst -sha256 -sign sk.pem -out data.sig data
+# openssl dgst -sha256 -verify vk.pem -signature data.sig data
+# openssl dgst -sha256 -prverify sk.pem -signature data.sig data
 
-sk.sign(msg, hashfunc=hashlib.sha1, sigencode=ecdsa.util.sigencode_der)
-vk.verify(sig, msg, hashfunc=hashlib.sha1, sigdecode=ecdsa.util.sigdecode_der)
+import hashlib
+from ecdsa import SigningKey, VerifyingKey
+from ecdsa.util import sigencode_der, sigdecode_der
+
+with open("vk.pem") as f:
+   vk = VerifyingKey.from_pem(f.read())
+
+with open("data", "rb") as f:
+   data = f.read()
+
+with open("data.sig", "rb") as f:
+   signature = f.read()
+
+assert vk.verify(signature, data, hashlib.sha256, sigdecode=sigdecode_der)
+
+with open("sk.pem") as f:
+   sk = SigningKey.from_pem(f.read(), hashlib.sha256)
+
+new_signature = sk.sign_deterministic(data, sigencode=sigencode_der)
+
+with open("data.sig2", "wb") as f:
+   f.write(new_signature)
+
+# openssl dgst -sha256 -verify vk.pem -signature data.sig2 data
 ```
 
-The keys that openssl handles can be read and written as follows:
+Note: if compatibility with OpenSSL 1.0.0 or earlier is necessary, the
+`sigencode_string` and `sigdecode_string` from `ecdsa.util` can be used for
+respectively writing and reading the signatures.
+
+The keys also can be written in format that openssl can handle:
 
 ```python
-sk = SigningKey.from_pem(open("sk.pem").read())
-open("sk.pem","w").write(sk.to_pem())
+from ecdsa import SigningKey, VerifyingKey
 
-vk = VerifyingKey.from_pem(open("vk.pem").read())
-open("vk.pem","w").write(vk.to_pem())
+with open("sk.pem") as f:
+    sk = SigningKey.from_pem(f.read())
+with open("sk.pem", "wb") as f:
+    f.write(sk.to_pem())
+
+with open("vk.pem") as f:
+    vk = VerifyingKey.from_pem(f.read())
+with open("vk.pem", "wb") as f:
+    f.write(vk.to_pem())
 ```
 
 ## Entropy
