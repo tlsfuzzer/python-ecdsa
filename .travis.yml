@@ -92,6 +92,15 @@ script:
         instrumental -f .instrumental.cov -sr
       fi
   - |
+      if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST == "false" ]]; then
+        # exclude the super slow test_malformed_sigs.py, until #127 is merged
+        files="$(ls src/ecdsa/test*.py | grep -v test_malformed_sigs.py)"
+        instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
+        instrumental -f .instrumental.cov -s
+        # just log the values when merging
+        instrumental -f .instrumental.cov -s | python diff-instrumental-2.py
+      fi
+  - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
           instrumental -f .instrumental.cov -s | python diff-instrumental-2.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
       fi
