@@ -369,30 +369,37 @@ Create a NIST192p keypair and immediately save both to disk:
 ```python
 from ecdsa import SigningKey
 sk = SigningKey.generate()
-vk = sk.get_verifying_key()
-open("private.pem","w").write(sk.to_pem())
-open("public.pem","w").write(vk.to_pem())
+vk = sk.verifying_key
+with open("private.pem", "wb") as f:
+    f.write(sk.to_pem())
+with open("public.pem", "wb") as f:
+    f.write(vk.to_pem())
 ```
 
-Load a signing key from disk, use it to sign a message, and write the
-signature to disk:
+Load a signing key from disk, use it to sign a message (using SHA-1), and write
+the signature to disk:
 
 ```python
 from ecdsa import SigningKey
-sk = SigningKey.from_pem(open("private.pem").read())
-message = open("message","rb").read()
+with open("private.pem") as f:
+    sk = SigningKey.from_pem(f.read())
+with open("message", "rb") as f:
+    message = f.read()
 sig = sk.sign(message)
-open("signature","wb").write(sig)
+with open("signature", "wb") as f:
+    f.write(sig)
 ```
 
 Load the verifying key, message, and signature from disk, and verify the
-signature:
+signature (assume SHA-1 hash):
 
 ```python
 from ecdsa import VerifyingKey, BadSignatureError
 vk = VerifyingKey.from_pem(open("public.pem").read())
-message = open("message","rb").read()
-sig = open("signature","rb").read()
+with open("message", "rb") as f:
+    message = f.read()
+with open("signature", "rb") as f:
+    sig = f.read()
 try:
     vk.verify(sig, message)
     print "good signature"
@@ -400,12 +407,12 @@ except BadSignatureError:
     print "BAD SIGNATURE"
 ```
 
-Create a NIST521p keypair
+Create a NIST521p keypair:
 
 ```python
 from ecdsa import SigningKey, NIST521p
 sk = SigningKey.generate(curve=NIST521p)
-vk = sk.get_verifying_key()
+vk = sk.verifying_key
 ```
 
 Create three independent signing keys from a master seed:
@@ -421,4 +428,28 @@ def make_key_from_seed(seed, curve=NIST192p):
 sk1 = make_key_from_seed("1:%s" % seed)
 sk2 = make_key_from_seed("2:%s" % seed)
 sk3 = make_key_from_seed("3:%s" % seed)
+```
+
+Load a verifying key from disk and print it using hex encoding in
+uncompressed and compressed format (defined in X9.62 and SEC1 standards):
+
+```python
+from ecdsa import VerifyingKey
+
+with open("public.pem") as f:
+    vk = VerifyingKey.from_pem(f.read())
+
+print("uncompressed: {0}".format(vk.to_string("uncompressed").hex()))
+print("compressed: {0}".format(vk.to_string("compressed").hex()))
+```
+
+Load a verifying key from a hex string from compressed format, output
+uncompressed:
+
+```python
+from ecdsa import VerifyingKey, NIST256p
+
+comp_str = '022799c0d0ee09772fdd337d4f28dc155581951d07082fb19a38aa396b67e77759'
+vk = VerifyingKey.from_string(bytearray.fromhex(comp_str), curve=NIST256p)
+print(vk.to_string("uncompressed").hex())
 ```
