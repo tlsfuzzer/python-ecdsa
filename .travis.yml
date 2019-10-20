@@ -24,10 +24,20 @@ matrix:
         env: TOX_ENV=py37
         dist: xenial
         sudo: true
+      - python: 3.8
+        env: TOX_ENV=py38
+        dist: xenial
+        sudo: true
+      - python: nightly
+        env: TOX_ENV=py
+        dist: xenial
+        sudo: true
       - python: pypy
         env: TOX_ENV=pypy
       - python: pypy3
         env: TOX_ENV=pypy3
+  allow_failures:
+      - python: nightly
 
 install:
   - pip list
