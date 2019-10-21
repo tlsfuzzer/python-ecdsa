@@ -55,6 +55,15 @@ Primary classes for performing signing and verification operations.
         Abstract Syntax Notation 1 is a standard description language for
         specifying serialisation and deserialisation of data structures in a
         portable and cross-platform way.
+
+    bytes-like object
+        All the types that implement the buffer protocol. That includes
+        ``str`` (only on python2), ``bytes``, ``bytesarray``, ``array.array`
+        and ``memoryview`` of those objects.
+        Please note that ``array.array` serialisation (converting it to byte
+        string) is endianess dependant! Signature computed over ``array.array``
+        of integers on a big-endian system will not be verified on a
+        little-endian system and vice-versa.
 """
 
 import binascii
@@ -70,6 +79,7 @@ from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey, MalformedSignature
+from ._compat import normalise_bytes
 
 
 __all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey",
@@ -231,8 +241,8 @@ class VerifyingKey(object):
         Python 2 days when there were no binary strings. In Python 3 the
         input needs to be a bytes-like object.
 
-        :param string: :term:`raw encoding` of the public key
-        :type string: bytes-like object
+        :param string: single point encoding of the public key
+        :type string: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lie
         :type curve: ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
@@ -245,6 +255,7 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        string = normalise_bytes(string)
         sig_len = len(string)
         if sig_len == curve.verifying_key_length:
             point = cls._from_raw_encoding(string, curve, validate_point)

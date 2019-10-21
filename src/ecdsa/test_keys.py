@@ -44,14 +44,6 @@ class TestVerifyingKeyFromString(unittest.TestCase):
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    @unittest.skipIf(sys.version_info >= (2, 7), "fails on python2.6 only")
-    @unittest.expectedFailure
-    def test_bytearray26(self):
-        vk = VerifyingKey.from_string(bytearray(self.key_bytes))
-
-        self.assertEqual(self.vk.to_string(), vk.to_string())
-
-    @unittest.skipUnless(sys.version_info >= (2, 7), "fails on python2.6 only")
     def test_bytearray(self):
         vk = VerifyingKey.from_string(bytearray(self.key_bytes))
 
@@ -74,22 +66,12 @@ class TestVerifyingKeyFromString(unittest.TestCase):
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    @unittest.expectedFailure
     def test_array_array_of_ints(self):
         arr = array.array('I', self.key_bytes)
         vk = VerifyingKey.from_string(arr)
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    @unittest.skipIf(sys.version_info >= (3, 0), "Fails on python3")
-    def test_array_array_of_ints_memoryview2(self):
-        arr = array.array('I', self.key_bytes)
-        vk = VerifyingKey.from_string(buffer(arr))
-
-        self.assertEqual(self.vk.to_string(), vk.to_string())
-
-    @unittest.expectedFailure
-    @unittest.skipUnless(sys.version_info >= (3, 0), "Fails on python3")
     def test_array_array_of_ints_memoryview(self):
         arr = array.array('I', self.key_bytes)
         vk = VerifyingKey.from_string(buffer(arr))
