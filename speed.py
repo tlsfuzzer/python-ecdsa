@@ -1,5 +1,6 @@
 import six
 import timeit
+from ecdsa.curves import curves
 
 def do(setup_statements, statement):
     # extracted from timeit.py
@@ -13,8 +14,17 @@ def do(setup_statements, statement):
             break
     return x / number
 
-for curve in ["NIST192p", "NIST224p", "NIST256p", "SECP256k1",
-              "NIST384p", "NIST521p"]:
+prnt_form = ("{name:>10}{sep:1} {siglen:>6} {keygen:>9{form}}{unit:1} "
+    "{keygen_inv:>9{form_inv}} {sign:>9{form}}{unit:1} "
+    "{sign_inv:>9{form_inv}} {verify:>9{form}}{unit:1} "
+    "{verify_inv:>9{form_inv}}")
+
+print(prnt_form.format(siglen="siglen", keygen="keygen", keygen_inv="keygen/s",
+                       sign="sign", sign_inv="sign/s", verify="verify",
+                       verify_inv="verify/s", name="", sep="", unit="",
+                       form="", form_inv=""))
+
+for curve in [i.name for i in curves]:
     S1 = "import six; from ecdsa import SigningKey, %s" % curve
     S2 = "sk = SigningKey.generate(%s)" % curve
     S3 = "msg = six.b('msg')"
@@ -31,5 +41,7 @@ for curve in ["NIST192p", "NIST224p", "NIST256p", "SECP256k1",
     import ecdsa
     c = getattr(ecdsa, curve)
     sig = ecdsa.SigningKey.generate(c).sign(six.b("msg"))
-    print("%9s: siglen=%3d, keygen=%.3fs, sign=%.3fs, verify=%.3fs" \
-          % (curve, len(sig), keygen, sign, verf))
+    print(prnt_form.format(
+        name=curve, sep=":", siglen=len(sig), unit="s", keygen=keygen,
+        keygen_inv=1.0/keygen, sign=sign, sign_inv=1.0/sign, verify=verf,
+        verify_inv=1.0/verf, form=".5f", form_inv=".2f"))
