@@ -77,3 +77,23 @@ class TestVerifyingKeyFromString(unittest.TestCase):
         vk = VerifyingKey.from_string(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_bytes_uncompressed(self):
+        vk = VerifyingKey.from_string(b'\x04' + self.key_bytes)
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_bytearray_uncompressed(self):
+        vk = VerifyingKey.from_string(bytearray(b'\x04' + self.key_bytes))
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_bytes_compressed(self):
+        vk = VerifyingKey.from_string(b'\x02' + self.key_bytes[:24])
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_bytearray_uncompressed(self):
+        vk = VerifyingKey.from_string(bytearray(b'\x02' + self.key_bytes[:24]))
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
