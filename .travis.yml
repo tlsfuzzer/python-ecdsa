@@ -6,8 +6,11 @@ language: python
 cache: pip
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
+# place the slowest (instrumental and py2.6) first
 matrix:
   include:
+      - python: 2.7
+        env: INSTRUMENTAL=yes
       - python: 2.6
         env: TOX_ENV=py26
       - python: 2.7
@@ -39,13 +42,68 @@ matrix:
   allow_failures:
       - python: nightly
 
+# for instrumental we're checking if the coverage changed from base branch
+# so collect that info
+before_install:
+  - |
+       echo -e "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST\n" \
+               "TRAVIS_REPO_SLUG=$TRAVIS_REPO_SLUG\n" \
+               "TRAVIS_PULL_REQUEST=$TRAVIS_PULL_REQUEST\n" \
+               "TRAVIS_COMMIT=$TRAVIS_COMMIT\n" \
+               "TRAVIS_PYTHON_VERSION=$TRAVIS_PYTHON_VERSION"
+  - |
+       # workaround https://github.com/travis-ci/travis-ci/issues/2666
+       if [ "$TRAVIS_PULL_REQUEST" != "false" ]; then
+         URL="https://github.com/${TRAVIS_REPO_SLUG}/pull/${TRAVIS_PULL_REQUEST}.patch"
+         # `--location` makes curl follow redirects
+         PR_FIRST=$(curl --silent --show-error --location $URL | head -1 | grep -o -E '\b[0-9a-f]{40}\b' | tr -d '\n')
+         TRAVIS_COMMIT_RANGE=$PR_FIRST^..$TRAVIS_COMMIT
+       fi
+  # sanity check current commit
+  - git rev-parse HEAD
+  - echo "TRAVIS_COMMIT_RANGE=$TRAVIS_COMMIT_RANGE"
+  - git fetch origin master:refs/remotes/origin/master
+
+
 install:
   - pip list
-  - if [[ -e build-requirements-${TRAVIS_PYTHON_VERSION}.txt ]]; then travis_retry pip install -r build-requirements-${TRAVIS_PYTHON_VERSION}.txt; else travis_retry pip install -r build-requirements.txt; fi
+  - |
+      if [[ -e build-requirements-${TRAVIS_PYTHON_VERSION}.txt ]]; then
+        travis_retry pip install -r build-requirements-${TRAVIS_PYTHON_VERSION}.txt;
+      else
+        travis_retry pip install -r build-requirements.txt;
+      fi
+  - if [[ $INSTRUMENTAL ]]; then travis_retry pip install instrumental; fi
   - pip list
 script:
-  - tox -e $TOX_ENV
+  - if [[ $TOX_ENV ]]; then tox -e $TOX_ENV; fi
   - tox -e speed
+  - cp diff-instrumental.py diff-instrumental-2.py
+  - |
+      if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
+        git checkout $PR_FIRST^
+        # exclude the super slow test_malformed_sigs.py, until #127 is merged
+        files="$(ls src/ecdsa/test*.py | grep -v test_malformed_sigs.py)"
+        instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
+        instrumental -f .instrumental.cov -s
+        instrumental -f .instrumental.cov -s | python diff-instrumental-2.py --save .diff-instrumental
+        git checkout $TRAVIS_COMMIT
+        instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
+        instrumental -f .instrumental.cov -sr
+      fi
+  - |
+      if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST == "false" ]]; then
+        # exclude the super slow test_malformed_sigs.py, until #127 is merged
+        files="$(ls src/ecdsa/test*.py | grep -v test_malformed_sigs.py)"
+        instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
+        instrumental -f .instrumental.cov -s
+        # just log the values when merging
+        instrumental -f .instrumental.cov -s | python diff-instrumental-2.py
+      fi
+  - |
+      if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
+          instrumental -f .instrumental.cov -s | python diff-instrumental-2.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
+      fi
 after_success:
-  - coveralls
+  - if [[ -z $INSTRUMENTAL ]]; then coveralls; fi
 
