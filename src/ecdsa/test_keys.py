@@ -14,6 +14,7 @@ import sys
 import pytest
 
 from .keys import VerifyingKey
+from .der import unpem
 
 
 class TestVerifyingKeyFromString(unittest.TestCase):
@@ -95,5 +96,57 @@ class TestVerifyingKeyFromString(unittest.TestCase):
 
     def test_bytearray_uncompressed(self):
         vk = VerifyingKey.from_string(bytearray(b'\x02' + self.key_bytes[:24]))
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+
+class TestVerifyingKeyFromDer(unittest.TestCase):
+    """
+    Verify that ecdsa.keys.VerifyingKey.from_der() can be used with
+    bytes-like objects.
+    """
+    @classmethod
+    def setUpClass(cls):
+        prv_key_str = (
+            "-----BEGIN EC PRIVATE KEY-----\n"
+            "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
+            "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
+            "bA==\n"
+            "-----END EC PRIVATE KEY-----\n")
+        key_str = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEuIF30ITvF/XkVjlAgCg2D59ZtKTX\n"
+            "Jk5i2gZR3OR6NaTFtFz1FZNCOotVe5wgmfNs\n"
+            "-----END PUBLIC KEY-----\n")
+        cls.key_bytes = unpem(key_str)
+        assert isinstance(cls.key_bytes, bytes)
+        cls.vk = VerifyingKey.from_pem(key_str)
+
+    def test_bytes(self):
+        vk = VerifyingKey.from_der(self.key_bytes)
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    @unittest.expectedFailure
+    def test_bytes_memoryview(self):
+        vk = VerifyingKey.from_der(buffer(self.key_bytes))
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_bytearray(self):
+        vk = VerifyingKey.from_der(bytearray(self.key_bytes))
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    @unittest.expectedFailure
+    def test_bytesarray_memoryview(self):
+        vk = VerifyingKey.from_der(buffer(bytearray(self.key_bytes)))
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    @unittest.expectedFailure
+    def test_array_array_of_bytes(self):
+        arr = array.array('B', self.key_bytes)
+        vk = VerifyingKey.from_der(arr)
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
