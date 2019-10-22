@@ -135,7 +135,7 @@ def remove_constructed(string):
 def remove_sequence(string):
     if not string:
         raise UnexpectedDER("Empty string does not encode a sequence")
-    if not string.startswith(b("\x30")):
+    if string[:1] != b"\x30":
         n = string[0] if isinstance(string[0], integer_types) else \
                 ord(string[0])
         raise UnexpectedDER("wanted type 'sequence' (0x30), got 0x%02x" % n)
@@ -157,7 +157,7 @@ def remove_octet_string(string):
 
 
 def remove_object(string):
-    if not string.startswith(b("\x06")):
+    if string[:1] != b"\x06":
         n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
         raise UnexpectedDER("wanted type 'object' (0x06), got 0x%02x" % n)
     length, lengthlength = read_length(string[1:])
@@ -302,7 +302,7 @@ def remove_bitstring(string, expect_unused=_sentry):
                       " specified",
                       DeprecationWarning)
     num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
-    if not string.startswith(b("\x03")):
+    if string[:1] != b"\x03":
         raise UnexpectedDER("wanted bitstring (0x03), got 0x%02x" % num)
     length, llen = read_length(string[1:])
     if not length:

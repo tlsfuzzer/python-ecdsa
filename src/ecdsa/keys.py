@@ -328,16 +328,17 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        string = normalise_bytes(string)
         # [[oid_ecPublicKey,oid_curve], point_str_bitstring]
         s1, empty = der.remove_sequence(string)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER("trailing junk after DER pubkey: %s" %
                                     binascii.hexlify(empty))
         s2, point_str_bitstring = der.remove_sequence(s1)
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
         oid_curve, empty = der.remove_object(rest)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER("trailing junk after DER pubkey objects: %s" %
                                     binascii.hexlify(empty))
         if not oid_pk == oid_ecPublicKey:
@@ -345,7 +346,7 @@ class VerifyingKey(object):
                                     "encoding: {0!r}".format(oid_pk))
         curve = find_curve(oid_curve)
         point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER("trailing junk after pubkey pointstring: %s" %
                                     binascii.hexlify(empty))
         # raw encoding of point is invalid in DER files

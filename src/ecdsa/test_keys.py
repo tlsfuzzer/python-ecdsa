@@ -127,7 +127,6 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    @unittest.expectedFailure
     def test_bytes_memoryview(self):
         vk = VerifyingKey.from_der(buffer(self.key_bytes))
 
@@ -138,15 +137,19 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    @unittest.expectedFailure
     def test_bytesarray_memoryview(self):
         vk = VerifyingKey.from_der(buffer(bytearray(self.key_bytes)))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    @unittest.expectedFailure
     def test_array_array_of_bytes(self):
         arr = array.array('B', self.key_bytes)
         vk = VerifyingKey.from_der(arr)
+
+        self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_array_array_of_bytes_memoryview(self):
+        arr = array.array('B', self.key_bytes)
+        vk = VerifyingKey.from_der(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
