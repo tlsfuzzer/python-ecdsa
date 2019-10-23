@@ -10,6 +10,8 @@ from .der import remove_integer, UnexpectedDER, read_length, encode_bitstring,\
 from six import b
 import pytest
 import warnings
+from ._compat import str_idx_as_int
+
 
 class TestRemoveInteger(unittest.TestCase):
     # DER requires the integers to be 0-padded only if they would be
@@ -229,3 +231,14 @@ class TestRemoveBitstring(unittest.TestCase):
     def test_invalid_padding_bits(self):
         with self.assertRaises(UnexpectedDER):
             remove_bitstring(b'\x03\x02\x01\xff', None)
+
+
+class TestStrIdxAsInt(unittest.TestCase):
+    def test_str(self):
+        self.assertEqual(115, str_idx_as_int('str', 0))
+
+    def test_bytes(self):
+        self.assertEqual(115, str_idx_as_int(b'str', 0))
+
+    def test_bytearray(self):
+        self.assertEqual(115, str_idx_as_int(bytearray(b'str'), 0))
