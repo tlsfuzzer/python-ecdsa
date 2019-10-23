@@ -383,6 +383,7 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey objects
         :rtype: list of VerifyingKey
         """
+        data = normalise_bytes(data)
         digest = hashfunc(data).digest()
         return cls.from_public_key_recovery_with_digest(
             signature, digest, curve, hashfunc=hashfunc,
@@ -423,6 +424,7 @@ class VerifyingKey(object):
         r, s = sigdecode(signature, generator.order())
         sig = ecdsa.Signature(r, s)
 
+        digest = normalise_bytes(digest)
         digest_as_number = string_to_number(digest)
         pks = sig.recover_public_keys(digest_as_number, generator)
 
