@@ -147,7 +147,7 @@ def remove_sequence(string):
 
 
 def remove_octet_string(string):
-    if not string.startswith(b("\x04")):
+    if string[:1] != b"\x04":
         n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
         raise UnexpectedDER("wanted type 'octetstring' (0x04), got 0x%02x" % n)
     length, llen = read_length(string[1:])

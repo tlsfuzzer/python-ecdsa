@@ -830,6 +830,7 @@ class SigningKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        string = normalise_bytes(string)
         s, empty = der.remove_sequence(string)
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after DER privkey: %s" %

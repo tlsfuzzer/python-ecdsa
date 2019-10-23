@@ -229,7 +229,7 @@ def test_VerifyingKey_verify(
 prv_key_bytes = (b'^\xc8B\x0b\xd6\xef\x92R\xa9B\xe9\x89\x04<\xa2'
                  b'\x9fV\x1f\xa5%w\x0e\xb1\xc5')
 assert len(prv_key_bytes) == 24
-keys = []
+converters = []
 for modifier, convert in [
         ("bytes", lambda x: x),
         ("bytes memoryview", buffer),
@@ -242,13 +242,33 @@ for modifier, convert in [
         ("array.array of ints memoryview",
          lambda x: buffer(array.array('I', x)))
         ]:
-    keys.append(pytest.param(
+    converters.append(pytest.param(
         convert,
         id=modifier))
 
-@pytest.mark.parametrize("convert", keys)
+@pytest.mark.parametrize("convert", converters)
 def test_SigningKey_from_string(convert):
     key = convert(prv_key_bytes)
     sk = SigningKey.from_string(key)
+
+    assert sk.to_string() == prv_key_bytes
+
+
+# test SigningKey.from_der()
+prv_key_str = (
+    "-----BEGIN EC PRIVATE KEY-----\n"
+    "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
+    "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
+    "bA==\n"
+    "-----END EC PRIVATE KEY-----\n")
+key_bytes = unpem(prv_key_str)
+assert isinstance(key_bytes, bytes)
+
+# last two converters are for array.array of ints, those require input
+# that's multiple of 4, which no curve we support produces
+@pytest.mark.parametrize("convert", converters[:-2])
+def test_SigningKey_from_der(convert):
+    key = convert(key_bytes)
+    sk = SigningKey.from_der(key)
 
     assert sk.to_string() == prv_key_bytes
