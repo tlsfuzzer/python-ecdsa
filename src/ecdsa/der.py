@@ -180,7 +180,7 @@ def remove_integer(string):
     if not string:
         raise UnexpectedDER("Empty string is an invalid encoding of an "
                             "integer")
-    if not string.startswith(b("\x02")):
+    if string[:1] != b"\x02":
         n = string[0] if isinstance(string[0], integer_types) \
                 else ord(string[0])
         raise UnexpectedDER("wanted type 'integer' (0x02), got 0x%02x" % n)

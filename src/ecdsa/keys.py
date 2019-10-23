@@ -543,7 +543,7 @@ class VerifyingKey(object):
         as the `sigdecode` parameter.
 
         :param signature: encoding of the signature
-        :type signature: bytes like object
+        :type signature: sigdecode method dependant
         :param data: data signed by the `signature`, will be hashed using
             `hashfunc`, if specified, or default hash function
         :type data: bytes like object
@@ -565,6 +565,10 @@ class VerifyingKey(object):
         :return: True if the verification was successful
         :rtype: bool
         """
+        # signature doesn't have to be a bytes-like-object so don't normalise
+        # it, the decoders will do that
+        data = normalise_bytes(data)
+
         hashfunc = hashfunc or self.default_hashfunc
         digest = hashfunc(data).digest()
         return self.verify_digest(signature, digest, sigdecode)
@@ -579,7 +583,7 @@ class VerifyingKey(object):
         as the `sigdecode` parameter.
 
         :param signature: encoding of the signature
-        :type signature: bytes like object
+        :type signature: sigdecode method dependant
         :param digest: raw hash value that the signature authenticates.
         :type digest: bytes like object
         :param sigdecode: Callable to define the way the signature needs to
@@ -597,6 +601,9 @@ class VerifyingKey(object):
         :return: True if the verification was successful
         :rtype: bool
         """
+        # signature doesn't have to be a bytes-like-object so don't normalise
+        # it, the decoders will do that
+        digest = normalise_bytes(digest)
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,

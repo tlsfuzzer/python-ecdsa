@@ -12,9 +12,12 @@ import array
 import six
 import sys
 import pytest
+import hashlib
 
-from .keys import VerifyingKey
+from .keys import VerifyingKey, SigningKey
 from .der import unpem
+from .util import sigencode_string, sigencode_der, sigencode_strings, \
+    sigdecode_string, sigdecode_der, sigdecode_strings
 
 
 class TestVerifyingKeyFromString(unittest.TestCase):
@@ -153,3 +156,70 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         vk = VerifyingKey.from_der(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
+
+
+# test VerifyingKey.verify()
+prv_key_str = (
+    "-----BEGIN EC PRIVATE KEY-----\n"
+    "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
+    "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
+    "bA==\n"
+    "-----END EC PRIVATE KEY-----\n")
+key_bytes = unpem(prv_key_str)
+assert isinstance(key_bytes, bytes)
+sk = SigningKey.from_der(key_bytes)
+vk = sk.verifying_key
+
+data = (b"some string for signing"
+        b"contents don't really matter"
+        b"but do include also some crazy values: "
+        b"\x00\x01\t\r\n\x00\x00\x00\xff\xf0")
+assert len(data) % 4 == 0
+sha1 = hashlib.sha1()
+sha1.update(data)
+data_hash = sha1.digest()
+
+sig_raw = sk.sign(data, sigencode=sigencode_string)
+assert isinstance(sig_raw, bytes)
+sig_der = sk.sign(data, sigencode=sigencode_der)
+assert isinstance(sig_der, bytes)
+sig_strings = sk.sign(data, sigencode=sigencode_strings)
+assert isinstance(sig_strings[0], bytes)
+
+verifiers = []
+for modifier, fun in [
+    ("bytes", lambda x: x),
+    ("bytes memoryview", lambda x: buffer(x)),
+    ("bytearray", lambda x: bytearray(x)),
+    ("bytearray memoryview", lambda x: buffer(bytearray(x))),
+    ("array.array of bytes", lambda x: array.array('B', x)),
+    ("array.array of bytes memoryview", lambda x: buffer(array.array('B', x))),
+    ("array.array of ints", lambda x: array.array('I', x)),
+    ("array.array of ints memoryview", lambda x: buffer(array.array('I', x)))
+    ]:
+    if "ints" in modifier:
+        conv = lambda x: x
+    else:
+        conv = fun
+    for sig_format, signature, decoder, mod_apply in [
+        ("raw", sig_raw, sigdecode_string, lambda x: conv(x)),
+        ("der", sig_der, sigdecode_der, lambda x: conv(x)),
+        ("strings", sig_strings, sigdecode_strings, lambda x:
+            tuple(conv(i) for i in x))
+        ]:
+        for method_name, vrf_mthd, vrf_data in [
+            ("verify", vk.verify, data),
+            ("verify_digest", vk.verify_digest, data_hash)
+            ]:
+            verifiers.append(pytest.param(
+                signature, decoder, mod_apply, fun, vrf_mthd, vrf_data,
+                id="{2}-{0}-{1}".format(modifier, sig_format, method_name)))
+
+@pytest.mark.parametrize(
+    "signature,decoder,mod_apply,fun,vrf_mthd,vrf_data",
+    verifiers)
+def test_VerifyingKey_verify(
+        signature, decoder, mod_apply, fun, vrf_mthd, vrf_data):
+    sig = mod_apply(signature)
+
+    assert vrf_mthd(sig, fun(vrf_data), sigdecode=decoder)
