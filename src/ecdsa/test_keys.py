@@ -223,3 +223,32 @@ def test_VerifyingKey_verify(
     sig = mod_apply(signature)
 
     assert vrf_mthd(sig, fun(vrf_data), sigdecode=decoder)
+
+
+# test SigningKey.from_string()
+prv_key_bytes = (b'^\xc8B\x0b\xd6\xef\x92R\xa9B\xe9\x89\x04<\xa2'
+                 b'\x9fV\x1f\xa5%w\x0e\xb1\xc5')
+assert len(prv_key_bytes) == 24
+keys = []
+for modifier, convert in [
+        ("bytes", lambda x: x),
+        ("bytes memoryview", buffer),
+        ("bytearray", bytearray),
+        ("bytearray memoryview", lambda x: buffer(bytearray(x))),
+        ("array.array of bytes", lambda x: array.array('B', x)),
+        ("array.array of bytes memoryview",
+         lambda x: buffer(array.array('B', x))),
+        ("array.array of ints", lambda x: array.array('I', x)),
+        ("array.array of ints memoryview",
+         lambda x: buffer(array.array('I', x)))
+        ]:
+    keys.append(pytest.param(
+        convert,
+        id=modifier))
+
+@pytest.mark.parametrize("convert", keys)
+def test_SigningKey_from_string(convert):
+    key = convert(prv_key_bytes)
+    sk = SigningKey.from_string(key)
+
+    assert sk.to_string() == prv_key_bytes

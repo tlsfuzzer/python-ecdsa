@@ -737,6 +737,7 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
+        string = normalise_bytes(string)
         if len(string) != curve.baselen:
             raise MalformedPointError(
                 "Invalid length of private key, received {0}, expected {1}"
