@@ -1018,6 +1018,7 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         secexp = self.privkey.secret_multiplier
+        hashfunc = hashfunc or self.default_hashfunc
 
         def simple_r_s(r, s, order):
             return r, s, order
