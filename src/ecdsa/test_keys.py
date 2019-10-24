@@ -284,3 +284,13 @@ def test_SigningKey_sign_deterministic(convert):
         extra_entropy=convert(extra_entropy))
 
     vk.verify(sig, data)
+
+
+# test SigningKey.sign_digest_deterministic()
+@pytest.mark.parametrize("convert", converters)
+def test_SigningKey_sign_digest_deterministic(convert):
+    sig = sk.sign_digest_deterministic(
+        convert(data_hash),
+        extra_entropy=convert(extra_entropy))
+
+    vk.verify(sig, data)
