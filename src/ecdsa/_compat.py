@@ -18,8 +18,21 @@ if sys.version_info < (3, 0):
         """Cast the input into array of bytes."""
         return buffer(buffer_object)
 
+    def hmac_compat(ret):
+        return ret
 
 else:
+    if sys.version_info < (3, 4):
+        # on python 3.3 hmac.hmac.update() accepts only bytes, on newer
+        # versions it does accept memoryview() also
+        def hmac_compat(data):
+            if not isinstance(data, bytes):
+                return bytes(data)
+            return data
+    else:
+        def hmac_compat(data):
+            return data
+
     def normalise_bytes(buffer_object):
         """Cast the input into array of bytes."""
         return memoryview(buffer_object).cast('B')

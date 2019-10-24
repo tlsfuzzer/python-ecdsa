@@ -178,7 +178,7 @@ assert len(data) % 4 == 0
 sha1 = hashlib.sha1()
 sha1.update(data)
 data_hash = sha1.digest()
-
+assert isinstance(data_hash, bytes)
 sig_raw = sk.sign(data, sigencode=sigencode_string)
 assert isinstance(sig_raw, bytes)
 sig_der = sk.sign(data, sigencode=sigencode_der)
@@ -272,3 +272,15 @@ def test_SigningKey_from_der(convert):
     sk = SigningKey.from_der(key)
 
     assert sk.to_string() == prv_key_bytes
+
+
+# test SigningKey.sign_deterministic()
+extra_entropy=b'\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11'
+
+@pytest.mark.parametrize("convert", converters)
+def test_SigningKey_sign_deterministic(convert):
+    sig = sk.sign_deterministic(
+        convert(data),
+        extra_entropy=convert(extra_entropy))
+
+    vk.verify(sig, data)
