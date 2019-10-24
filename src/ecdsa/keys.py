@@ -1084,6 +1084,7 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         hashfunc = hashfunc or self.default_hashfunc
+        data = normalise_bytes(data)
         h = hashfunc(data).digest()
         return self.sign_digest(h, entropy, sigencode, k)
 
