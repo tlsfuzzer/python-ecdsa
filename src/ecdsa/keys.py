@@ -1123,6 +1123,7 @@ class SigningKey(object):
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependant type
         """
+        digest = normalise_bytes(digest)
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,
