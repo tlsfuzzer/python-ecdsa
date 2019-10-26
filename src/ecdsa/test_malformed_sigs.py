@@ -258,6 +258,16 @@ def test_random_der_as_signature(params, der):
         verifying_key.verify(der, example_data, sigdecode=sigdecode_der)
 
 
+@settings(**params)
+@given(st.sampled_from(keys_and_sigs), st.binary(max_size=1024**2))
+def test_random_bytes_as_signature(params, der):
+    """Check if random bytes are rejected as signature"""
+    name, verifying_key, _ = params
+
+    with pytest.raises(BadSignatureError):
+        verifying_key.verify(der, example_data, sigdecode=sigdecode_der)
+
+
 keys_and_string_sigs = [
     (name, verifying_key,
      sigencode_string(*sigdecode_der(sig, verifying_key.curve.order),
