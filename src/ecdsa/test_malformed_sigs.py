@@ -18,6 +18,7 @@ from .keys import BadSignatureError
 from .util import sigencode_der, sigencode_string
 from .util import sigdecode_der, sigdecode_string
 from .curves import curves, NIST256p
+from .der import encode_integer, encode_sequence
 
 
 example_data = b"some data to sign"
@@ -116,6 +117,48 @@ if sys.version_info >= (2, 7):
 @given(st_fuzzed_sig())
 def test_fuzzed_der_signatures(args):
     verifying_key, sig = args
+
+    with pytest.raises(BadSignatureError):
+        verifying_key.verify(sig, example_data, sigdecode=sigdecode_der)
+
+
+@st.composite
+def st_random_der_ecdsa_sig_value(draw):
+    """
+    Hypothesis strategy for selecting random values and encoding them
+    to ECDSA-Sig-Value object::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER
+        }
+    """
+    name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
+    note("Configuration: {0}".format(name))
+    order = verifying_key.curve.order
+
+    # the encode_integer doesn't suport negative numbers, would be nice
+    # to generate them too, but we have coverage for remove_integer()
+    # verifying that it doesn't accept them, so meh.
+    # Test all numbers around the ones that can show up (around order)
+    # way smaller and slightly bigger
+    r = draw(st.integers(min_value=0, max_value=order << 4) |
+             st.integers(min_value=order >> 2, max_value=order+1))
+    s = draw(st.integers(min_value=0, max_value=order << 4) |
+             st.integers(min_value=order >> 2, max_value=order+1))
+
+    sig = encode_sequence(encode_integer(r), encode_integer(s))
+
+    return verifying_key, sig
+
+
+@given(st_random_der_ecdsa_sig_value())
+def test_random_der_ecdsa_sig_value(params):
+    """
+    Check if random values encoded in ECDSA-Sig-Value structure are rejected
+    as signature.
+    """
+    verifying_key, sig = params
 
     with pytest.raises(BadSignatureError):
         verifying_key.verify(sig, example_data, sigdecode=sigdecode_der)
