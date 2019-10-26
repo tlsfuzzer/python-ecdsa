@@ -61,7 +61,7 @@ def test_signatures(verifying_key, signature):
 
 
 @st.composite
-def st_fuzzed_sig(draw):
+def st_fuzzed_sig(draw, keys_and_sigs):
     """
     Hypothesis strategy that generates pairs of VerifyingKey and malformed
     signatures created by fuzzing of a valid signature.
@@ -114,7 +114,7 @@ if sys.version_info >= (2, 7):
 
 
 @settings(**params)
-@given(st_fuzzed_sig())
+@given(st_fuzzed_sig(keys_and_sigs))
 def test_fuzzed_der_signatures(args):
     verifying_key, sig = args
 
