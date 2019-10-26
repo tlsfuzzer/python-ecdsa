@@ -33,6 +33,7 @@ coverage-html
 .tox
 nosetests.xml
 t/
+.hypothesis/
 
 # Translations
 *.mo
