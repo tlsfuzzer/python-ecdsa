@@ -18,7 +18,8 @@ from .keys import BadSignatureError
 from .util import sigencode_der, sigencode_string
 from .util import sigdecode_der, sigdecode_string
 from .curves import curves, NIST256p
-from .der import encode_integer, encode_sequence
+from .der import encode_integer, encode_bitstring, encode_octet_string, \
+    encode_oid, encode_sequence, encode_constructed
 
 
 example_data = b"some data to sign"
@@ -109,8 +110,12 @@ def st_fuzzed_sig(draw, keys_and_sigs):
 params = {}
 # not supported in hypothesis 2.0.0
 if sys.version_info >= (2, 7):
+    from hypothesis import HealthCheck
     # deadline=5s because NIST521p are slow to verify
     params["deadline"] = 5000
+    params["suppress_health_check"] = [HealthCheck.data_too_large,
+                                       HealthCheck.filter_too_much,
+                                       HealthCheck.too_slow]
 
 
 @settings(**params)
@@ -162,6 +167,95 @@ def test_random_der_ecdsa_sig_value(params):
 
     with pytest.raises(BadSignatureError):
         verifying_key.verify(sig, example_data, sigdecode=sigdecode_der)
+
+
+def st_der_integer(*args, **kwargs):
+    """
+    Hypothesis strategy that returns a random positive integer as DER
+    INTEGER.
+    Parameters are passed to hypothesis.strategy.integer.
+    """
+    if "min_value" not in kwargs:
+        kwargs["min_value"] = 0
+    return st.builds(encode_integer, st.integers(*args, **kwargs))
+
+
+@st.composite
+def st_der_bit_string(draw, *args, **kwargs):
+    """
+    Hypothesis strategy that returns a random DER BIT STRING.
+    Parameters are passed to hypothesis.strategy.binary.
+    """
+    data = draw(st.binary(*args, **kwargs))
+    if data:
+        unused = draw(st.integers(min_value=0, max_value=7))
+        data = bytearray(data)
+        data[-1] &= - (2**unused)
+        data = bytes(data)
+    else:
+        unused = 0
+    return encode_bitstring(data, unused)
+
+
+def st_der_octet_string(*args, **kwargs):
+    """
+    Hypothesis strategy that returns a random DER OCTET STRING object.
+    Parameters are passed to hypothesis.strategy.binary
+    """
+    return st.builds(encode_octet_string, st.binary(*args, **kwargs))
+
+
+def st_der_null():
+    """
+    Hypothesis strategy that returns DER NULL object.
+    """
+    return st.just(b'\x05\x00')
+
+
+@st.composite
+def st_der_oid(draw):
+    """
+    Hypothesis strategy that returns DER OBJECT IDENTIFIER objects.
+    """
+    first = draw(st.integers(min_value=0, max_value=2))
+    second = draw(st.integers(min_value=0, max_value=39))
+    rest = draw(st.lists(st.integers(min_value=0, max_value=2**512),
+                         max_size=50))
+    return encode_oid(first, second, *rest)
+
+
+def st_der():
+    """
+    Hypothesis strategy that returns random DER structures.
+
+    A valid DER structure is any primitive object, an octet encoding
+    of a valid DER structure, sequence of valid DER objects or a constructed
+    encoding of any of the above.
+    """
+    return st.recursive(
+        st.just(b'') | st_der_integer(max_value=2**4096) |
+        st_der_bit_string(max_size=1024**2) |
+        st_der_octet_string(max_size=1024**2) | st_der_null() | st_der_oid(),
+        lambda children:
+            st.builds(lambda x: encode_octet_string(x), st.one_of(children)) |
+            st.builds(lambda x: encode_bitstring(x, 0), st.one_of(children)) |
+            st.builds(lambda x: encode_sequence(*x),
+                      st.lists(children, max_size=200)) |
+            st.builds(lambda tag, x:
+                      encode_constructed(tag, x),
+                      st.integers(min_value=0, max_value=0x3f),
+                      st.one_of(children))
+        )
+
+
+@settings(**params)
+@given(st.sampled_from(keys_and_sigs), st_der())
+def test_random_der_as_signature(params, der):
+    """Check if random DER structures are rejected as signature"""
+    name, verifying_key, _ = params
+
+    with pytest.raises(BadSignatureError):
+        verifying_key.verify(der, example_data, sigdecode=sigdecode_der)
 
 
 keys_and_string_sigs = [
