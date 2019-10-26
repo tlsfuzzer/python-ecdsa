@@ -164,40 +164,21 @@ def test_random_der_ecdsa_sig_value(params):
         verifying_key.verify(sig, example_data, sigdecode=sigdecode_der)
 
 
-####
-#
-# For string encoded signatures, only the length of string is important
-#
-####
-
-str_sigs = []
-
-#for curve in curves:
-for curve in [NIST256p]:
-    #for hash_alg in ["md5", "sha1", "sha224", "sha256", "sha384", "sha512"]:
-    for hash_alg in ["sha256"]:
-        key = SigningKey.generate(curve)
-        signature = key.sign(example_data, hashfunc=getattr(hashlib, hash_alg),
-                             sigencode=sigencode_string)
-        for trunc in range(len(signature)):
-            str_sigs.append(pytest.param(
-                key.verifying_key, hash_alg,
-                signature, trunc,
-                id="{0}-{1}-trunc-{2}".format(
-                    curve.name, hash_alg, trunc)))
+keys_and_string_sigs = [
+    (name, verifying_key,
+     sigencode_string(*sigdecode_der(sig, verifying_key.curve.order),
+                      order=verifying_key.curve.order))
+    for name, verifying_key, sig in keys_and_sigs]
+"""
+Name of the curve+hash combination, VerifyingKey and signature as a
+byte string.
+"""
 
 
-@pytest.mark.parametrize("verifying_key,hash_alg,signature,trunc", str_sigs)
-def test_truncated_string_signatures(verifying_key, hash_alg, signature, trunc):
-    # check if a malformed string encoded signature causes the same exception
-    # to be raised irrespective of the type of error
-    sig = bytearray(signature)
-    sig = sig[:trunc]
-    sig = binary_type(sig)
+@settings(**params)
+@given(st_fuzzed_sig(keys_and_string_sigs))
+def test_fuzzed_string_signatures(params):
+    verifying_key, sig = params
 
-    try:
-        verifying_key.verify(sig, example_data, getattr(hashlib, hash_alg),
-                             sigdecode_string)
-        assert False
-    except BadSignatureError:
-        assert True
+    with pytest.raises(BadSignatureError):
+        verifying_key.verify(sig, example_data, sigdecode=sigdecode_string)
