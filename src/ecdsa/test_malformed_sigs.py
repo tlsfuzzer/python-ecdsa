@@ -157,6 +157,7 @@ def st_random_der_ecdsa_sig_value(draw):
     return verifying_key, sig
 
 
+@settings(**params)
 @given(st_random_der_ecdsa_sig_value())
 def test_random_der_ecdsa_sig_value(params):
     """
