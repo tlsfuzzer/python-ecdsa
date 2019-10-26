@@ -11,7 +11,7 @@ import pytest
 import sys
 from six import binary_type
 import hypothesis.strategies as st
-from hypothesis import note, assume, given, settings
+from hypothesis import note, assume, given, settings, example
 
 from .keys import SigningKey
 from .keys import BadSignatureError
@@ -261,6 +261,15 @@ def test_random_der_as_signature(params, der):
 
 @settings(**params)
 @given(st.sampled_from(keys_and_sigs), st.binary(max_size=1024**2))
+@example(
+    keys_and_sigs[0],
+    encode_sequence(encode_integer(0), encode_integer(0)))
+@example(
+    keys_and_sigs[0],
+    encode_sequence(encode_integer(1), encode_integer(1)) + b'\x00')
+@example(
+    keys_and_sigs[0],
+    encode_sequence(*[encode_integer(1)] * 3))
 def test_random_bytes_as_signature(params, der):
     """Check if random bytes are rejected as signature"""
     name, verifying_key, _ = params
