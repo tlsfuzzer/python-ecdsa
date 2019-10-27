@@ -2,6 +2,10 @@ from __future__ import print_function
 import sys
 import hypothesis.strategies as st
 from hypothesis import given, settings, note
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import pytest
 from .ecdsa import Private_key, Public_key, Signature, \
     generator_192, digest_integer, ellipticcurve, point_is_valid, \
@@ -16,62 +20,44 @@ if sys.version_info > (2, 7):
     HYP_SETTINGS["deadline"] = 5000
 
 
-def test_ecdsa():
-  class TestFailure(Exception):
-    pass
+class TestP192FromX9_62(unittest.TestCase):
+    """Check test vectors from X9.62"""
+    @classmethod
+    def setUpClass(cls):
+        cls.d = 651056770906015076056810763456358567190100156695615665659
+        cls.Q = cls.d * generator_192
+        cls.k = 6140507067065001063065065565667405560006161556565665656654
+        cls.R = cls.k * generator_192
 
-  print("NIST Curve P-192:")
+        cls.msg = 968236873715988614170569073515315707566766479517
+        cls.pubk = Public_key(generator_192, generator_192 * cls.d)
+        cls.privk = Private_key(cls.pubk, cls.d)
+        cls.sig = cls.privk.sign(cls.msg, cls.k)
 
-  p192 = generator_192
+    def test_point_multiplication(self):
+        assert self.Q.x() == 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5
 
-  # From X9.62:
+    def test_point_multiplication_2(self):
+        assert self.R.x() == 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD
+        assert self.R.y() == 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835
 
-  d = 651056770906015076056810763456358567190100156695615665659
-  Q = d * p192
-  if Q.x() != 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5:
-    raise TestFailure("*** p192 * d came out wrong.")
-  else:
-    print("p192 * d came out right.")
+    def test_mult_and_addition(self):
+        u1 = 2563697409189434185194736134579731015366492496392189760599
+        u2 = 6266643813348617967186477710235785849136406323338782220568
+        temp = u1 * generator_192 + u2 * self.Q
+        assert temp.x() == 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD
+        assert temp.y() == 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835
 
-  k = 6140507067065001063065065565667405560006161556565665656654
-  R = k * p192
-  if R.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
-     or R.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
-    raise TestFailure("*** k * p192 came out wrong.")
-  else:
-    print("k * p192 came out right.")
+    def test_signature(self):
+        r, s = self.sig.r, self.sig.s
+        assert r == 3342403536405981729393488334694600415596881826869351677613
+        assert s == 5735822328888155254683894997897571951568553642892029982342
 
-  u1 = 2563697409189434185194736134579731015366492496392189760599
-  u2 = 6266643813348617967186477710235785849136406323338782220568
-  temp = u1 * p192 + u2 * Q
-  if temp.x() != 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD \
-     or temp.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
-    raise TestFailure("*** u1 * p192 + u2 * Q came out wrong.")
-  else:
-    print("u1 * p192 + u2 * Q came out right.")
+    def test_verification(self):
+        assert self.pubk.verifies(self.msg, self.sig)
 
-  e = 968236873715988614170569073515315707566766479517
-  pubk = Public_key(generator_192, generator_192 * d)
-  privk = Private_key(pubk, d)
-  sig = privk.sign(e, k)
-  r, s = sig.r, sig.s
-  if r != 3342403536405981729393488334694600415596881826869351677613 \
-     or s != 5735822328888155254683894997897571951568553642892029982342:
-    raise TestFailure("*** r or s came out wrong.")
-  else:
-    print("r and s came out right.")
-
-  valid = pubk.verifies(e, sig)
-  if valid:
-    print("Signature verified OK.")
-  else:
-    raise TestFailure("*** Signature failed verification.")
-
-  valid = pubk.verifies(e - 1, sig)
-  if not valid:
-    print("Forgery was correctly rejected.")
-  else:
-    raise TestFailure("*** Forgery was erroneously accepted.")
+    def test_rejection(self):
+        assert not self.pubk.verifies(self.msg - 1, self.sig)
 
 
 # Testing point validity, as per ECDSAVS.pdf B.2.2:
