@@ -32,30 +32,34 @@ def test_numbertheory():
   assert lcm([3, 5 * 3, 7 * 3]) == 3 * 5 * 7
   assert lcm(3) == 3
 
-  print_("Testing next_prime...")
-  bigprimes = (999671,
-               999683,
-               999721,
-               999727,
-               999749,
-               999763,
-               999769,
-               999773,
-               999809,
-               999853,
-               999863,
-               999883,
-               999907,
-               999917,
-               999931,
-               999953,
-               999959,
-               999961,
-               999979,
-               999983)
 
-  for i in range(len(bigprimes) - 1):
-    assert next_prime(bigprimes[i]) == bigprimes[i + 1]
+BIGPRIMES = (999671,
+             999683,
+             999721,
+             999727,
+             999749,
+             999763,
+             999769,
+             999773,
+             999809,
+             999853,
+             999863,
+             999883,
+             999907,
+             999917,
+             999931,
+             999953,
+             999959,
+             999961,
+             999979,
+             999983)
+
+
+@pytest.mark.parametrize(
+    "prime, next_p",
+    [(p, q) for p, q in zip(BIGPRIMES[:-1], BIGPRIMES[1:])])
+def test_next_prime(prime, next_p):
+    assert next_prime(prime) == next_p
 
 
 @pytest.mark.parametrize("prime", smallprimes)
