@@ -4,7 +4,12 @@ try:
 except ImportError:
     import unittest
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, settings, example
+try:
+    from hypothesis import HealthCheck
+    HC_PRESENT=True
+except ImportError:
+    HC_PRESENT=False
 from .numbertheory import (SquareRootError, factorization, gcd, lcm,
                            jacobi, inverse_mod,
                            is_prime, next_prime, smallprimes,
@@ -79,32 +84,6 @@ def test_numbertheory():
           print_("Failed to report no root for sqrt( %d ) mod %d." % \
                  (nonsquare, p))
 
-  # Test the jacobi function:
-  for m in range(3, 400, 2):
-    print_("Testing jacobi for modulus m = %d." % m)
-    if is_prime(m):
-      squares = []
-      for root in range(1, m):
-        if jacobi(root * root, m) != 1:
-          error_tally = error_tally + 1
-          print_("jacobi( %d * %d, %d) != 1" % (root, root, m))
-        squares.append(root * root % m)
-      for i in range(1, m):
-        if i not in squares:
-          if jacobi(i, m) != -1:
-            error_tally = error_tally + 1
-            print_("jacobi( %d, %d ) != -1" % (i, m))
-    else:       # m is not prime.
-      f = factorization(m)
-      for a in range(1, m):
-        c = 1
-        for i in f:
-          c = c * jacobi(a, i[0]) ** i[1]
-        if c != jacobi(a, m):
-          error_tally = error_tally + 1
-          print_("%d != jacobi( %d, %d )" % (c, a, m))
-
-
   class FailedTest(Exception):
     pass
 
@@ -123,7 +102,45 @@ def st_two_nums_rel_prime(draw):
     return num, mod
 
 
+HYP_SETTINGS = {}
+if HC_PRESENT:
+    HYP_SETTINGS['suppress_health_check']=[HealthCheck.filter_too_much,
+                                           HealthCheck.too_slow]
+    # the factorization() sometimes takes a long time to finish
+    HYP_SETTINGS['deadline'] = 5000
+
+
 class TestNumbertheory(unittest.TestCase):
+    @settings(**HYP_SETTINGS)
+    @given(st.integers(min_value=1, max_value=10**12))
+    @example(265399 * 1526929)
+    @example(373297 ** 2 * 553991)
+    def test_factorization(self, num):
+        factors = factorization(num)
+        mult = 1
+        for i in factors:
+            mult *= i[0] ** i[1]
+        assert mult == num
+
+    @settings(**HYP_SETTINGS)
+    @given(st.integers(min_value=3, max_value=1000).filter(lambda x: x % 2))
+    def test_jacobi(self, mod):
+        if is_prime(mod):
+            squares = set()
+            for root in range(1, mod):
+                assert jacobi(root * root, mod) == 1
+                squares.add(root * root % mod)
+            for i in range(1, mod):
+                if i not in squares:
+                    assert jacobi(i, mod) == -1
+        else:
+            factors = factorization(mod)
+            for a in range(1, mod):
+                c = 1
+                for i in factors:
+                    c *= jacobi(a, i[0]) ** i[1]
+                assert c == jacobi(a, mod)
+
     @given(st_two_nums_rel_prime())
     def test_inverse_mod(self, nums):
         num, mod = nums
