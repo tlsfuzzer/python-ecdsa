@@ -4,7 +4,7 @@ import hypothesis.strategies as st
 from hypothesis import given, settings, note
 import pytest
 from .ecdsa import Private_key, Public_key, Signature, \
-    curve_192, generator_192, digest_integer, ellipticcurve, point_is_valid, \
+    generator_192, digest_integer, ellipticcurve, point_is_valid, \
     generator_224, generator_256, generator_384, generator_521, \
     generator_secp256k1
 
@@ -19,15 +19,6 @@ if sys.version_info > (2, 7):
 def test_ecdsa():
   class TestFailure(Exception):
     pass
-
-  def test_point_validity(generator, x, y, expected):
-    """generator defines the curve; is (x,y) a point on
-       this curve? "expected" is True if the right answer is Yes."""
-    if point_is_valid(generator, x, y) == expected:
-      print("Point validity tested as expected.")
-    else:
-      raise TestFailure("*** Point validity test gave wrong result.")
-
 
   print("NIST Curve P-192:")
 
@@ -82,79 +73,77 @@ def test_ecdsa():
   else:
     raise TestFailure("*** Forgery was erroneously accepted.")
 
-  print("Testing point validity, as per ECDSAVS.pdf B.2.2:")
 
-  test_point_validity( \
-    p192, \
-    0xcd6d0f029a023e9aaca429615b8f577abee685d8257cc83a, \
-    0x00019c410987680e9fb6c0b6ecc01d9a2647c8bae27721bacdfc, \
-    False)
+# Testing point validity, as per ECDSAVS.pdf B.2.2:
+P192_POINTS = [
+    (generator_192,
+     0xcd6d0f029a023e9aaca429615b8f577abee685d8257cc83a,
+     0x00019c410987680e9fb6c0b6ecc01d9a2647c8bae27721bacdfc,
+     False),
 
-  test_point_validity(
-    p192, \
-    0x00017f2fce203639e9eaf9fb50b81fc32776b30e3b02af16c73b, \
-    0x95da95c5e72dd48e229d4748d4eee658a9a54111b23b2adb, \
-    False)
+    (generator_192,
+     0x00017f2fce203639e9eaf9fb50b81fc32776b30e3b02af16c73b,
+     0x95da95c5e72dd48e229d4748d4eee658a9a54111b23b2adb,
+     False),
 
-  test_point_validity(
-    p192, \
-    0x4f77f8bc7fccbadd5760f4938746d5f253ee2168c1cf2792, \
-    0x000147156ff824d131629739817edb197717c41aab5c2a70f0f6, \
-    False)
+    (generator_192,
+     0x4f77f8bc7fccbadd5760f4938746d5f253ee2168c1cf2792,
+     0x000147156ff824d131629739817edb197717c41aab5c2a70f0f6,
+     False),
 
-  test_point_validity(
-    p192, \
-    0xc58d61f88d905293bcd4cd0080bcb1b7f811f2ffa41979f6, \
-    0x8804dc7a7c4c7f8b5d437f5156f3312ca7d6de8a0e11867f, \
-    True)
+    (generator_192,
+     0xc58d61f88d905293bcd4cd0080bcb1b7f811f2ffa41979f6,
+     0x8804dc7a7c4c7f8b5d437f5156f3312ca7d6de8a0e11867f,
+     True),
 
-  test_point_validity(
-    p192, \
-    0xcdf56c1aa3d8afc53c521adf3ffb96734a6a630a4a5b5a70, \
-    0x97c1c44a5fb229007b5ec5d25f7413d170068ffd023caa4e, \
-    True)
+    (generator_192,
+     0xcdf56c1aa3d8afc53c521adf3ffb96734a6a630a4a5b5a70,
+     0x97c1c44a5fb229007b5ec5d25f7413d170068ffd023caa4e,
+     True),
 
-  test_point_validity(
-    p192, \
-    0x89009c0dc361c81e99280c8e91df578df88cdf4b0cdedced, \
-    0x27be44a529b7513e727251f128b34262a0fd4d8ec82377b9, \
-    True)
+    (generator_192,
+     0x89009c0dc361c81e99280c8e91df578df88cdf4b0cdedced,
+     0x27be44a529b7513e727251f128b34262a0fd4d8ec82377b9,
+     True),
 
-  test_point_validity(
-    p192, \
-    0x6a223d00bd22c52833409a163e057e5b5da1def2a197dd15, \
-    0x7b482604199367f1f303f9ef627f922f97023e90eae08abf, \
-    True)
+    (generator_192,
+     0x6a223d00bd22c52833409a163e057e5b5da1def2a197dd15,
+     0x7b482604199367f1f303f9ef627f922f97023e90eae08abf,
+     True),
 
-  test_point_validity(
-    p192, \
-    0x6dccbde75c0948c98dab32ea0bc59fe125cf0fb1a3798eda, \
-    0x0001171a3e0fa60cf3096f4e116b556198de430e1fbd330c8835, \
-    False)
+    (generator_192,
+     0x6dccbde75c0948c98dab32ea0bc59fe125cf0fb1a3798eda,
+     0x0001171a3e0fa60cf3096f4e116b556198de430e1fbd330c8835,
+     False),
 
-  test_point_validity(
-    p192, \
-    0xd266b39e1f491fc4acbbbc7d098430931cfa66d55015af12, \
-    0x193782eb909e391a3148b7764e6b234aa94e48d30a16dbb2, \
-    False)
+    (generator_192,
+     0xd266b39e1f491fc4acbbbc7d098430931cfa66d55015af12,
+     0x193782eb909e391a3148b7764e6b234aa94e48d30a16dbb2,
+     False),
 
-  test_point_validity(
-    p192, \
-    0x9d6ddbcd439baa0c6b80a654091680e462a7d1d3f1ffeb43, \
-    0x6ad8efc4d133ccf167c44eb4691c80abffb9f82b932b8caa, \
-    False)
+    (generator_192,
+     0x9d6ddbcd439baa0c6b80a654091680e462a7d1d3f1ffeb43,
+     0x6ad8efc4d133ccf167c44eb4691c80abffb9f82b932b8caa,
+     False),
 
-  test_point_validity(
-    p192, \
-    0x146479d944e6bda87e5b35818aa666a4c998a71f4e95edbc, \
-    0xa86d6fe62bc8fbd88139693f842635f687f132255858e7f6, \
-    False)
+    (generator_192,
+     0x146479d944e6bda87e5b35818aa666a4c998a71f4e95edbc,
+     0xa86d6fe62bc8fbd88139693f842635f687f132255858e7f6,
+     False),
 
-  test_point_validity(
-    p192, \
-    0xe594d4a598046f3598243f50fd2c7bd7d380edb055802253, \
-    0x509014c0c4d6b536e3ca750ec09066af39b4c8616a53a923, \
-    False)
+    (generator_192,
+     0xe594d4a598046f3598243f50fd2c7bd7d380edb055802253,
+     0x509014c0c4d6b536e3ca750ec09066af39b4c8616a53a923,
+     False)]
+
+
+@pytest.mark.parametrize("generator,x,y,expected", P192_POINTS)
+def test_point_validity(generator, x, y, expected):
+    """
+    `generator` defines the curve; is `(x, y)` a point on
+    this curve? `expected` is True if the right answer is Yes.
+    """
+    assert point_is_valid(generator, x, y) == expected
 
 
 # Trying signature-verification tests from ECDSAVS.pdf B.2.4:
