@@ -1,8 +1,8 @@
-from .ecdsa import (Private_key, Public_key, Signature,
-                    curve_192, generator_192,
-                    digest_integer, ellipticcurve, point_is_valid)
-from six import print_
+from __future__ import print_function
 import random
+from .ecdsa import Private_key, Public_key, Signature, \
+    curve_192, generator_192, digest_integer, ellipticcurve, point_is_valid
+
 
 def test_ecdsa():
   class TestFailure(Exception):
@@ -12,7 +12,7 @@ def test_ecdsa():
     """generator defines the curve; is (x,y) a point on
        this curve? "expected" is True if the right answer is Yes."""
     if point_is_valid(generator, x, y) == expected:
-      print_("Point validity tested as expected.")
+      print("Point validity tested as expected.")
     else:
       raise TestFailure("*** Point validity test gave wrong result.")
 
@@ -24,8 +24,8 @@ def test_ecdsa():
                       ellipticcurve.Point(curve_192, Qx, Qy))
     got = pubk.verifies(digest_integer(Msg), Signature(R, S))
     if got == expected:
-      print_("Signature tested as expected: got %s, expected %s." % \
-             (got, expected))
+      print("Signature tested as expected: got %s, expected %s." % \
+            (got, expected))
     else:
       raise TestFailure("*** Signature test failed: got %s, expected %s." % \
                         (got, expected))
@@ -35,21 +35,21 @@ def test_ecdsa():
     sign = Signature(R,S)
     pks = sign.recover_public_keys(digest_integer(Msg), generator_192)
 
-    print_("Test pk recover")
+    print("Test pk recover")
 
     if pks:
 
       # Test if the signature is valid for all found public keys
       for pk in pks:
         q = pk.point
-        print_("Recovered q: %s" % q)
+        print("Recovered q: %s" % q)
         test_signature_validity(Msg, q.x(), q.y(), R, S, True)
 
       # Test if the original public key is in the set of found keys
       original_q = ellipticcurve.Point(curve_192, Qx, Qy)
       points = [pk.point for pk in pks]
       if original_q in points:
-        print_("Original q was found")
+        print("Original q was found")
       else:
         raise TestFailure("Original q is not in the list of recovered public keys")
 
@@ -57,7 +57,7 @@ def test_ecdsa():
       raise TestFailure("*** NO valid public key returned")
 
 
-  print_("NIST Curve P-192:")
+  print("NIST Curve P-192:")
 
   p192 = generator_192
 
@@ -68,7 +68,7 @@ def test_ecdsa():
   if Q.x() != 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5:
     raise TestFailure("*** p192 * d came out wrong.")
   else:
-    print_("p192 * d came out right.")
+    print("p192 * d came out right.")
 
   k = 6140507067065001063065065565667405560006161556565665656654
   R = k * p192
@@ -76,7 +76,7 @@ def test_ecdsa():
      or R.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
     raise TestFailure("*** k * p192 came out wrong.")
   else:
-    print_("k * p192 came out right.")
+    print("k * p192 came out right.")
 
   u1 = 2563697409189434185194736134579731015366492496392189760599
   u2 = 6266643813348617967186477710235785849136406323338782220568
@@ -85,7 +85,7 @@ def test_ecdsa():
      or temp.y() != 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835:
     raise TestFailure("*** u1 * p192 + u2 * Q came out wrong.")
   else:
-    print_("u1 * p192 + u2 * Q came out right.")
+    print("u1 * p192 + u2 * Q came out right.")
 
   e = 968236873715988614170569073515315707566766479517
   pubk = Public_key(generator_192, generator_192 * d)
@@ -96,21 +96,21 @@ def test_ecdsa():
      or s != 5735822328888155254683894997897571951568553642892029982342:
     raise TestFailure("*** r or s came out wrong.")
   else:
-    print_("r and s came out right.")
+    print("r and s came out right.")
 
   valid = pubk.verifies(e, sig)
   if valid:
-    print_("Signature verified OK.")
+    print("Signature verified OK.")
   else:
     raise TestFailure("*** Signature failed verification.")
 
   valid = pubk.verifies(e - 1, sig)
   if not valid:
-    print_("Forgery was correctly rejected.")
+    print("Forgery was correctly rejected.")
   else:
     raise TestFailure("*** Forgery was erroneously accepted.")
 
-  print_("Testing point validity, as per ECDSAVS.pdf B.2.2:")
+  print("Testing point validity, as per ECDSAVS.pdf B.2.2:")
 
   test_point_validity( \
     p192, \
@@ -184,8 +184,8 @@ def test_ecdsa():
     0x509014c0c4d6b536e3ca750ec09066af39b4c8616a53a923, \
     False)
 
-  print_("Trying signature-verification tests from ECDSAVS.pdf B.2.4:")
-  print_("P-192:")
+  print("Trying signature-verification tests from ECDSAVS.pdf B.2.4:")
+  print("P-192:")
   Msg = 0x84ce72aa8699df436059f052ac51b6398d2511e49631bcb7e71f89c499b9ee425dfbc13a5f6d408471b054f2655617cbbaf7937b7c80cd8865cf02c8487d30d2b0fbd8b2c4e102e16d828374bbc47b93852f212d5043c3ea720f086178ff798cc4f63f787b9c2e419efa033e7644ea7936f54462dc21a6c4580725f7f0e7d158
   Qx = 0xd9dbfb332aa8e5ff091e8ce535857c37c73f6250ffb2e7ac
   Qy = 0x282102e364feded3ad15ddf968f88d8321aa268dd483ebc4
@@ -293,7 +293,7 @@ def test_ecdsa():
   S = 0x984c2db99827576c0a41a5da41e07d8cc768bc82f18c9da9
   test_signature_validity(Msg, Qx, Qy, R, S, False)
 
-  print_("Testing the example code:")
+  print("Testing the example code:")
 
   # Building a public/private key pair from the NIST Curve P-192:
 
@@ -320,11 +320,11 @@ def test_ecdsa():
   # Verifying a signature for a hash value:
 
   if pubkey.verifies(hash, signature):
-    print_("Demo verification succeeded.")
+    print("Demo verification succeeded.")
   else:
     raise TestFailure("*** Demo verification failed.")
 
   if pubkey.verifies(hash - 1, signature):
     raise TestFailure("**** Demo verification failed to reject tampered hash.")
   else:
-    print_("Demo verification correctly rejected tampered hash.")
+    print("Demo verification correctly rejected tampered hash.")
