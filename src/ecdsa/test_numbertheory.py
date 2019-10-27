@@ -1,8 +1,14 @@
+from six import print_
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+import hypothesis.strategies as st
+from hypothesis import given
 from .numbertheory import (SquareRootError, factorization, gcd, lcm,
                            jacobi, inverse_mod,
                            is_prime, next_prime, smallprimes,
                            square_root_mod_prime)
-from six import print_
 
 def test_numbertheory():
 
@@ -99,26 +105,30 @@ def test_numbertheory():
           print_("%d != jacobi( %d, %d )" % (c, a, m))
 
 
-# Test the inverse_mod function:
-  print_("Testing inverse_mod . . .")
-  import random
-  n_tests = 0
-  for i in range(100):
-    m = random.randint(20, 10000)
-    for j in range(100):
-      a = random.randint(1, m - 1)
-      if gcd(a, m) == 1:
-        n_tests = n_tests + 1
-        inv = inverse_mod(a, m)
-        if inv <= 0 or inv >= m or (a * inv) % m != 1:
-          error_tally = error_tally + 1
-          print_("%d = inverse_mod( %d, %d ) is wrong." % (inv, a, m))
-  assert n_tests > 1000
-  print_(n_tests, " tests of inverse_mod completed.")
-
   class FailedTest(Exception):
     pass
 
   print_(error_tally, "errors detected.")
   if error_tally != 0:
     raise FailedTest("%d errors detected" % error_tally)
+
+
+@st.composite
+def st_two_nums_rel_prime(draw):
+    # 521-bit is the biggest curve we operate on, use 1024 for a bit
+    # of breathing space
+    mod = draw(st.integers(min_value=2, max_value=2**1024))
+    num = draw(st.integers(min_value=1, max_value=mod-1)
+               .filter(lambda x: gcd(x, mod) == 1))
+    return num, mod
+
+
+class TestNumbertheory(unittest.TestCase):
+    @given(st_two_nums_rel_prime())
+    def test_inverse_mod(self, nums):
+        num, mod = nums
+
+        inv = inverse_mod(num, mod)
+
+        assert 0 < inv < mod
+        assert num * inv % mod == 1
