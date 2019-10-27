@@ -1,7 +1,18 @@
 from __future__ import print_function
-import random
+import sys
+import hypothesis.strategies as st
+from hypothesis import given, settings, note
 from .ecdsa import Private_key, Public_key, Signature, \
-    curve_192, generator_192, digest_integer, ellipticcurve, point_is_valid
+    curve_192, generator_192, digest_integer, ellipticcurve, point_is_valid, \
+    generator_224, generator_256, generator_384, generator_521, \
+    generator_secp256k1
+
+
+HYP_SETTINGS = {}
+# old hypothesis doesn't have the "deadline" setting
+if sys.version_info > (2, 7):
+    # SEC521p is slow, allow long execution for it
+    HYP_SETTINGS["deadline"] = 5000
 
 
 def test_ecdsa():
@@ -293,38 +304,45 @@ def test_ecdsa():
   S = 0x984c2db99827576c0a41a5da41e07d8cc768bc82f18c9da9
   test_signature_validity(Msg, Qx, Qy, R, S, False)
 
-  print("Testing the example code:")
 
-  # Building a public/private key pair from the NIST Curve P-192:
+@st.composite
+def st_random_gen_key_msg_nonce(draw):
+    """Hypothesis strategy for test_sig_verify()."""
+    name_gen = {
+        "generator_192": generator_192,
+        "generator_224": generator_224,
+        "generator_256": generator_256,
+        "generator_secp256k1": generator_secp256k1,
+        "generator_384": generator_384,
+        "generator_521": generator_521}
+    name = draw(st.sampled_from(sorted(name_gen.keys())))
+    note("Generator used: {0}".format(name))
+    generator = name_gen[name]
+    order = generator.order()
 
-  g = generator_192
-  n = g.order()
+    key = draw(st.integers(min_value=1, max_value=order))
+    msg = draw(st.integers(min_value=1, max_value=order))
+    nonce = draw(st.integers(min_value=1, max_value=order+1) |
+                 st.integers(min_value=order>>1, max_value=order))
+    return generator, key, msg, nonce
 
-  # (random.SystemRandom is supposed to provide
-  # crypto-quality random numbers, but as Debian recently
-  # illustrated, a systems programmer can accidentally
-  # demolish this security, so in serious applications
-  # further precautions are appropriate.)
 
-  randrange = random.SystemRandom().randrange
+SIG_VER_SETTINGS = dict(HYP_SETTINGS)
+SIG_VER_SETTINGS["max_examples"] = 10
+@settings(**SIG_VER_SETTINGS)
+@given(st_random_gen_key_msg_nonce())
+def test_sig_verify(args):
+    """
+    Check if signing and verification works for arbitrary messages and
+    that signatures for other messages are rejected.
+    """
+    generator, sec_mult, msg, nonce = args
 
-  secret = randrange(1, n)
-  pubkey = Public_key(g, g * secret)
-  privkey = Private_key(pubkey, secret)
+    pubkey = Public_key(generator, generator * sec_mult)
+    privkey = Private_key(pubkey, sec_mult)
 
-  # Signing a hash value:
+    signature = privkey.sign(msg, nonce)
 
-  hash = randrange(1, n)
-  signature = privkey.sign(hash, randrange(1, n))
+    assert pubkey.verifies(msg, signature)
 
-  # Verifying a signature for a hash value:
-
-  if pubkey.verifies(hash, signature):
-    print("Demo verification succeeded.")
-  else:
-    raise TestFailure("*** Demo verification failed.")
-
-  if pubkey.verifies(hash - 1, signature):
-    raise TestFailure("**** Demo verification failed to reject tampered hash.")
-  else:
-    print("Demo verification correctly rejected tampered hash.")
+    assert not pubkey.verifies(msg - 1, signature)
