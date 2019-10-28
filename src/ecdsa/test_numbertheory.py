@@ -1,4 +1,7 @@
+import operator
 from six import print_
+from functools import reduce
+import operator
 try:
     import unittest2 as unittest
 except ImportError:
@@ -21,11 +24,6 @@ def test_numbertheory():
   # Making sure locally defined exceptions work:
   # p = modular_exp(2, -2, 3)
   # p = square_root_mod_prime(2, 3)
-
-  print_("Testing gcd...")
-  assert gcd(3 * 5 * 7, 3 * 5 * 11, 3 * 5 * 13) == 3 * 5
-  assert gcd([3 * 5 * 7, 3 * 5 * 11, 3 * 5 * 13]) == 3 * 5
-  assert gcd(3) == 3
 
   print_("Testing lcm...")
   assert lcm(3, 5 * 3, 7 * 3) == 3 * 5 * 7
@@ -95,7 +93,7 @@ def st_primes(draw, *args, **kwargs):
         kwargs["min_value"] = 1
     prime = draw(st.sampled_from(smallprimes) |
                  st.integers(*args, **kwargs)
-                 .filter(lambda x: is_prime(x)))
+                 .filter(is_prime))
     return prime
 
 
@@ -107,6 +105,65 @@ def st_num_square_prime(draw):
     return sq, prime
 
 
+@st.composite
+def st_comp_with_com_fac(draw):
+    """
+    Strategy that returns lists of numbers, all having a common factor.
+    """
+    primes = draw(st.lists(st_primes(max_value=2**512), min_size=1,
+                           max_size=10))
+    # select random prime(s) that will make the common factor of composites
+    com_fac_primes = draw(st.lists(st.sampled_from(primes),
+                                   min_size=1, max_size=20))
+    com_fac = reduce(operator.mul, com_fac_primes, 1)
+
+    # select at most 20 lists (returned numbers),
+    # each having at most 30 primes (factors) including none (then the number
+    # will be 1)
+    comp_primes = draw(
+        st.integers(min_value=1, max_value=20).
+        flatmap(lambda n: st.lists(st.lists(st.sampled_from(primes),
+                                            max_size=30),
+                                   min_size=1, max_size=n)))
+
+    return [reduce(operator.mul, nums, 1) * com_fac for nums in comp_primes]
+
+
+@st.composite
+def st_comp_no_com_fac(draw):
+    """
+    Strategy that returns lists of numbers that don't have a common factor.
+    """
+    primes = draw(st.lists(st_primes(max_value=2**512),
+                           min_size=2, max_size=10, unique=True))
+    # first select the primes that will create the uncommon factor
+    # between returned numbers
+    uncom_fac_primes = draw(st.lists(
+        st.sampled_from(primes),
+        min_size=1, max_size=len(primes)-1, unique=True))
+    uncom_fac = reduce(operator.mul, uncom_fac_primes, 1)
+
+    # then build composites from leftover primes
+    leftover_primes = [i for i in primes if i not in uncom_fac_primes]
+
+    assert leftover_primes
+    assert uncom_fac_primes
+
+    # select at most 20 lists, each having at most 30 primes
+    # selected from the leftover_primes list
+    number_primes = draw(
+        st.integers(min_value=1, max_value=20).
+        flatmap(lambda n: st.lists(st.lists(st.sampled_from(leftover_primes),
+                                            max_size=30),
+                                   min_size=1, max_size=n)))
+
+    numbers = [reduce(operator.mul, nums, 1) for nums in number_primes]
+
+    insert_at = draw(st.integers(min_value=0, max_value=len(numbers)))
+    numbers.insert(insert_at, uncom_fac)
+    return numbers
+
+
 HYP_SETTINGS = {}
 if HC_PRESENT:
     HYP_SETTINGS['suppress_health_check']=[HealthCheck.filter_too_much,
@@ -116,6 +173,39 @@ if HC_PRESENT:
 
 
 class TestNumbertheory(unittest.TestCase):
+    def test_gcd(self):
+        assert gcd(3 * 5 * 7, 3 * 5 * 11, 3 * 5 * 13) == 3 * 5
+        assert gcd([3 * 5 * 7, 3 * 5 * 11, 3 * 5 * 13]) == 3 * 5
+        assert gcd(3) == 3
+
+    @unittest.skipUnless(HC_PRESENT,
+                         "Hypothesis 2.0.0 can't be made tolerant of hard to "
+                         "meet requirements (like `is_prime()`)")
+    @settings(**HYP_SETTINGS)
+    @given(st_comp_with_com_fac())
+    def test_gcd_with_com_factor(self, numbers):
+        n = gcd(numbers)
+        assert 1 in numbers or n != 1
+        for i in numbers:
+            assert i % n == 0
+
+    @unittest.skipUnless(HC_PRESENT,
+                         "Hypothesis 2.0.0 can't be made tolerant of hard to "
+                         "meet requirements (like `is_prime()`)")
+    @settings(**HYP_SETTINGS)
+    @given(st_comp_no_com_fac())
+    def test_gcd_with_uncom_factor(self, numbers):
+        n = gcd(numbers)
+        assert n == 1
+
+    @given(st.lists(st.integers(min_value=1, max_value=2**8192),
+                    min_size=1, max_size=20))
+    def test_gcd_with_random_numbers(self, numbers):
+        n = gcd(numbers)
+        for i in numbers:
+            # check that at least it's a divider
+            assert i % n == 0
+
     @unittest.skipUnless(HC_PRESENT,
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
                          "meet requirements (like `is_prime()`)")
