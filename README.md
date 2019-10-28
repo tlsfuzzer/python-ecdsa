@@ -49,12 +49,12 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
 ```
             siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-  NIST192p:     48   0.02193s     45.60   0.01167s     85.71   0.02307s     43.34
-  NIST224p:     56   0.02993s     33.42   0.01595s     62.71   0.03157s     31.68
-  NIST256p:     64   0.03937s     25.40   0.02131s     46.92   0.04212s     23.74
-  NIST384p:     96   0.09177s     10.90   0.04844s     20.64   0.09787s     10.22
-  NIST521p:    132   0.17622s      5.67   0.09454s     10.58   0.18823s      5.31
- SECP256k1:     64   0.03940s     25.38   0.02124s     47.07   0.04137s     24.17
+  NIST192p:     48   0.01586s     63.05   0.00853s    117.26   0.01624s     61.58
+  NIST224p:     56   0.02153s     46.46   0.01145s     87.36   0.02307s     43.35
+  NIST256p:     64   0.02850s     35.09   0.01500s     66.65   0.02925s     34.19
+  NIST384p:     96   0.06664s     15.01   0.03512s     28.48   0.06887s     14.52
+  NIST521p:    132   0.13048s      7.66   0.07050s     14.18   0.13673s      7.31
+ SECP256k1:     64   0.02809s     35.60   0.01531s     65.32   0.03113s     32.12
  ```
 
 For comparison, a highly optimised implementation (including curve-specific
