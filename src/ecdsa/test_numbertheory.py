@@ -21,10 +21,6 @@ from .numbertheory import (SquareRootError, factorization, gcd, lcm,
 
 def test_numbertheory():
 
-  # Making sure locally defined exceptions work:
-  # p = modular_exp(2, -2, 3)
-  # p = square_root_mod_prime(2, 3)
-
   print_("Testing lcm...")
   assert lcm(3, 5 * 3, 7 * 3) == 3 * 5 * 7
   assert lcm([3, 5 * 3, 7 * 3]) == 3 * 5 * 7

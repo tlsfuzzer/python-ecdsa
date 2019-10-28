@@ -35,20 +35,15 @@ class NegativeExponentError(Error):
   pass
 
 
-def modular_exp(base, exponent, modulus):
-  "Raise base to exponent, reducing by modulus"
-  if exponent < 0:
-    raise NegativeExponentError("Negative exponents (%d) not allowed" \
-                                % exponent)
-  return pow(base, exponent, modulus)
-#   result = 1L
-#   x = exponent
-#   b = base + 0L
-#   while x > 0:
-#     if x % 2 > 0: result = (result * b) % modulus
-#     x = x // 2
-#     b = (b * b) % modulus
-#   return result
+def modular_exp(base, exponent, modulus):  # pragma: no cover
+    """Raise base to exponent, reducing by modulus"""
+    # deprecated in 0.14
+    warnings.warn("Function is unused in library code. If you use this code, "
+                  "change to pow() builtin.", DeprecationWarning)
+    if exponent < 0:
+        raise NegativeExponentError("Negative exponents (%d) not allowed"
+                                    % exponent)
+    return pow(base, exponent, modulus)
 
 
 def polynomial_reduce_mod(poly, polymod, p):
@@ -182,14 +177,14 @@ def square_root_mod_prime(a, p):
                           % (a, p))
 
   if p % 4 == 3:
-    return modular_exp(a, (p + 1) // 4, p)
+    return pow(a, (p + 1) // 4, p)
 
   if p % 8 == 5:
-    d = modular_exp(a, (p - 1) // 4, p)
+    d = pow(a, (p - 1) // 4, p)
     if d == 1:
-      return modular_exp(a, (p + 3) // 8, p)
+      return pow(a, (p + 3) // 8, p)
     if d == p - 1:
-      return (2 * a * modular_exp(4 * a, (p - 5) // 8, p)) % p
+      return (2 * a * pow(4 * a, (p - 5) // 8, p)) % p
     raise RuntimeError("Shouldn't get here.")
 
   if PY3:
@@ -524,11 +519,11 @@ def is_prime(n):
     r = r // 2
   for i in xrange(t):
     a = smallprimes[i]
-    y = modular_exp(a, r, n)
+    y = pow(a, r, n)
     if y != 1 and y != n - 1:
       j = 1
       while j <= s - 1 and y != n - 1:
-        y = modular_exp(y, 2, n)
+        y = pow(y, 2, n)
         if y == 1:
           miller_rabin_test_count = i + 1
           return False
