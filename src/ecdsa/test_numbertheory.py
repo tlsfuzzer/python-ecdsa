@@ -19,13 +19,6 @@ from .numbertheory import (SquareRootError, factorization, gcd, lcm,
                            is_prime, next_prime, smallprimes,
                            square_root_mod_prime)
 
-def test_numbertheory():
-
-  print_("Testing lcm...")
-  assert lcm(3, 5 * 3, 7 * 3) == 3 * 5 * 7
-  assert lcm([3, 5 * 3, 7 * 3]) == 3 * 5 * 7
-  assert lcm(3) == 3
-
 
 BIGPRIMES = (999671,
              999683,
@@ -201,6 +194,18 @@ class TestNumbertheory(unittest.TestCase):
         for i in numbers:
             # check that at least it's a divider
             assert i % n == 0
+
+    def test_lcm(self):
+        assert lcm(3, 5 * 3, 7 * 3) == 3 * 5 * 7
+        assert lcm([3, 5 * 3, 7 * 3]) == 3 * 5 * 7
+        assert lcm(3) == 3
+
+    @given(st.lists(st.integers(min_value=1, max_value=2**8192),
+                    min_size=1, max_size=20))
+    def test_lcm_with_random_numbers(self, numbers):
+        n = lcm(numbers)
+        for i in numbers:
+            assert n % i == 0
 
     @unittest.skipUnless(HC_PRESENT,
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
