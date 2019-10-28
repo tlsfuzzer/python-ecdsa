@@ -721,6 +721,16 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     assert vk.pubkey.point == from_enc.pubkey.point
 
 
+def test_ecdh():
+    for vcurve in curves:
+        priv1 = SigningKey.generate(curve=vcurve, hashfunc=sha256)
+        priv2 = SigningKey.generate(curve=vcurve, hashfunc=sha256)
+
+        secret1 = priv1.ecdh_get_shared_secret(priv2.get_verifying_key())
+        secret2 = priv2.ecdh_get_shared_secret(priv1.get_verifying_key())
+        assert secret1 == secret2
+
+
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
     # sign/verify arguments changed between 0.9.8 and 1.0.0: the early

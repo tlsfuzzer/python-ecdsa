@@ -1168,3 +1168,22 @@ class SigningKey(object):
         assert 1 <= _k < order
         sig = self.privkey.sign(number, _k)
         return sig.r, sig.s
+
+    def ecdh_get_shared_secret(self, remote_public_key):
+        """
+        Elliptic-curve Diffie–Hellman (ECDH). A key agreement protocol.
+        Allows two parties, each having an elliptic-curve public–private key 
+        pair, to establish a shared secret over an insecure channel
+                
+        :param remote_public_key: public key of remote party (VerifyingKey)
+        :return: shared secret
+        """""
+        # shared secret = PUBKEYtheirs * PRIVATEKEYours
+        result = remote_public_key.pubkey.point * self.privkey.secret_multiplier
+
+        sharing_secret = ecdsa.int_to_string(result.x())
+        deltalen = self.curve.baselen - len(sharing_secret)
+        if deltalen > 0:
+            sharing_secret = b"\x00" * deltalen + sharing_secret
+        return sharing_secret
+
