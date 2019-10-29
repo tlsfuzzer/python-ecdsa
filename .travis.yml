@@ -60,7 +60,7 @@ before_install:
          TRAVIS_COMMIT_RANGE=$PR_FIRST^..$TRAVIS_COMMIT
        fi
   # sanity check current commit
-  - git rev-parse HEAD
+  - BRANCH=$(git rev-parse HEAD)
   - echo "TRAVIS_COMMIT_RANGE=$TRAVIS_COMMIT_RANGE"
   - git fetch origin master:refs/remotes/origin/master
 
@@ -78,7 +78,6 @@ install:
 script:
   - if [[ $TOX_ENV ]]; then tox -e $TOX_ENV; fi
   - tox -e speed
-  - cp diff-instrumental.py diff-instrumental-2.py
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
         git checkout $PR_FIRST^
@@ -86,8 +85,9 @@ script:
         files="$(ls src/ecdsa/test*.py | grep -v test_malformed_sigs.py)"
         instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
         instrumental -f .instrumental.cov -s
-        instrumental -f .instrumental.cov -s | python diff-instrumental-2.py --save .diff-instrumental
-        git checkout $TRAVIS_COMMIT
+        instrumental -f .instrumental.cov -s | python diff-instrumental.py --save .diff-instrumental
+        git checkout $BRANCH
+        files="$(ls src/ecdsa/test*.py | grep -v test_malformed_sigs.py)"
         instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
         instrumental -f .instrumental.cov -sr
       fi
@@ -98,11 +98,11 @@ script:
         instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
         instrumental -f .instrumental.cov -s
         # just log the values when merging
-        instrumental -f .instrumental.cov -s | python diff-instrumental-2.py
+        instrumental -f .instrumental.cov -s | python diff-instrumental.py
       fi
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
-          instrumental -f .instrumental.cov -s | python diff-instrumental-2.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
+          instrumental -f .instrumental.cov -s | python diff-instrumental.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
       fi
 after_success:
   - if [[ -z $INSTRUMENTAL ]]; then coveralls; fi

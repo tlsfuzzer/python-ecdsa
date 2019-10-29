@@ -12,7 +12,7 @@ Many thanks to Coda Hale for his implementation in Go language:
 import hmac
 from binascii import hexlify
 from .util import number_to_string, number_to_string_crop, bit_length
-from six import b
+from ._compat import hmac_compat
 
 
 # bit_length was defined in this module previously so keep it for backwards
@@ -54,24 +54,33 @@ def generate_k(order, secexp, hash_func, data, retry_gen=0, extra_entropy=b''):
     qlen = bit_length(order)
     holen = hash_func().digest_size
     rolen = (qlen + 7) / 8
-    bx = number_to_string(secexp, order) + bits2octets(data, order) + \
-        extra_entropy
+    bx = (hmac_compat(number_to_string(secexp, order)),
+          hmac_compat(bits2octets(data, order)),
+          hmac_compat(extra_entropy))
 
     # Step B
-    v = b('\x01') * holen
+    v = b'\x01' * holen
 
     # Step C
-    k = b('\x00') * holen
+    k = b'\x00' * holen
 
     # Step D
 
-    k = hmac.new(k, v + b('\x00') + bx, hash_func).digest()
+    k = hmac.new(k, digestmod=hash_func)
+    k.update(v + b'\x00')
+    for i in bx:
+        k.update(i)
+    k = k.digest()
 
     # Step E
     v = hmac.new(k, v, hash_func).digest()
 
     # Step F
-    k = hmac.new(k, v + b('\x01') + bx, hash_func).digest()
+    k = hmac.new(k, digestmod=hash_func)
+    k.update(v + b'\x01')
+    for i in bx:
+        k.update(i)
+    k = k.digest()
 
     # Step G
     v = hmac.new(k, v, hash_func).digest()
@@ -79,7 +88,7 @@ def generate_k(order, secexp, hash_func, data, retry_gen=0, extra_entropy=b''):
     # Step H
     while True:
         # Step H1
-        t = b('')
+        t = b''
 
         # Step H2
         while len(t) < rolen:
@@ -89,11 +98,10 @@ def generate_k(order, secexp, hash_func, data, retry_gen=0, extra_entropy=b''):
         # Step H3
         secret = bits2int(t, qlen)
 
-        if secret >= 1 and secret < order:
+        if 1 <= secret < order:
             if retry_gen <= 0:
                 return secret
-            else:
-                retry_gen -= 1
+            retry_gen -= 1
 
-        k = hmac.new(k, v + b('\x00'), hash_func).digest()
+        k = hmac.new(k, v + b'\x00', hash_func).digest()
         v = hmac.new(k, v, hash_func).digest()

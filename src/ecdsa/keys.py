@@ -55,6 +55,15 @@ Primary classes for performing signing and verification operations.
         Abstract Syntax Notation 1 is a standard description language for
         specifying serialisation and deserialisation of data structures in a
         portable and cross-platform way.
+
+    bytes-like object
+        All the types that implement the buffer protocol. That includes
+        ``str`` (only on python2), ``bytes``, ``bytesarray``, ``array.array`
+        and ``memoryview`` of those objects.
+        Please note that ``array.array` serialisation (converting it to byte
+        string) is endianess dependant! Signature computed over ``array.array``
+        of integers on a big-endian system will not be verified on a
+        little-endian system and vice-versa.
 """
 
 import binascii
@@ -70,6 +79,7 @@ from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
 from .util import oid_ecPublicKey, encoded_oid_ecPublicKey, MalformedSignature
+from ._compat import normalise_bytes
 
 
 __all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey",
@@ -231,8 +241,8 @@ class VerifyingKey(object):
         Python 2 days when there were no binary strings. In Python 3 the
         input needs to be a bytes-like object.
 
-        :param string: :term:`raw encoding` of the public key
-        :type string: bytes-like object
+        :param string: single point encoding of the public key
+        :type string: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lie
         :type curve: ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
@@ -245,6 +255,7 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        string = normalise_bytes(string)
         sig_len = len(string)
         if sig_len == curve.verifying_key_length:
             point = cls._from_raw_encoding(string, curve, validate_point)
@@ -317,16 +328,17 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        string = normalise_bytes(string)
         # [[oid_ecPublicKey,oid_curve], point_str_bitstring]
         s1, empty = der.remove_sequence(string)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER("trailing junk after DER pubkey: %s" %
                                     binascii.hexlify(empty))
         s2, point_str_bitstring = der.remove_sequence(s1)
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
         oid_curve, empty = der.remove_object(rest)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER("trailing junk after DER pubkey objects: %s" %
                                     binascii.hexlify(empty))
         if not oid_pk == oid_ecPublicKey:
@@ -334,7 +346,7 @@ class VerifyingKey(object):
                                     "encoding: {0!r}".format(oid_pk))
         curve = find_curve(oid_curve)
         point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER("trailing junk after pubkey pointstring: %s" %
                                     binascii.hexlify(empty))
         # raw encoding of point is invalid in DER files
@@ -371,6 +383,7 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey objects
         :rtype: list of VerifyingKey
         """
+        data = normalise_bytes(data)
         digest = hashfunc(data).digest()
         return cls.from_public_key_recovery_with_digest(
             signature, digest, curve, hashfunc=hashfunc,
@@ -411,6 +424,7 @@ class VerifyingKey(object):
         r, s = sigdecode(signature, generator.order())
         sig = ecdsa.Signature(r, s)
 
+        digest = normalise_bytes(digest)
         digest_as_number = string_to_number(digest)
         pks = sig.recover_public_keys(digest_as_number, generator)
 
@@ -531,7 +545,7 @@ class VerifyingKey(object):
         as the `sigdecode` parameter.
 
         :param signature: encoding of the signature
-        :type signature: bytes like object
+        :type signature: sigdecode method dependant
         :param data: data signed by the `signature`, will be hashed using
             `hashfunc`, if specified, or default hash function
         :type data: bytes like object
@@ -553,6 +567,10 @@ class VerifyingKey(object):
         :return: True if the verification was successful
         :rtype: bool
         """
+        # signature doesn't have to be a bytes-like-object so don't normalise
+        # it, the decoders will do that
+        data = normalise_bytes(data)
+
         hashfunc = hashfunc or self.default_hashfunc
         digest = hashfunc(data).digest()
         return self.verify_digest(signature, digest, sigdecode)
@@ -567,7 +585,7 @@ class VerifyingKey(object):
         as the `sigdecode` parameter.
 
         :param signature: encoding of the signature
-        :type signature: bytes like object
+        :type signature: sigdecode method dependant
         :param digest: raw hash value that the signature authenticates.
         :type digest: bytes like object
         :param sigdecode: Callable to define the way the signature needs to
@@ -585,6 +603,9 @@ class VerifyingKey(object):
         :return: True if the verification was successful
         :rtype: bool
         """
+        # signature doesn't have to be a bytes-like-object so don't normalise
+        # it, the decoders will do that
+        digest = normalise_bytes(digest)
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,
@@ -716,6 +737,7 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
+        string = normalise_bytes(string)
         if len(string) != curve.baselen:
             raise MalformedPointError(
                 "Invalid length of private key, received {0}, expected {1}"
@@ -808,6 +830,7 @@ class SigningKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        string = normalise_bytes(string)
         s, empty = der.remove_sequence(string)
         if empty != b(""):
             raise der.UnexpectedDER("trailing junk after DER privkey: %s" %
@@ -951,6 +974,8 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         hashfunc = hashfunc or self.default_hashfunc
+        data = normalise_bytes(data)
+        extra_entropy = normalise_bytes(extra_entropy)
         digest = hashfunc(data).digest()
 
         return self.sign_digest_deterministic(
@@ -993,6 +1018,9 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         secexp = self.privkey.secret_multiplier
+        hashfunc = hashfunc or self.default_hashfunc
+        digest = normalise_bytes(digest)
+        extra_entropy = normalise_bytes(extra_entropy)
 
         def simple_r_s(r, s, order):
             return r, s, order
@@ -1056,6 +1084,7 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         hashfunc = hashfunc or self.default_hashfunc
+        data = normalise_bytes(data)
         h = hashfunc(data).digest()
         return self.sign_digest(h, entropy, sigencode, k)
 
@@ -1094,6 +1123,7 @@ class SigningKey(object):
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependant type
         """
+        digest = normalise_bytes(digest)
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,

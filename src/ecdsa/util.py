@@ -6,6 +6,7 @@ import binascii
 from hashlib import sha256
 from six import PY3, int2byte, b, next
 from . import der
+from ._compat import normalise_bytes
 
 # RFC5480:
 #   The "unrestricted" algorithm identifier is:
@@ -312,6 +313,7 @@ def sigdecode_string(signature, order):
     :return: tuple with decoded 'r' and 's' values of signature
     :rtype: tuple of ints
     """
+    signature = normalise_bytes(signature)
     l = orderlen(order)
     if not len(signature) == 2 * l:
         raise MalformedSignature(
@@ -347,6 +349,8 @@ def sigdecode_strings(rs_strings, order):
             "Invalid number of strings provided: {0}, expected 2"
             .format(len(rs_strings)))
     (r_str, s_str) = rs_strings
+    r_str = normalise_bytes(r_str)
+    s_str = normalise_bytes(s_str)
     l = orderlen(order)
     if not len(r_str) == l:
         raise MalformedSignature(
@@ -388,14 +392,15 @@ def sigdecode_der(sig_der, order):
     :return: tuple with decoded 'r' and 's' values of signature
     :rtype: tuple of ints
     """
+    sig_der = normalise_bytes(sig_der)
     # return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
     rs_strings, empty = der.remove_sequence(sig_der)
-    if empty != b(""):
+    if empty != b"":
         raise der.UnexpectedDER("trailing junk after DER sig: %s" %
                                 binascii.hexlify(empty))
     r, rest = der.remove_integer(rs_strings)
     s, empty = der.remove_integer(rest)
-    if empty != b(""):
+    if empty != b"":
         raise der.UnexpectedDER("trailing junk after DER numbers: %s" %
                                 binascii.hexlify(empty))
     return r, s

@@ -3,7 +3,8 @@ from __future__ import division
 import binascii
 import base64
 import warnings
-from six import int2byte, b, integer_types, text_type
+from six import int2byte, b, text_type
+from ._compat import str_idx_as_int
 
 
 class UnexpectedDER(Exception):
@@ -20,7 +21,7 @@ def encode_integer(r):
     if len(h) % 2:
         h = b("0") + h
     s = binascii.unhexlify(h)
-    num = s[0] if isinstance(s[0], integer_types) else ord(s[0])
+    num = str_idx_as_int(s, 0)
     if num <= 0x7f:
         return b("\x02") + int2byte(len(s)) + s
     else:
@@ -83,7 +84,7 @@ def encode_bitstring(s, unused=_sentry):
         if unused:
             if not s:
                 raise ValueError("unused is non-zero but s is empty")
-            last = s[-1] if isinstance(s[-1], integer_types) else ord(s[-1])
+            last = str_idx_as_int(s, -1)
             if last & (2 ** unused - 1):
                 raise ValueError("unused bits must be zeros in DER")
         encoded_unused = int2byte(unused)
@@ -121,7 +122,7 @@ def encode_number(n):
 
 
 def remove_constructed(string):
-    s0 = string[0] if isinstance(string[0], integer_types) else ord(string[0])
+    s0 = str_idx_as_int(string, 0)
     if (s0 & 0xe0) != 0xa0:
         raise UnexpectedDER("wanted type 'constructed tag' (0xa0-0xbf), "
                             "got 0x%02x" % s0)
@@ -135,9 +136,8 @@ def remove_constructed(string):
 def remove_sequence(string):
     if not string:
         raise UnexpectedDER("Empty string does not encode a sequence")
-    if not string.startswith(b("\x30")):
-        n = string[0] if isinstance(string[0], integer_types) else \
-                ord(string[0])
+    if string[:1] != b"\x30":
+        n = str_idx_as_int(string, 0)
         raise UnexpectedDER("wanted type 'sequence' (0x30), got 0x%02x" % n)
     length, lengthlength = read_length(string[1:])
     if length > len(string) - 1 - lengthlength:
@@ -147,8 +147,8 @@ def remove_sequence(string):
 
 
 def remove_octet_string(string):
-    if not string.startswith(b("\x04")):
-        n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
+    if string[:1] != b"\x04":
+        n = str_idx_as_int(string, 0)
         raise UnexpectedDER("wanted type 'octetstring' (0x04), got 0x%02x" % n)
     length, llen = read_length(string[1:])
     body = string[1+llen:1+llen+length]
@@ -157,8 +157,8 @@ def remove_octet_string(string):
 
 
 def remove_object(string):
-    if not string.startswith(b("\x06")):
-        n = string[0] if isinstance(string[0], integer_types) else ord(string[0])
+    if string[:1] != b"\x06":
+        n = str_idx_as_int(string, 0)
         raise UnexpectedDER("wanted type 'object' (0x06), got 0x%02x" % n)
     length, lengthlength = read_length(string[1:])
     body = string[1+lengthlength:1+lengthlength+length]
@@ -180,9 +180,8 @@ def remove_integer(string):
     if not string:
         raise UnexpectedDER("Empty string is an invalid encoding of an "
                             "integer")
-    if not string.startswith(b("\x02")):
-        n = string[0] if isinstance(string[0], integer_types) \
-                else ord(string[0])
+    if string[:1] != b"\x02":
+        n = str_idx_as_int(string, 0)
         raise UnexpectedDER("wanted type 'integer' (0x02), got 0x%02x" % n)
     length, llen = read_length(string[1:])
     if length > len(string) - 1 - llen:
@@ -191,16 +190,14 @@ def remove_integer(string):
         raise UnexpectedDER("0-byte long encoding of integer")
     numberbytes = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
-    msb = numberbytes[0] if isinstance(numberbytes[0], integer_types) \
-            else ord(numberbytes[0])
+    msb = str_idx_as_int(numberbytes, 0)
     if not msb < 0x80:
         raise UnexpectedDER("Negative integers are not supported")
     # check if the encoding is the minimal one (DER requirement)
     if length > 1 and not msb:
         # leading zero byte is allowed if the integer would have been
         # considered a negative number otherwise
-        smsb = numberbytes[1] if isinstance(numberbytes[1], integer_types) \
-                else ord(numberbytes[1])
+        smsb = str_idx_as_int(numberbytes, 1)
         if smsb < 0x80:
             raise UnexpectedDER("Invalid encoding of integer, unnecessary "
                                 "zero padding bytes")
@@ -215,7 +212,7 @@ def read_number(string):
         if llen > len(string):
             raise UnexpectedDER("ran out of length bytes")
         number = number << 7
-        d = string[llen] if isinstance(string[llen], integer_types) else ord(string[llen])
+        d = str_idx_as_int(string, llen)
         number += (d & 0x7f)
         llen += 1
         if not d & 0x80:
@@ -238,7 +235,7 @@ def encode_length(l):
 def read_length(string):
     if not string:
         raise UnexpectedDER("Empty string can't encode valid length value")
-    num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
+    num = str_idx_as_int(string, 0)
     if not (num & 0x80):
         # short form
         return (num & 0x7f), 1
@@ -250,7 +247,7 @@ def read_length(string):
     if llen > len(string)-1:
         raise UnexpectedDER("Length of length longer than provided buffer")
     # verify that the encoding is minimal possible (DER requirement)
-    msb = string[1] if isinstance(string[1], integer_types) else ord(string[1])
+    msb = str_idx_as_int(string, 1)
     if not msb or llen == 1 and msb < 0x80:
         raise UnexpectedDER("Not minimal encoding of length")
     return int(binascii.hexlify(string[1:1+llen]), 16), 1+llen
@@ -301,8 +298,8 @@ def remove_bitstring(string, expect_unused=_sentry):
         warnings.warn("Legacy call convention used, expect_unused= needs to be"
                       " specified",
                       DeprecationWarning)
-    num = string[0] if isinstance(string[0], integer_types) else ord(string[0])
-    if not string.startswith(b("\x03")):
+    num = str_idx_as_int(string, 0)
+    if string[:1] != b"\x03":
         raise UnexpectedDER("wanted bitstring (0x03), got 0x%02x" % num)
     length, llen = read_length(string[1:])
     if not length:
@@ -310,8 +307,7 @@ def remove_bitstring(string, expect_unused=_sentry):
     body = string[1+llen:1+llen+length]
     rest = string[1+llen+length:]
     if expect_unused is not _sentry:
-        unused = body[0] if isinstance(body[0], integer_types) \
-            else ord(body[0])
+        unused = str_idx_as_int(body, 0)
         if not 0 <= unused <= 7:
             raise UnexpectedDER("Invalid encoding of unused bits")
         if expect_unused is not None and expect_unused != unused:
@@ -320,8 +316,7 @@ def remove_bitstring(string, expect_unused=_sentry):
         if unused:
             if not body:
                 raise UnexpectedDER("Invalid encoding of empty bit string")
-            last = body[-1] if isinstance(body[-1], integer_types) else \
-                ord(body[-1])
+            last = str_idx_as_int(body, -1)
             # verify that all the unused bits are set to zero (DER requirement)
             if last & (2 ** unused - 1):
                 raise UnexpectedDER("Non zero padding bits in bit string")
