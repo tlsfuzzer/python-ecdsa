@@ -4,7 +4,7 @@ from binascii import hexlify, unhexlify
 
 from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
 from .curves import curves
-from .keys import SigningKey, VerifyingKey
+from .keys import SigningKey, VerifyingKey, InvalidPublicKeyCurveError
 
 
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
@@ -21,17 +21,12 @@ def test_ecdh_wrong_public_key_curve():
     priv1 = SigningKey.generate(curve=NIST192p)
     priv2 = SigningKey.generate(curve=NIST256p)
 
-    try:
+    with pytest.raises(InvalidPublicKeyCurveError):
         priv1.ecdh_get_shared_secret(priv2.get_verifying_key())
-        assert False
-    except ValueError:
-        pass
 
-    try:
+    with pytest.raises(InvalidPublicKeyCurveError):
         priv2.ecdh_get_shared_secret(priv1.get_verifying_key())
-        assert False
-    except ValueError:
-        pass
+
 
 # https://github.com/scogliani/ecc-test-vectors/blob/master/ecdh_kat/secp192r1.txt
 # https://github.com/scogliani/ecc-test-vectors/blob/master/ecdh_kat/secp256r1.txt
@@ -146,7 +141,7 @@ def test_ecdh_wrong_public_key_curve():
         ),
     ],
 )
-def test_ecdh_(curve,privatekey,pubkey,secret):
+def test_ecdh_NIST(curve,privatekey,pubkey,secret):
     priv = SigningKey.from_string(unhexlify(privatekey), curve)
     pub = VerifyingKey.from_string(unhexlify(pubkey), curve)
 

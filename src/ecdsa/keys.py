@@ -113,6 +113,18 @@ class MalformedPointError(AssertionError):
     pass
 
 
+class InvalidPublicKeyCurveError(AssertionError):
+    """ECDH. Raised in case not equal curves in public key and private key."""
+
+    pass
+
+
+class InvalidSharedSecretError(AssertionError):
+    """ECDH. Raised in case the shared secret we obtained is an INFINITY."""
+
+    pass
+
+
 class VerifyingKey(object):
     """
     Class for handling keys that can verify signatures (public keys).
@@ -1179,17 +1191,14 @@ class SigningKey(object):
         :return: shared secret
         """""
 
-        if not self.curve.curve.contains_point(
-                remote_public_key.pubkey.point.x(),
-                remote_public_key.pubkey.point.y()):
-            raise ValueError("Invalid curve in public key.")
+        if self.curve.curve != remote_public_key.curve.curve:
+            raise InvalidPublicKeyCurveError
 
         # shared secret = PUBKEYtheirs * PRIVATEKEYours
         result = remote_public_key.pubkey.point * self.privkey.secret_multiplier
         if result == ellipticcurve.INFINITY:
-            raise ValueError("Invalid shared secret.")
+            raise InvalidSharedSecretError
 
-        shared_secret = number_to_string(result.x(),
-                                         0xff << ((self.curve.baselen - 1) * 8))
+        shared_secret = number_to_string(result.x(), self.curve.order)
         return shared_secret
 

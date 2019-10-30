@@ -1,5 +1,5 @@
 from .keys import SigningKey, VerifyingKey, BadSignatureError, BadDigestError,\
-        MalformedPointError
+        MalformedPointError, InvalidPublicKeyCurveError
 from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p,\
         SECP256k1, BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,\
         BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1, BRAINPOOLP512r1
@@ -14,7 +14,7 @@ __all__ = ["curves", "der", "ecdsa", "ellipticcurve", "keys", "numbertheory",
            "test_pyecdsa", "util", "six"]
 
 _hush_pyflakes = [SigningKey, VerifyingKey, BadSignatureError, BadDigestError,
-                  MalformedPointError, UnexpectedDER,
+                  MalformedPointError, UnexpectedDER, InvalidPublicKeyCurveError,
                   NIST192p, NIST224p, NIST256p, NIST384p, NIST521p, SECP256k1,
                   BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,
                   BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1,
