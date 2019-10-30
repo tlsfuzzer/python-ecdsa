@@ -135,6 +135,11 @@ class VerifyingKey(object):
         self.default_hashfunc = None
         self.pubkey = None
 
+    def __repr__(self):
+        pub_key = self.to_string("compressed")
+        return "VerifyingKey.from_string({0!r}, {1!r}, {2})".format(
+            pub_key, self.curve, self.default_hashfunc().name)
+
     @classmethod
     def from_public_point(cls, point, curve=NIST192p, hashfunc=sha1):
         """

@@ -23,12 +23,12 @@ def encode_integer(r):
     s = binascii.unhexlify(h)
     num = str_idx_as_int(s, 0)
     if num <= 0x7f:
-        return b("\x02") + int2byte(len(s)) + s
+        return b("\x02") + encode_length(len(s)) + s
     else:
         # DER integers are two's complement, so if the first byte is
         # 0x80-0xff then we need an extra 0x00 byte to prevent it from
         # looking negative.
-        return b("\x02") + int2byte(len(s)+1) + b("\x00") + s
+        return b("\x02") + encode_length(len(s)+1) + b("\x00") + s
 
 
 # sentry object to check if an argument was specified (used to detect
