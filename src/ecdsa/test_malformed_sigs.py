@@ -82,12 +82,13 @@ def st_fuzzed_sig(draw, keys_and_sigs):
     note("Remove bytes: {0}".format(to_remove))
 
     # decide which bytes of the original signature should be changed
-    xors = draw(st.dictionaries(
-        st.integers(min_value=0, max_value=len(sig)-1),
-        st.integers(min_value=1, max_value=255)))
-    for i, val in xors.items():
-        sig[i] ^= val
-    note("xors: {0}".format(xors))
+    if sig:
+        xors = draw(st.dictionaries(
+            st.integers(min_value=0, max_value=len(sig)-1),
+            st.integers(min_value=1, max_value=255)))
+        for i, val in xors.items():
+            sig[i] ^= val
+        note("xors: {0}".format(xors))
 
     # decide where new data should be inserted
     insert_pos = draw(st.integers(min_value=0, max_value=len(sig)))
