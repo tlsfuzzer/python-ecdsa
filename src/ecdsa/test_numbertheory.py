@@ -169,7 +169,8 @@ class TestNumbertheory(unittest.TestCase):
 
     @unittest.skipUnless(HC_PRESENT,
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
-                         "meet requirements (like `is_prime()`)")
+                         "meet requirements (like `is_prime()`), the test "
+                         "case times-out on it")
     @settings(**HYP_SETTINGS)
     @given(st_comp_with_com_fac())
     def test_gcd_with_com_factor(self, numbers):
@@ -180,7 +181,8 @@ class TestNumbertheory(unittest.TestCase):
 
     @unittest.skipUnless(HC_PRESENT,
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
-                         "meet requirements (like `is_prime()`)")
+                         "meet requirements (like `is_prime()`), the test "
+                         "case times-out on it")
     @settings(**HYP_SETTINGS)
     @given(st_comp_no_com_fac())
     def test_gcd_with_uncom_factor(self, numbers):
@@ -209,7 +211,8 @@ class TestNumbertheory(unittest.TestCase):
 
     @unittest.skipUnless(HC_PRESENT,
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
-                         "meet requirements (like `is_prime()`)")
+                         "meet requirements (like `is_prime()`), the test "
+                         "case times-out on it")
     @settings(**HYP_SETTINGS)
     @given(st_num_square_prime())
     def test_square_root_mod_prime(self, vals):
