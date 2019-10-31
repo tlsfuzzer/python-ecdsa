@@ -1,3 +1,6 @@
+"""
+Class for performing Elliptic-curve Diffie-Hellman (ECDH) operations.
+"""
 
 from .util import number_to_string
 from .ellipticcurve import INFINITY
