@@ -49,6 +49,13 @@ def test_next_prime(prime, next_p):
     assert next_prime(prime) == next_p
 
 
+@pytest.mark.parametrize(
+    "val",
+    [-1, 0, 1])
+def test_next_prime_with_nums_less_2(val):
+    assert next_prime(val) == 2
+
+
 @pytest.mark.parametrize("prime", smallprimes)
 def test_square_root_mod_prime_for_small_primes(prime):
     squares = set()
