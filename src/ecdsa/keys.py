@@ -83,7 +83,8 @@ from ._compat import normalise_bytes
 
 
 __all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey",
-           "MalformedPointError"]
+           "MalformedPointError", "InvalidPublicKeyCurveError",
+           "InvalidSharedSecretError"]
 
 
 class BadSignatureError(Exception):
@@ -1192,12 +1193,13 @@ class SigningKey(object):
         """""
 
         if self.curve.curve != remote_public_key.curve.curve:
-            raise InvalidPublicKeyCurveError
+            raise InvalidPublicKeyCurveError(
+                "Curves for public key and private key is not equal.")
 
         # shared secret = PUBKEYtheirs * PRIVATEKEYours
         result = remote_public_key.pubkey.point * self.privkey.secret_multiplier
         if result == ellipticcurve.INFINITY:
-            raise InvalidSharedSecretError
+            raise InvalidSharedSecretError("Invalid shared secret (INFINITY).")
 
         shared_secret = number_to_string(result.x(), self.curve.order)
         return shared_secret

@@ -4,7 +4,8 @@ from binascii import hexlify, unhexlify
 
 from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
 from .curves import curves
-from .keys import SigningKey, VerifyingKey, InvalidPublicKeyCurveError
+from .keys import SigningKey, VerifyingKey, InvalidPublicKeyCurveError, \
+                InvalidSharedSecretError
 
 
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
@@ -27,6 +28,15 @@ def test_ecdh_wrong_public_key_curve():
     with pytest.raises(InvalidPublicKeyCurveError):
         priv2.ecdh_get_shared_secret(priv1.get_verifying_key())
 
+
+def test_ecdh_invalid_shared_secret_curve():
+    priv1 = SigningKey.generate(curve=NIST256p)
+    priv2 = SigningKey.generate(curve=NIST256p)
+
+    priv1.privkey.secret_multiplier = priv1.curve.order
+
+    with pytest.raises(InvalidSharedSecretError):
+        priv1.ecdh_get_shared_secret(priv2.get_verifying_key())
 
 # https://github.com/scogliani/ecc-test-vectors/blob/master/ecdh_kat/secp192r1.txt
 # https://github.com/scogliani/ecc-test-vectors/blob/master/ecdh_kat/secp256r1.txt
