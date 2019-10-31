@@ -4,39 +4,71 @@ from binascii import hexlify, unhexlify
 
 from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
 from .curves import curves
-from .keys import SigningKey, VerifyingKey, InvalidPublicKeyCurveError, \
-                InvalidSharedSecretError
+from .ecdh import ECDH, InvalidPublicKeyCurveError, \
+                InvalidSharedSecretError, NoKeyError
+from .keys import SigningKey
 
 
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
 def test_ecdh_each(vcurve):
-    priv1 = SigningKey.generate(curve=vcurve)
-    priv2 = SigningKey.generate(curve=vcurve)
+    ecdh1 = ECDH()
+    ecdh1.GeneratePrivateKey(vcurve)
+    ecdh2 = ECDH()
+    ecdh2.GeneratePrivateKey(vcurve)
 
-    secret1 = priv1.ecdh_get_shared_secret(priv2.get_verifying_key())
-    secret2 = priv2.ecdh_get_shared_secret(priv1.get_verifying_key())
+    ecdh1.LoadPublicKey(ecdh2.GetMyPublicKey())
+    ecdh2.LoadPublicKey(ecdh1.GetMyPublicKey())
+
+    secret1 = ecdh1.GenerateSharedSecret()
+    secret2 = ecdh2.GenerateSharedSecret()
     assert secret1 == secret2
 
 
+def test_ecdh_no_public_key():
+    ecdh1 = ECDH()
+
+    with pytest.raises(NoKeyError):
+        ecdh1.GenerateSharedSecret()
+
+    ecdh1.GeneratePrivateKey(NIST192p)
+
+    with pytest.raises(NoKeyError):
+        ecdh1.GenerateSharedSecret()
+
+
 def test_ecdh_wrong_public_key_curve():
-    priv1 = SigningKey.generate(curve=NIST192p)
-    priv2 = SigningKey.generate(curve=NIST256p)
+    ecdh1 = ECDH()
+    ecdh1.GeneratePrivateKey(NIST192p)
+    ecdh2 = ECDH()
+    ecdh2.GeneratePrivateKey(NIST256p)
 
     with pytest.raises(InvalidPublicKeyCurveError):
-        priv1.ecdh_get_shared_secret(priv2.get_verifying_key())
+        ecdh1.LoadPublicKey(ecdh2.GetMyPublicKey())
 
     with pytest.raises(InvalidPublicKeyCurveError):
-        priv2.ecdh_get_shared_secret(priv1.get_verifying_key())
+        ecdh2.LoadPublicKey(ecdh1.GetMyPublicKey())
+
+    ecdh1.publicKey = ecdh2.GetMyPublicKey()
+    ecdh2.publicKey = ecdh1.GetMyPublicKey()
+
+    with pytest.raises(InvalidPublicKeyCurveError):
+        ecdh1.GenerateSharedSecret()
+
+    with pytest.raises(InvalidPublicKeyCurveError):
+        ecdh2.GenerateSharedSecret()
 
 
 def test_ecdh_invalid_shared_secret_curve():
-    priv1 = SigningKey.generate(curve=NIST256p)
-    priv2 = SigningKey.generate(curve=NIST256p)
+    ecdh1 = ECDH()
+    ecdh1.GeneratePrivateKey(NIST256p)
 
-    priv1.privkey.secret_multiplier = priv1.curve.order
+    ecdh1.LoadPublicKey(SigningKey.generate(NIST256p).get_verifying_key())
+
+    ecdh1.privateKey.privkey.secret_multiplier = ecdh1.privateKey.curve.order
 
     with pytest.raises(InvalidSharedSecretError):
-        priv1.ecdh_get_shared_secret(priv2.get_verifying_key())
+        ecdh1.GenerateSharedSecret()
+
 
 # https://github.com/scogliani/ecc-test-vectors/blob/master/ecdh_kat/secp192r1.txt
 # https://github.com/scogliani/ecc-test-vectors/blob/master/ecdh_kat/secp256r1.txt
@@ -152,10 +184,11 @@ def test_ecdh_invalid_shared_secret_curve():
     ],
 )
 def test_ecdh_NIST(curve,privatekey,pubkey,secret):
-    priv = SigningKey.from_string(unhexlify(privatekey), curve)
-    pub = VerifyingKey.from_string(unhexlify(pubkey), curve)
+    ecdh = ECDH()
+    ecdh.LoadPrivateKeyFromStr(unhexlify(privatekey), curve)
+    ecdh.LoadPublicKeyFromStr(unhexlify(pubkey))
 
-    sharedsecret = priv.ecdh_get_shared_secret(pub)
+    sharedsecret = ecdh.GenerateSharedSecret()
 
     assert sharedsecret == unhexlify(secret)
 

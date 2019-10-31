@@ -83,8 +83,7 @@ from ._compat import normalise_bytes
 
 
 __all__ = ["BadSignatureError", "BadDigestError", "VerifyingKey", "SigningKey",
-           "MalformedPointError", "InvalidPublicKeyCurveError",
-           "InvalidSharedSecretError"]
+           "MalformedPointError"]
 
 
 class BadSignatureError(Exception):
@@ -110,18 +109,6 @@ class BadDigestError(Exception):
 
 class MalformedPointError(AssertionError):
     """Raised in case the encoding of private or public key is malformed."""
-
-    pass
-
-
-class InvalidPublicKeyCurveError(AssertionError):
-    """ECDH. Raised in case not equal curves in public key and private key."""
-
-    pass
-
-
-class InvalidSharedSecretError(AssertionError):
-    """ECDH. Raised in case the shared secret we obtained is an INFINITY."""
 
     pass
 
@@ -1181,26 +1168,4 @@ class SigningKey(object):
         assert 1 <= _k < order
         sig = self.privkey.sign(number, _k)
         return sig.r, sig.s
-
-    def ecdh_get_shared_secret(self, remote_public_key):
-        """
-        Elliptic-curve Diffie-Hellman (ECDH). A key agreement protocol.
-        Allows two parties, each having an elliptic-curve public-private key 
-        pair, to establish a shared secret over an insecure channel
-                
-        :param remote_public_key: public key of remote party (VerifyingKey)
-        :return: shared secret
-        """""
-
-        if self.curve.curve != remote_public_key.curve.curve:
-            raise InvalidPublicKeyCurveError(
-                "Curves for public key and private key is not equal.")
-
-        # shared secret = PUBKEYtheirs * PRIVATEKEYours
-        result = remote_public_key.pubkey.point * self.privkey.secret_multiplier
-        if result == ellipticcurve.INFINITY:
-            raise InvalidSharedSecretError("Invalid shared secret (INFINITY).")
-
-        shared_secret = number_to_string(result.x(), self.curve.order)
-        return shared_secret
 
