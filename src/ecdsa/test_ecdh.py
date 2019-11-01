@@ -12,12 +12,11 @@ from .keys import SigningKey
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
 def test_ecdh_each(vcurve):
     ecdh1 = ECDH(curve=vcurve)
-    ecdh1.generate_private_key()
     ecdh2 = ECDH(curve=vcurve)
-    ecdh2.generate_private_key()
 
+    ecdh2.generate_private_key()
     ecdh1.load_shared_public_key(ecdh2.get_public_key())
-    ecdh2.load_shared_public_key(ecdh1.get_public_key())
+    ecdh2.load_shared_public_key(ecdh1.generate_private_key())
 
     secret1 = ecdh1.generate_sharedsecret_str()
     secret2 = ecdh2.generate_sharedsecret_str()

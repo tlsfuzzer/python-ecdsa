@@ -78,16 +78,14 @@ class ECDH(object):
         if self.curve != private_key.curve:
             raise InvalidCurveError("Curve mismatch.")
         self.private_key = private_key
+        return self.private_key.get_verifying_key()
 
     def generate_private_key(self):
-        self.load_private_key(SigningKey.generate(curve=self.curve))
-        return self.private_key.get_verifying_key()
+        return self.load_private_key(SigningKey.generate(curve=self.curve))
 
     def load_private_key_str(self, private_key):
-        self.load_private_key(
+        return self.load_private_key(
             SigningKey.from_string(private_key, curve=self.curve))
-        return self.private_key.get_verifying_key()
-
 
     def load_private_key_der(self, private_key):
         return self.load_private_key(SigningKey.from_der(private_key))
