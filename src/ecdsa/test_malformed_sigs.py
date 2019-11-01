@@ -246,7 +246,8 @@ def st_der():
             st.builds(lambda tag, x:
                       encode_constructed(tag, x),
                       st.integers(min_value=0, max_value=0x3f),
-                      st.one_of(children))
+                      st.one_of(children)),
+        max_leaves=40
         )
 
 
