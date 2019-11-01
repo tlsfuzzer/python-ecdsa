@@ -81,16 +81,19 @@ class ECDH(object):
 
     def generate_private_key(self):
         self.load_private_key(SigningKey.generate(curve=self.curve))
+        return self.private_key.get_verifying_key()
 
     def load_private_key_str(self, private_key):
         self.load_private_key(
             SigningKey.from_string(private_key, curve=self.curve))
+        return self.private_key.get_verifying_key()
+
 
     def load_private_key_der(self, private_key):
-        self.load_private_key(SigningKey.from_der(private_key))
+        return self.load_private_key(SigningKey.from_der(private_key))
 
     def load_private_key_pem(self, private_key):
-        self.load_private_key(SigningKey.from_pem(private_key))
+        return self.load_private_key(SigningKey.from_pem(private_key))
 
     def get_public_key(self):
         return self.private_key.get_verifying_key()
