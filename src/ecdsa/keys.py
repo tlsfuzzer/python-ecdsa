@@ -708,10 +708,10 @@ class SigningKey(object):
                 "Invalid value for secexp, expected integer between 1 and {0}"
                 .format(n))
         pubkey_point = curve.generator * secexp
-        pubkey = ecdsa.Public_key(curve.generator, pubkey_point)
-        pubkey.order = n
-        self.verifying_key = VerifyingKey.from_public_point(pubkey_point, curve,
+        self.verifying_key = VerifyingKey.from_public_point(pubkey_point,
+                                                            curve,
                                                             hashfunc)
+        pubkey = self.verifying_key.pubkey
         self.privkey = ecdsa.Private_key(pubkey, secexp)
         self.privkey.order = n
         return self

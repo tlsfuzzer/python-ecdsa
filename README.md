@@ -49,13 +49,13 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
 ```
             siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-  NIST192p:     48   0.03183s     31.42   0.01127s     88.70   0.02253s     44.39
-  NIST224p:     56   0.04304s     23.24   0.01548s     64.59   0.03122s     32.03
-  NIST256p:     64   0.05720s     17.48   0.02055s     48.67   0.04075s     24.54
-  NIST384p:     96   0.13216s      7.57   0.04696s     21.29   0.09400s     10.64
-  NIST521p:    132   0.25805s      3.88   0.09329s     10.72   0.18841s      5.31
- SECP256k1:     64   0.05677s     17.61   0.02073s     48.23   0.04067s     24.59
-```
+  NIST192p:     48   0.01586s     63.05   0.00853s    117.26   0.01624s     61.58
+  NIST224p:     56   0.02153s     46.46   0.01145s     87.36   0.02307s     43.35
+  NIST256p:     64   0.02850s     35.09   0.01500s     66.65   0.02925s     34.19
+  NIST384p:     96   0.06664s     15.01   0.03512s     28.48   0.06887s     14.52
+  NIST521p:    132   0.13048s      7.66   0.07050s     14.18   0.13673s      7.31
+ SECP256k1:     64   0.02809s     35.60   0.01531s     65.32   0.03113s     32.12
+ ```
 
 For comparison, a highly optimised implementation (including curve-specific
 assemply) like OpenSSL provides following performance numbers on the same

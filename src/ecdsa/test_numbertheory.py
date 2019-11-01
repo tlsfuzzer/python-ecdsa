@@ -259,3 +259,6 @@ class TestNumbertheory(unittest.TestCase):
 
         assert 0 < inv < mod
         assert num * inv % mod == 1
+
+    def test_inverse_mod_with_zero(self):
+        assert 0 == inverse_mod(0, 11)
