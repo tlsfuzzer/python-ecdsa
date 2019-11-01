@@ -225,11 +225,14 @@ def inverse_mod(a, m):
     return ud + m
 
 
-def gcd2(a, b):
-  """Greatest common divisor using Euclid's algorithm."""
-  while a:
-    a, b = b % a, a
-  return b
+try:
+    gcd2 = math.gcd
+except AttributeError:
+    def gcd2(a, b):
+        """Greatest common divisor using Euclid's algorithm."""
+        while a:
+            a, b = b % a, a
+        return b
 
 
 def gcd(*a):
@@ -567,4 +570,3 @@ smallprimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
                1171, 1181, 1187, 1193, 1201, 1213, 1217, 1223, 1229]
 
 miller_rabin_test_count = 0
-
