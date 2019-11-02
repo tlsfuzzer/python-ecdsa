@@ -19,10 +19,14 @@ This library provides key generation, signing, and verifying, for five
 popular NIST "Suite B" GF(p) (_prime field_) curves, with key lengths of 192,
 224, 256, 384, and 521 bits. The "short names" for these curves, as known by
 the OpenSSL tool (`openssl ecparam -list_curves`), are: `prime192v1`,
-`secp224r1`, `prime256v1`, `secp384r1`, and `secp521r1`. It also includes the
-256-bit curve `secp256k1` used by Bitcoin. No other curves
-are included, but it is not too hard to add support for more curves
-over prime fields.
+`secp224r1`, `prime256v1`, `secp384r1`, and `secp521r1`. It includes the
+256-bit curve `secp256k1` used by Bitcoin. There is also support for the
+regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
+"short names" of those curves are: `brainpoolP160r1`, `brainpoolP192r1`,
+`brainpoolP224r1`, `brainpoolP256r1`, `brainpoolP320r1`, `brainpoolP384r1`,
+`brainpoolP512r1`.
+No other curves are included, but it is not too hard to add support for more
+curves over prime fields.
 
 ## Dependencies
 
@@ -48,18 +52,25 @@ Use `tox -e speed` to generate this table on your own computer.
 On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
 ```
-            siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-  NIST192p:     48   0.01586s     63.05   0.00853s    117.26   0.01624s     61.58
-  NIST224p:     56   0.02153s     46.46   0.01145s     87.36   0.02307s     43.35
-  NIST256p:     64   0.02850s     35.09   0.01500s     66.65   0.02925s     34.19
-  NIST384p:     96   0.06664s     15.01   0.03512s     28.48   0.06887s     14.52
-  NIST521p:    132   0.13048s      7.66   0.07050s     14.18   0.13673s      7.31
- SECP256k1:     64   0.02809s     35.60   0.01531s     65.32   0.03113s     32.12
- ```
+                  siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
+        NIST192p:     48   0.01534s     65.18   0.00833s    120.05   0.01601s     62.48
+        NIST224p:     56   0.02107s     47.46   0.01153s     86.74   0.02220s     45.05
+        NIST256p:     64   0.02824s     35.40   0.01523s     65.66   0.02965s     33.73
+        NIST384p:     96   0.06640s     15.06   0.03572s     27.99   0.06973s     14.34
+        NIST521p:    132   0.13150s      7.60   0.07094s     14.10   0.13869s      7.21
+       SECP256k1:     64   0.02807s     35.63   0.01525s     65.58   0.02964s     33.74
+ BRAINPOOLP160r1:     40   0.01100s     90.88   0.00564s    177.45   0.01053s     94.92
+ BRAINPOOLP192r1:     48   0.01633s     61.25   0.00833s    120.05   0.01591s     62.84
+ BRAINPOOLP224r1:     56   0.02261s     44.23   0.01153s     86.76   0.02234s     44.77
+ BRAINPOOLP256r1:     64   0.02997s     33.36   0.01532s     65.29   0.03084s     32.42
+ BRAINPOOLP320r1:     80   0.04774s     20.95   0.02447s     40.86   0.04717s     21.20
+ BRAINPOOLP384r1:     96   0.07007s     14.27   0.03566s     28.04   0.07056s     14.17
+ BRAINPOOLP512r1:    128   0.13390s      7.47   0.06766s     14.78   0.13425s      7.45
+```
 
 For comparison, a highly optimised implementation (including curve-specific
 assemply) like OpenSSL provides following performance numbers on the same
-machine. Run `openssl speed`:
+machine. Run `openssl speed` to reproduce it:
 ```
                               sign    verify    sign/s verify/s
  192 bits ecdsa (nistp192)   0.0002s   0.0002s   4785.6   5380.7
