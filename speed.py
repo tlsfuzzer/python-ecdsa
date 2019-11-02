@@ -14,7 +14,7 @@ def do(setup_statements, statement):
             break
     return x / number
 
-prnt_form = ("{name:>10}{sep:1} {siglen:>6} {keygen:>9{form}}{unit:1} "
+prnt_form = ("{name:>16}{sep:1} {siglen:>6} {keygen:>9{form}}{unit:1} "
     "{keygen_inv:>9{form_inv}} {sign:>9{form}}{unit:1} "
     "{sign_inv:>9{form_inv}} {verify:>9{form}}{unit:1} "
     "{verify_inv:>9{form_inv}}")
