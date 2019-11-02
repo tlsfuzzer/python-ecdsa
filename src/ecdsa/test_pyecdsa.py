@@ -819,11 +819,6 @@ class OpenSSL(unittest.TestCase):
     def do_test_from_openssl(self, curve):
         curvename = curve.openssl_name
         assert curvename
-
-        if curvename not in self.supported_curves:
-            raise unittest.SkipTest(
-                "Curve %s is not by the OpenSSL on the system" % curvename)
-
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
