@@ -12,9 +12,13 @@ addons:
       - libmpc-dev
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
-# place the slowest (instrumental and py2.6) first
+# place the slowest (instrumental, mutation and py2.6) first
 matrix:
   include:
+      - python: 3.9
+        dist: bionic
+        sudo: true
+        env: MUTATION=yes
       - python: 2.7
         env: INSTRUMENTAL=yes
         dist: bionic
@@ -125,15 +129,16 @@ install:
       else
         travis_retry pip install -r build-requirements.txt;
       fi
-  - if [[ $TOX_ENV =~ gmpy2 ]] || [[ $INSTRUMENTAL ]]; then travis_retry pip install gmpy2; fi
+  - if [[ $TOX_ENV =~ gmpy2 ]] || [[ $INSTRUMENTAL ]] || [[ $MUTATION ]]; then travis_retry pip install gmpy2; fi
   - if [[ $TOX_ENV =~ gmpyp ]]; then travis_retry pip install gmpy; fi
   - if [[ $INSTRUMENTAL ]]; then travis_retry pip install instrumental; fi
+  - if [[ $MUTATION ]]; then travis_retry pip install cosmic-ray; fi
   - pip list
 script:
   - if [[ $TOX_ENV ]]; then tox -e $TOX_ENV; fi
-  - if [[ $TOX_ENV =~ gmpy2 ]]; then tox -e speedgmpy2; fi
-  - if [[ $TOX_ENV =~ gmpyp ]]; then tox -e speedgmpy; fi
-  - if ! [[ $TOX_ENV =~ gmpy ]]; then tox -e speed; fi
+  - if [[ $TOX_ENV =~ gmpy2 ]] && [[ -z $MUTATION ]]; then tox -e speedgmpy2; fi
+  - if [[ $TOX_ENV =~ gmpyp ]] && [[ -z $MUTATION ]]; then tox -e speedgmpy; fi
+  - if ! [[ $TOX_ENV =~ gmpy ]] && [[ -z $MUTATION ]]; then tox -e speed; fi
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
         git checkout $PR_FIRST^
@@ -155,6 +160,26 @@ script:
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
           instrumental -f .instrumental.cov -s | python diff-instrumental.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
       fi
+  # cosmic-ray (mutation testing) runs
+  - if [[ $MUTATION ]]; then cosmic-ray init cosmic-ray.toml session.sqlite; fi
+  - if [[ $MUTATION ]]; then cosmic-ray baseline --report session.sqlite; fi
+  - if [[ $MUTATION ]]; then cr-report --show-output session.baseline.sqlite; fi
+  - |
+      if [[ $MUTATION ]]; then
+          cosmic-ray exec session.sqlite &
+          COSMIC_PID=$!
+          # make sure that we output something every 5 minutes (otherwise travis will kill us)
+          while kill -s 0 $COSMIC_PID; do
+            sleep 300
+            cr-report session.sqlite | tail -n 3;
+          done &
+          REPORT_PID=$!
+          # kill exec after 25 minutes
+          (sleep $((60*25)); kill $COSMIC_PID) &
+      fi
+  - if [[ $MUTATION ]]; then wait $COSMIC_PID ; kill $REPORT_PID ; true; fi
+  - if [[ $MUTATION ]]; then cr-report --show-output session.sqlite | tail -n 40; fi
+  - if [[ $MUTATION ]]; then cr-rate --estimate --fail-over 25 --confidence 99.9 session.sqlite; fi
 after_success:
-  - if [[ -z $INSTRUMENTAL ]]; then coveralls; fi
+  - if [[ -z $INSTRUMENTAL && -z $MUTATION ]]; then coveralls; fi
 
