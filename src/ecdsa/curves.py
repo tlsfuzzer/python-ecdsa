@@ -8,7 +8,9 @@ from .util import orderlen
 # will need to mark it as deprecated later
 __all__ = ["UnknownCurveError", "orderlen", "Curve", "NIST192p",
            "NIST224p", "NIST256p", "NIST384p", "NIST521p", "curves",
-           "find_curve", "SECP256k1"]
+           "find_curve", "SECP256k1", "BRAINPOOLP160r1", "BRAINPOOLP192r1",
+           "BRAINPOOLP224r1", "BRAINPOOLP256r1" "BRAINPOOLP320r1",
+           "BRAINPOOLP384r1", "BRAINPOOLP512r1"]
 
 
 class UnknownCurveError(Exception):
