@@ -101,17 +101,18 @@ safer to use. You are looking at the README for this wrapper.
 
 ## Testing
 
-There are four test suites, three for the original Pearson module, and one
-more for the wrapper. To run them all, do this:
+To run the full test suite, do this:
 
     tox -e coverage
 
-On an Intel Core i7 4790K @ 4.0GHz, the combined tests take about 8 minutes to
-run.
+On an Intel Core i7 4790K @ 4.0GHz, the tests take about 150 seconds to execute.
+The test suite uses
+[`hypothesis`](https://github.com/HypothesisWorks/hypothesis) so there is some
+inherent variability in the test suite execution time.
 
-One component of `test_pyecdsa.py` checks compatibility with OpenSSL, by
+One part of `test_pyecdsa.py` checks compatibility with OpenSSL, by
 running the "openssl" CLI tool, make sure it's in your `PATH` if you want
-to test it.
+to test compatibility with it.
 
 ## Security
 
