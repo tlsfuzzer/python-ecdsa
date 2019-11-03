@@ -3,6 +3,7 @@ from __future__ import division
 import binascii
 import base64
 import warnings
+from itertools import chain
 from six import int2byte, b, text_type
 from ._compat import str_idx_as_int
 
@@ -97,12 +98,10 @@ def encode_octet_string(s):
 
 
 def encode_oid(first, second, *pieces):
-    assert first <= 2
-    assert second <= 39
-    encoded_pieces = [int2byte(40*first+second)] + [encode_number(p)
-                                                    for p in pieces]
-    body = b('').join(encoded_pieces)
-    return b('\x06') + encode_length(len(body)) + body
+    assert 0 <= first < 2 and 0 <= second <= 39 or first == 2 and 0 <= second
+    body = b''.join(chain([encode_number(40*first+second)],
+                          (encode_number(p) for p in pieces)))
+    return b'\x06' + encode_length(len(body)) + body
 
 
 def encode_sequence(*encoded_pieces):
@@ -157,20 +156,31 @@ def remove_octet_string(string):
 
 
 def remove_object(string):
+    if not string:
+        raise UnexpectedDER(
+            "Empty string does not encode an object identifier")
     if string[:1] != b"\x06":
         n = str_idx_as_int(string, 0)
         raise UnexpectedDER("wanted type 'object' (0x06), got 0x%02x" % n)
     length, lengthlength = read_length(string[1:])
     body = string[1+lengthlength:1+lengthlength+length]
     rest = string[1+lengthlength+length:]
+    if not body:
+        raise UnexpectedDER("Empty object identifier")
+    if len(body) != length:
+        raise UnexpectedDER(
+            "Length of object identifier longer than the provided buffer")
     numbers = []
     while body:
         n, ll = read_number(body)
         numbers.append(n)
         body = body[ll:]
     n0 = numbers.pop(0)
-    first = n0//40
-    second = n0-(40*first)
+    if n0 < 80:
+        first = n0 // 40
+    else:
+        first = 2
+    second = n0 - (40 * first)
     numbers.insert(0, first)
     numbers.insert(1, second)
     return tuple(numbers), rest
@@ -209,7 +219,7 @@ def read_number(string):
     llen = 0
     # base-128 big endian, with b7 set in all but the last byte
     while True:
-        if llen > len(string):
+        if llen >= len(string):
             raise UnexpectedDER("ran out of length bytes")
         number = number << 7
         d = str_idx_as_int(string, llen)

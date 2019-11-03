@@ -952,17 +952,6 @@ class OpenSSL(unittest.TestCase):
 
 
 class DER(unittest.TestCase):
-    def test_oids(self):
-        oid_ecPublicKey = der.encode_oid(1, 2, 840, 10045, 2, 1)
-        self.assertEqual(hexlify(oid_ecPublicKey), b("06072a8648ce3d0201"))
-        self.assertEqual(hexlify(NIST224p.encoded_oid), b("06052b81040021"))
-        self.assertEqual(hexlify(NIST256p.encoded_oid),
-                         b("06082a8648ce3d030107"))
-        x = oid_ecPublicKey + b("more")
-        x1, rest = der.remove_object(x)
-        self.assertEqual(x1, (1, 2, 840, 10045, 2, 1))
-        self.assertEqual(rest, b("more"))
-
     def test_integer(self):
         self.assertEqual(der.encode_integer(0), b("\x02\x01\x00"))
         self.assertEqual(der.encode_integer(1), b("\x02\x01\x01"))

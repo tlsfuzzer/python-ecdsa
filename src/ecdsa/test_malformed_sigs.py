@@ -220,7 +220,10 @@ def st_der_oid(draw):
     Hypothesis strategy that returns DER OBJECT IDENTIFIER objects.
     """
     first = draw(st.integers(min_value=0, max_value=2))
-    second = draw(st.integers(min_value=0, max_value=39))
+    if first < 2:
+        second = draw(st.integers(min_value=0, max_value=39))
+    else:
+        second = draw(st.integers(min_value=0, max_value=2**512))
     rest = draw(st.lists(st.integers(min_value=0, max_value=2**512),
                          max_size=50))
     return encode_oid(first, second, *rest)
