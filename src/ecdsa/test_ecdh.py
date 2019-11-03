@@ -15,8 +15,8 @@ def test_ecdh_each(vcurve):
     ecdh2 = ECDH(curve=vcurve)
 
     ecdh2.generate_private_key()
-    ecdh1.load_shared_public_key(ecdh2.get_public_key())
-    ecdh2.load_shared_public_key(ecdh1.generate_private_key())
+    ecdh1.load_received_public_key(ecdh2.get_public_key())
+    ecdh2.load_received_public_key(ecdh1.generate_private_key())
 
     secret1 = ecdh1.generate_sharedsecret_str()
     secret2 = ecdh2.generate_sharedsecret_str()
@@ -42,10 +42,10 @@ def test_ecdh_wrong_public_key_curve():
     ecdh2.generate_private_key()
 
     with pytest.raises(InvalidCurveError):
-        ecdh1.load_shared_public_key(ecdh2.get_public_key())
+        ecdh1.load_received_public_key(ecdh2.get_public_key())
 
     with pytest.raises(InvalidCurveError):
-        ecdh2.load_shared_public_key(ecdh1.get_public_key())
+        ecdh2.load_received_public_key(ecdh1.get_public_key())
 
     ecdh1.public_key = ecdh2.get_public_key()
     ecdh2.public_key = ecdh1.get_public_key()
@@ -61,7 +61,7 @@ def test_ecdh_invalid_shared_secret_curve():
     ecdh1 = ECDH(curve=NIST256p)
     ecdh1.generate_private_key()
 
-    ecdh1.load_shared_public_key(SigningKey.generate(NIST256p).get_verifying_key())
+    ecdh1.load_received_public_key(SigningKey.generate(NIST256p).get_verifying_key())
 
     ecdh1.private_key.privkey.secret_multiplier = ecdh1.private_key.curve.order
 
@@ -207,8 +207,8 @@ def test_ecdh_invalid_shared_secret_curve():
 )
 def test_ecdh_NIST(curve,privatekey,pubkey,secret):
     ecdh = ECDH(curve=curve)
-    ecdh.load_private_key_str(unhexlify(privatekey))
-    ecdh.load_shared_public_key_str(unhexlify(pubkey))
+    ecdh.load_private_key_plain(unhexlify(privatekey))
+    ecdh.load_received_public_key_plain(unhexlify(pubkey))
 
     sharedsecret = ecdh.generate_sharedsecret_str()
 
@@ -239,7 +239,7 @@ pem_secret = "8f457e34982478d1c34b9cd2d0c15911b72dd60d869e2cea"
 def test_ecdh_pem():
     ecdh = ECDH()
     ecdh.load_private_key_pem(pem_private_key)
-    ecdh.load_shared_public_key_pem(pem_public_key)
+    ecdh.load_received_public_key_pem(pem_public_key)
 
     sharedsecret = ecdh.generate_sharedsecret_str()
 
@@ -249,7 +249,7 @@ def test_ecdh_pem():
 def test_ecdh_der():
     ecdh = ECDH()
     ecdh.load_private_key_der(unhexlify(der_private_key))
-    ecdh.load_shared_public_key_der(unhexlify(der_public_key))
+    ecdh.load_received_public_key_der(unhexlify(der_public_key))
 
     sharedsecret = ecdh.generate_sharedsecret_str()
 

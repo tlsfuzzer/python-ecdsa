@@ -11,25 +11,25 @@ __all__ = ["ECDH", "NoKeyError", "InvalidCurveError",
            "InvalidSharedSecretError"]
 
 
-class NoKeyError(AssertionError):
-    """ECDH. Key not found but it needed for operation."""
+class NoKeyError(AttributeError):
+    """ECDH. Key not found but it is needed for operation."""
 
     pass
 
 
-class NoCurveError(AssertionError):
-    """ECDH. Curve not set but it needed for operation."""
+class NoCurveError(AttributeError):
+    """ECDH. Curve not set but it is needed for operation."""
 
     pass
 
 
-class InvalidCurveError(AssertionError):
-    """ECDH. Raised in case not equal curves in public key and private key."""
+class InvalidCurveError(RuntimeError):
+    """ECDH. Raised in case the public and private keys use different curves."""
 
     pass
 
 
-class InvalidSharedSecretError(AssertionError):
+class InvalidSharedSecretError(RuntimeError):
     """ECDH. Raised in case the shared secret we obtained is an INFINITY."""
 
     pass
@@ -43,12 +43,13 @@ class ECDH(object):
     """""
 
     def __init__(self, curve=None, private_key=None, public_key=None):
-        if curve is None and private_key:
-            self.curve = private_key.curve
-        else:
-            self.curve = curve
-        self.private_key = private_key
-        self.public_key = public_key
+        self.curve = curve
+        self.private_key = None
+        self.public_key = None
+        if private_key:
+            self.load_private_key(private_key)
+        if public_key:
+            self.load_received_public_key(public_key)
 
     def _get_shared_secret(self, remote_public_key):
         if self.private_key is None:
@@ -83,7 +84,7 @@ class ECDH(object):
     def generate_private_key(self):
         return self.load_private_key(SigningKey.generate(curve=self.curve))
 
-    def load_private_key_str(self, private_key):
+    def load_private_key_plain(self, private_key):
         return self.load_private_key(
             SigningKey.from_string(private_key, curve=self.curve))
 
@@ -96,20 +97,22 @@ class ECDH(object):
     def get_public_key(self):
         return self.private_key.get_verifying_key()
 
-    def load_shared_public_key(self, public_key):
+    def load_received_public_key(self, public_key):
+        if self.curve is None:
+            self.curve = public_key.curve
         if self.curve != public_key.curve:
             raise InvalidCurveError("Curve mismatch.")
         self.public_key = public_key
 
-    def load_shared_public_key_str(self, public_key_str):
-        return self.load_shared_public_key(
+    def load_received_public_key_plain(self, public_key_str):
+        return self.load_received_public_key(
             VerifyingKey.from_string(public_key_str, self.curve))
 
-    def load_shared_public_key_der(self, public_key_str):
-        return self.load_shared_public_key(VerifyingKey.from_der(public_key_str))
+    def load_received_public_key_der(self, public_key_str):
+        return self.load_received_public_key(VerifyingKey.from_der(public_key_str))
 
-    def load_shared_public_key_pem(self, public_key_str):
-        return self.load_shared_public_key(VerifyingKey.from_pem(public_key_str))
+    def load_received_public_key_pem(self, public_key_str):
+        return self.load_received_public_key(VerifyingKey.from_pem(public_key_str))
 
     def generate_sharedsecret_str(self):
         return number_to_string(
