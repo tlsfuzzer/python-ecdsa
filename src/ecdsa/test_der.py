@@ -311,6 +311,14 @@ class TestRemoveObject(unittest.TestCase):
         self.assertEqual(rest, b'')
         self.assertEqual(oid, (2, 999, 3))
 
+    def test_with_padded_first_subid(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x02\x80\x00')
+
+    def test_with_padded_second_subid(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x04\x88\x37\x80\x01')
+
     def test_with_missing_last_byte_of_multi_byte(self):
         with self.assertRaises(UnexpectedDER):
             remove_object(b'\x06\x03\x88\x37\x83')

@@ -217,6 +217,8 @@ def remove_integer(string):
 def read_number(string):
     number = 0
     llen = 0
+    if str_idx_as_int(string, 0) == 0x80:
+        raise UnexpectedDER("Non minimal encoding of OID subidentifier")
     # base-128 big endian, with b7 set in all but the last byte
     while True:
         if llen >= len(string):
