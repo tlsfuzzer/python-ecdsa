@@ -1,16 +1,20 @@
 
 # compatibility with Python 2.6, for that we need unittest2 package,
 # which is not available on 3.3 or 3.4
+import warnings
+from binascii import hexlify
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-from .der import remove_integer, UnexpectedDER, read_length, encode_bitstring,\
-        remove_bitstring
 from six import b
+import hypothesis.strategies as st
+from hypothesis import given, example
 import pytest
-import warnings
 from ._compat import str_idx_as_int
+from .curves import NIST256p, NIST224p
+from .der import remove_integer, UnexpectedDER, read_length, encode_bitstring,\
+        remove_bitstring, remove_object, encode_oid
 
 
 class TestRemoveInteger(unittest.TestCase):
@@ -242,3 +246,139 @@ class TestStrIdxAsInt(unittest.TestCase):
 
     def test_bytearray(self):
         self.assertEqual(115, str_idx_as_int(bytearray(b'str'), 0))
+
+
+class TestEncodeOid(unittest.TestCase):
+    def test_pub_key_oid(self):
+        oid_ecPublicKey = encode_oid(1, 2, 840, 10045, 2, 1)
+        self.assertEqual(hexlify(oid_ecPublicKey), b("06072a8648ce3d0201"))
+
+    def test_nist224p_oid(self):
+        self.assertEqual(hexlify(NIST224p.encoded_oid), b("06052b81040021"))
+
+    def test_nist256p_oid(self):
+        self.assertEqual(hexlify(NIST256p.encoded_oid),
+                         b"06082a8648ce3d030107")
+
+    def test_large_second_subid(self):
+        # from X.690, section 8.19.5
+        oid = encode_oid(2, 999, 3)
+        self.assertEqual(oid, b'\x06\x03\x88\x37\x03')
+
+    def test_with_two_subids(self):
+        oid = encode_oid(2, 999)
+        self.assertEqual(oid, b'\x06\x02\x88\x37')
+
+    def test_zero_zero(self):
+        oid = encode_oid(0, 0)
+        self.assertEqual(oid, b'\x06\x01\x00')
+
+    def test_with_wrong_types(self):
+        with self.assertRaises((TypeError, AssertionError)):
+            encode_oid(0, None)
+
+    def test_with_small_first_large_second(self):
+        with self.assertRaises(AssertionError):
+            encode_oid(1, 40)
+
+    def test_small_first_max_second(self):
+        oid = encode_oid(1, 39)
+        self.assertEqual(oid, b'\x06\x01\x4f')
+
+    def test_with_invalid_first(self):
+        with self.assertRaises(AssertionError):
+            encode_oid(3, 39)
+
+
+class TestRemoveObject(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.oid_ecPublicKey = encode_oid(1, 2, 840, 10045, 2, 1)
+
+    def test_pub_key_oid(self):
+        oid, rest = remove_object(self.oid_ecPublicKey)
+        self.assertEqual(rest, b'')
+        self.assertEqual(oid, (1, 2, 840, 10045, 2, 1))
+
+    def test_with_extra_bytes(self):
+        oid, rest = remove_object(self.oid_ecPublicKey + b'more')
+        self.assertEqual(rest, b'more')
+        self.assertEqual(oid, (1, 2, 840, 10045, 2, 1))
+
+    def test_with_large_second_subid(self):
+        # from X.690, section 8.19.5
+        oid, rest = remove_object(b'\x06\x03\x88\x37\x03')
+        self.assertEqual(rest, b'')
+        self.assertEqual(oid, (2, 999, 3))
+
+    def test_with_padded_first_subid(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x02\x80\x00')
+
+    def test_with_padded_second_subid(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x04\x88\x37\x80\x01')
+
+    def test_with_missing_last_byte_of_multi_byte(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x03\x88\x37\x83')
+
+    def test_with_two_subids(self):
+        oid, rest = remove_object(b'\x06\x02\x88\x37')
+        self.assertEqual(rest, b'')
+        self.assertEqual(oid, (2, 999))
+
+    def test_zero_zero(self):
+        oid, rest = remove_object(b'\x06\x01\x00')
+        self.assertEqual(rest, b'')
+        self.assertEqual(oid, (0, 0))
+
+    def test_empty_string(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'')
+
+    def test_missing_length(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06')
+
+    def test_empty_oid(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x00')
+
+    def test_empty_oid_overflow(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x01')
+
+    def test_with_wrong_type(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x04\x02\x88\x37')
+
+    def test_with_too_long_length(self):
+        with self.assertRaises(UnexpectedDER):
+            remove_object(b'\x06\x03\x88\x37')
+
+
+@st.composite
+def st_oid(draw, max_value=2**512, max_size=50):
+    """
+    Hypothesis strategy that returns valid OBJECT IDENTIFIERs as tuples
+
+    :param max_value: maximum value of any single sub-identifier
+    :param max_size: maximum length of the generated OID
+    """
+    first = draw(st.integers(min_value=0, max_value=2))
+    if first < 2:
+        second = draw(st.integers(min_value=0, max_value=39))
+    else:
+        second = draw(st.integers(min_value=0, max_value=max_value))
+    rest = draw(st.lists(st.integers(min_value=0, max_value=max_value),
+                         max_size=max_size))
+    return (first, second) + tuple(rest)
+
+
+@given(st_oid())
+def test_oids(ids):
+    encoded_oid = encode_oid(*ids)
+    decoded_oid, rest = remove_object(encoded_oid)
+    assert rest == b''
+    assert decoded_oid == ids
