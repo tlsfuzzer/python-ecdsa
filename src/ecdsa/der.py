@@ -219,7 +219,8 @@ def read_number(string):
     llen = 0
     if str_idx_as_int(string, 0) == 0x80:
         raise UnexpectedDER("Non minimal encoding of OID subidentifier")
-    # base-128 big endian, with b7 set in all but the last byte
+    # base-128 big endian, with most significant bit set in all but the last
+    # byte
     while True:
         if llen >= len(string):
             raise UnexpectedDER("ran out of length bytes")
