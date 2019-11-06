@@ -58,7 +58,7 @@ class ECDH(object):
         if self.public_key is None:
             raise NoKeyError(
                 "Public key needs to be set to create shared secret")
-        if self.private_key.curve != remote_public_key.curve:
+        if not (self.private_key.curve == self.curve == remote_public_key.curve):
             raise InvalidCurveError(
                 "Curves for public key and private key is not equal.")
 
@@ -84,7 +84,7 @@ class ECDH(object):
     def generate_private_key(self):
         return self.load_private_key(SigningKey.generate(curve=self.curve))
 
-    def load_private_key_plain(self, private_key):
+    def load_private_key_bytes(self, private_key):
         return self.load_private_key(
             SigningKey.from_string(private_key, curve=self.curve))
 
@@ -104,7 +104,7 @@ class ECDH(object):
             raise InvalidCurveError("Curve mismatch.")
         self.public_key = public_key
 
-    def load_received_public_key_plain(self, public_key_str):
+    def load_received_public_key_bytes(self, public_key_str):
         return self.load_received_public_key(
             VerifyingKey.from_string(public_key_str, self.curve))
 
@@ -114,7 +114,7 @@ class ECDH(object):
     def load_received_public_key_pem(self, public_key_str):
         return self.load_received_public_key(VerifyingKey.from_pem(public_key_str))
 
-    def generate_sharedsecret_str(self):
+    def generate_sharedsecret_bytes(self):
         return number_to_string(
                     self.generate_sharedsecret(),
                     self.private_key.curve.order)
