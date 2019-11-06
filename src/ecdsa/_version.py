@@ -43,7 +43,7 @@ def get_config():
     cfg.style = "pep440"
     cfg.tag_prefix = "python-ecdsa-"
     cfg.parentdir_prefix = "ecdsa-"
-    cfg.versionfile_source = "ecdsa/_version.py"
+    cfg.versionfile_source = "src/ecdsa/_version.py"
     cfg.verbose = False
     return cfg
 

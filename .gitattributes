@@ -1,1 +1,1 @@
-ecdsa/_version.py export-subst
+src/ecdsa/_version.py export-subst
