@@ -1,3 +1,7 @@
+* Release 0.14.1 (06 Nov 2019)
+
+Remove the obsolete `six.py` file from wheel
+
 * Release 0.14 (06 Nov 2019)
 
 Bug fixes:
