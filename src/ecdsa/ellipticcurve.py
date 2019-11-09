@@ -65,7 +65,7 @@ class CurveFp(object):
 
   def contains_point(self, x, y):
     """Is the point (x,y) on this curve?"""
-    return (y * y - (x * x * x + self.__a * x + self.__b)) % self.__p == 0
+    return (y * y - ((x * x + self.__a) * x + self.__b)) % self.__p == 0
 
   def __str__(self):
     return "CurveFp(p=%d, a=%d, b=%d)" % (self.__p, self.__a, self.__b)
