@@ -7,29 +7,29 @@ from .ellipticcurve import INFINITY
 from .keys import SigningKey, VerifyingKey
 
 
-__all__ = ["ECDH", "NoKeyError", "InvalidCurveError",
+__all__ = ["ECDH", "NoKeyError", "NoCurveError", "InvalidCurveError",
            "InvalidSharedSecretError"]
 
 
-class NoKeyError(AttributeError):
+class NoKeyError(Exception):
     """ECDH. Key not found but it is needed for operation."""
 
     pass
 
 
-class NoCurveError(AttributeError):
+class NoCurveError(Exception):
     """ECDH. Curve not set but it is needed for operation."""
 
     pass
 
 
-class InvalidCurveError(RuntimeError):
+class InvalidCurveError(Exception):
     """ECDH. Raised in case the public and private keys use different curves."""
 
     pass
 
 
-class InvalidSharedSecretError(RuntimeError):
+class InvalidSharedSecretError(Exception):
     """ECDH. Raised in case the shared secret we obtained is an INFINITY."""
 
     pass
@@ -43,6 +43,13 @@ class ECDH(object):
     """""
 
     def __init__(self, curve=None, private_key=None, public_key=None):
+        """
+        ECDH init. Class can be init without parameters and then
+        it will needs to set all of them for proper operation.
+        :param curve: curve for operations
+        :param private_key: `my` private key for ecdh
+        :param public_key:  `their` public key for ecdh
+        """
         self.curve = curve
         self.private_key = None
         self.public_key = None
@@ -71,7 +78,15 @@ class ECDH(object):
         return result.x()
 
     def set_curve(self, key_curve):
-        self.private_key = SigningKey.generate(curve=key_curve)
+        """
+        Set working curve for ecdh operation
+        :param key_curve: curve from `curves`
+        :return: none
+        """
+        self.curve = key_curve
+
+    def generate_private_key(self):
+        return self.load_private_key(SigningKey.generate(curve=self.curve))
 
     def load_private_key(self, private_key):
         if self.curve is None:
@@ -80,9 +95,6 @@ class ECDH(object):
             raise InvalidCurveError("Curve mismatch.")
         self.private_key = private_key
         return self.private_key.get_verifying_key()
-
-    def generate_private_key(self):
-        return self.load_private_key(SigningKey.generate(curve=self.curve))
 
     def load_private_key_bytes(self, private_key):
         return self.load_private_key(
