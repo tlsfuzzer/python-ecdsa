@@ -101,6 +101,8 @@ class Point(object):
 
     # X9.62 B.3:
 
+    if not isinstance(other, Point):
+        return NotImplemented
     if other == INFINITY:
       return self
     if self == INFINITY:
