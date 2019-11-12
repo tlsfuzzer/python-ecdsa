@@ -333,35 +333,11 @@ class PointJacobi(object):
           return INFINITY
       return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
-  def __radd__(self, other):
-      """Add other to self."""
-      return self + other
-
-  def __add__(self, other):
-      """Add two points on elliptic curve."""
-      if self == INFINITY:
-          return other
-      if other == INFINITY:
-          return self
-      if isinstance(other, Point):
-          other = PointJacobi.from_affine(other)
-      if self.__curve != other.__curve:
-          raise ValueError("The other point is on different curve")
-
-      p = self.__curve.p()
-      X1, Y1, Z1 = self.__x, self.__y, self.__z
-      X2, Y2, Z2 = other.__x, other.__y, other.__z
-      if Z1 == Z2:
-          if Z1 == 1:
-              return self._add_with_z_1(X1, Y1, X2, Y2)
-          return self._add_with_z_eq(X1, Y1, Z1, X2, Y2)
-      if Z1 == 1:
-          return self._add_with_z2_1(X2, Y2, Z2, X1, Y1)
-      if Z2 == 1:
-          return self._add_with_z2_1(X1, Y1, Z1, X2, Y2)
-
+  def _add_with_z_ne(self, X1, Y1, Z1, X2, Y2, Z2):
+      """add points with arbitrary z"""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
+      p = self.__curve.p()
       Z1Z1 = Z1 * Z1 % p
       Z2Z2 = Z2 * Z2 % p
       U1 = X1 * Z2Z2 % p
@@ -383,6 +359,33 @@ class PointJacobi(object):
           return INFINITY
 
       return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+
+  def __radd__(self, other):
+      """Add other to self."""
+      return self + other
+
+  def __add__(self, other):
+      """Add two points on elliptic curve."""
+      if self == INFINITY:
+          return other
+      if other == INFINITY:
+          return self
+      if isinstance(other, Point):
+          other = PointJacobi.from_affine(other)
+      if self.__curve != other.__curve:
+          raise ValueError("The other point is on different curve")
+
+      X1, Y1, Z1 = self.__x, self.__y, self.__z
+      X2, Y2, Z2 = other.__x, other.__y, other.__z
+      if Z1 == Z2:
+          if Z1 == 1:
+              return self._add_with_z_1(X1, Y1, X2, Y2)
+          return self._add_with_z_eq(X1, Y1, Z1, X2, Y2)
+      if Z1 == 1:
+          return self._add_with_z2_1(X2, Y2, Z2, X1, Y1)
+      if Z2 == 1:
+          return self._add_with_z2_1(X1, Y1, Z1, X2, Y2)
+      return self._add_with_z_ne(X1, Y1, Z1, X2, Y2, Z2)
 
   def __rmul__(self, other):
       """Multiply point by an integer."""
