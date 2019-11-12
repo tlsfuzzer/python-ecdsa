@@ -227,14 +227,13 @@ class PointJacobi(object):
   # similarly, sometimes the `% p` is skipped if it makes the calculation
   # faster and the result of calculation is later reduced modulo `p`
 
-  def _double_with_z_1(self, X1, Y1):
+  def _double_with_z_1(self, X1, Y1, p, a):
       """Add a point to itself with z == 1."""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-mdbl-2007-bl
-      p, a = self.__curve.p(), self.__curve.a()
       XX, YY = X1 * X1 % p, Y1 * Y1 % p
       if not YY:
-          return INFINITY
+          return 0, 0, 1
       YYYY = YY * YY % p
       S = 2 * ((X1 + YY)**2 - XX - YYYY) % p
       M = 3 * XX + a
@@ -242,16 +241,17 @@ class PointJacobi(object):
       # X3 = T
       Y3 = (M * (S - T) - 8 * YYYY) % p
       Z3 = 2 * Y1 % p
-      return PointJacobi(self.__curve, T, Y3, Z3, self.__order)
+      return T, Y3, Z3
 
-  def _double(self, X1, Y1, Z1):
+  def _double(self, X1, Y1, Z1, p, a):
       """Add a point to itself, arbitrary z."""
+      if Z1 == 1:
+          return self._double_with_z_1(X1, Y1, p, a)
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
-      p, a = self.__curve.p(), self.__curve.a()
       XX, YY = X1 * X1 % p, Y1 * Y1 % p
       if not YY:
-          return INFINITY
+          return 0, 0, 1
       YYYY = YY * YY % p
       ZZ = Z1 * Z1 % p
       S = 2 * ((X1 + YY)**2 - XX - YYYY) % p
@@ -261,17 +261,22 @@ class PointJacobi(object):
       Y3 = (M * (S - T) - 8 * YYYY) % p
       Z3 = ((Y1 + Z1)**2 - YY - ZZ) % p
 
-      return PointJacobi(self.__curve, T, Y3, Z3, self.__order)
+      return T, Y3, Z3
 
   def double(self):
       """Add a point to itself."""
       if not self.__y:
           return INFINITY
 
+      p, a = self.__curve.p(), self.__curve.a()
+
       X1, Y1, Z1 = self.__x, self.__y, self.__z
-      if Z1 == 1:
-          return self._double_with_z_1(X1, Y1)
-      return self._double(X1, Y1, Z1)
+
+      X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
+
+      if not Y3:
+          return INFINITY
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
   def _add_with_z_1(self, X1, Y1, X2, Y2):
       """add points when both Z1 and Z2 equal 1"""
