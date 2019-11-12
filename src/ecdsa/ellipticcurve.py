@@ -227,19 +227,28 @@ class PointJacobi(object):
   # similarly, sometimes the `% p` is skipped if it makes the calculation
   # faster and the result of calculation is later reduced modulo `p`
 
-  def double(self):
-      """Add a point to itself."""
-      if not self.__y:
+  def _double_with_z_1(self, X1, Y1):
+      """Add a point to itself with z == 1."""
+      # after:
+      # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-mdbl-2007-bl
+      p, a = self.__curve.p(), self.__curve.a()
+      XX, YY = X1 * X1 % p, Y1 * Y1 % p
+      if not YY:
           return INFINITY
+      YYYY = YY * YY % p
+      S = 2 * ((X1 + YY)**2 - XX - YYYY) % p
+      M = 3 * XX + a
+      T = (M * M - 2 * S) % p
+      # X3 = T
+      Y3 = (M * (S - T) - 8 * YYYY) % p
+      Z3 = 2 * Y1 % p
+      return PointJacobi(self.__curve, T, Y3, Z3, self.__order)
 
-      p = self.__curve.p()
-      a = self.__curve.a()
-
-      X1, Y1, Z1 = self.__x, self.__y, self.__z
-
+  def _double(self, X1, Y1, Z1):
+      """Add a point to itself, arbitrary z."""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
-
+      p, a = self.__curve.p(), self.__curve.a()
       XX, YY = X1 * X1 % p, Y1 * Y1 % p
       if not YY:
           return INFINITY
@@ -253,6 +262,16 @@ class PointJacobi(object):
       Z3 = ((Y1 + Z1)**2 - YY - ZZ) % p
 
       return PointJacobi(self.__curve, T, Y3, Z3, self.__order)
+
+  def double(self):
+      """Add a point to itself."""
+      if not self.__y:
+          return INFINITY
+
+      X1, Y1, Z1 = self.__x, self.__y, self.__z
+      if Z1 == 1:
+          return self._double_with_z_1(X1, Y1)
+      return self._double(X1, Y1, Z1)
 
   def _add_with_z_1(self, X1, Y1, X2, Y2):
       """add points when both Z1 and Z2 equal 1"""

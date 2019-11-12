@@ -69,6 +69,13 @@ class TestJacobi(unittest.TestCase):
 
         self.assertIs(pj, INFINITY)
 
+    def test_double_with_zero_equivalent_point_non_1_z(self):
+        pj = PointJacobi(curve_256, 0, curve_256.p(), 2)
+
+        pj = pj.double()
+
+        self.assertIs(pj, INFINITY)
+
     def test_compare_with_affine_point(self):
         pj = PointJacobi.from_affine(generator_256)
         pa = pj.to_affine()
