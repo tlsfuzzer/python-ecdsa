@@ -168,6 +168,10 @@ if HC_PRESENT:
     HYP_SETTINGS['deadline'] = 5000
 
 
+HYP_SLOW_SETTINGS=dict(HYP_SETTINGS)
+HYP_SLOW_SETTINGS["max_examples"] = 10
+
+
 class TestNumbertheory(unittest.TestCase):
     def test_gcd(self):
         assert gcd(3 * 5 * 7, 3 * 5 * 11, 3 * 5 * 13) == 3 * 5
@@ -178,7 +182,7 @@ class TestNumbertheory(unittest.TestCase):
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
                          "meet requirements (like `is_prime()`), the test "
                          "case times-out on it")
-    @settings(**HYP_SETTINGS)
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st_comp_with_com_fac())
     def test_gcd_with_com_factor(self, numbers):
         n = gcd(numbers)
@@ -190,7 +194,7 @@ class TestNumbertheory(unittest.TestCase):
                          "Hypothesis 2.0.0 can't be made tolerant of hard to "
                          "meet requirements (like `is_prime()`), the test "
                          "case times-out on it")
-    @settings(**HYP_SETTINGS)
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st_comp_no_com_fac())
     def test_gcd_with_uncom_factor(self, numbers):
         n = gcd(numbers)

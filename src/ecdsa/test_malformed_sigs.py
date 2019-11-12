@@ -118,6 +118,9 @@ if sys.version_info >= (2, 7):
                                        HealthCheck.filter_too_much,
                                        HealthCheck.too_slow]
 
+slow_params = dict(params)
+slow_params["max_examples"] = 10
+
 
 @settings(**params)
 @given(st_fuzzed_sig(keys_and_sigs))
@@ -158,7 +161,7 @@ def st_random_der_ecdsa_sig_value(draw):
     return verifying_key, sig
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st_random_der_ecdsa_sig_value())
 def test_random_der_ecdsa_sig_value(params):
     """

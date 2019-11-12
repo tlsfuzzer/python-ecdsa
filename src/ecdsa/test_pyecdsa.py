@@ -12,6 +12,9 @@ import pytest
 from binascii import hexlify, unhexlify
 from hashlib import sha1, sha256, sha512
 
+from hypothesis import given
+import hypothesis.strategies as st
+
 from six import b, print_, binary_type
 from .keys import SigningKey, VerifyingKey
 from .keys import BadSignatureError, MalformedPointError, BadDigestError
@@ -1025,17 +1028,17 @@ class Util(unittest.TestCase):
         self.assertEqual(("%x" % (tta("seed", NIST224p.order))).encode(),
                          b("6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc"))
 
-    def test_randrange(self):
+    @given(st.integers(min_value=0, max_value=10**200))
+    def test_randrange(self, i):
         # util.randrange does not provide long-term stability: we might
         # change the algorithm in the future.
-        for i in range(1000):
-            entropy = util.PRNG("seed-%d" % i)
-            for order in (2**8 - 2, 2**8 - 1, 2**8,
-                          2**16 - 1, 2**16 + 1,
-                          ):
-                # that oddball 2**16+1 takes half our runtime
-                n = util.randrange(order, entropy=entropy)
-                self.assertTrue(1 <= n < order, (1, n, order))
+        entropy = util.PRNG("seed-%d" % i)
+        for order in (2**8 - 2, 2**8 - 1, 2**8,
+                      2**16 - 1, 2**16 + 1,
+                      ):
+            # that oddball 2**16+1 takes half our runtime
+            n = util.randrange(order, entropy=entropy)
+            self.assertTrue(1 <= n < order, (1, n, order))
 
     def OFF_test_prove_uniformity(self):
         order = 2**8 - 2
