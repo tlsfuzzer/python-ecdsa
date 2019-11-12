@@ -84,6 +84,17 @@ class PointJacobi(object):
   """
   def __init__(self, curve, x, y, z, order=None, generator=False):
       """
+      Initialise a point that uses Jacobi representation internally.
+
+      :param CurveFp curve: curve on which the point resides
+      :param int x: the X parameter of Jacobi representation (equal to x when
+        converting from affine coordinates
+      :param int y: the Y parameter of Jacobi representation (equal to y when
+        converting from affine coordinates
+      :param int z: the Z parameter of Jacobi representation (equal to 1 when
+        converting from affine coordinates
+      :param int order: the point order, must be non zero when using
+        generator=True
       :param bool generator: the point provided is a curve generator, as
         such, it will be commonly used with scalar multiplication. This will
         cause to precompute multiplication table for it
@@ -133,9 +144,14 @@ class PointJacobi(object):
               (y1 * zz2 * z2 - y2 * zz1 * z1) % p == 0
 
   def order(self):
+      """Return the order of the point.
+
+      None if it is undefined.
+      """
       return self.__order
 
   def curve(self):
+      """Return curve over which the point is defined."""
       return self.__curve
 
   def x(self):
@@ -144,7 +160,8 @@ class PointJacobi(object):
 
       This method should be used only when the 'y' coordinate is not needed.
       It's computationally more efficient to use `to_affine()` and then
-      call x() and y() on the returned instance.
+      call x() and y() on the returned instance. Or call `scale()`
+      and then x() and y() on the returned instance.
       """
       if self.__z == 1:
           return self.__x
@@ -158,7 +175,8 @@ class PointJacobi(object):
 
       This method should be used only when the 'x' coordinate is not needed.
       It's computationally more efficient to use `to_affine()` and then
-      call x() and y() on the returned instance.
+      call x() and y() on the returned instance. Or call `scale()`
+      and then x() and y() on the returned instance.
       """
       if self.__z == 1:
           return self.__y
@@ -190,7 +208,12 @@ class PointJacobi(object):
 
   @staticmethod
   def from_affine(point, generator=False):
-      """Create from an affine point."""
+      """Create from an affine point.
+
+      :param bool generator: set to True to make the point to precalculate
+        multiplication table - useful for public point when verifying many
+        signatures (around 100 or so) or for generator points of a curve.
+      """
       return PointJacobi(point.curve(), point.x(), point.y(), 1,
                          point.order(), generator)
 
@@ -292,6 +315,7 @@ class PointJacobi(object):
       return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
   def __radd__(self, other):
+      """Add other to self."""
       return self + other
 
   def __add__(self, other):
@@ -346,6 +370,7 @@ class PointJacobi(object):
       return self * other
 
   def _mul_precompute(self, other):
+      """Multiply point by integer with precomputation table."""
       result = INFINITY
       for precomp in self.__precompute:
           if other % 2:
@@ -357,7 +382,9 @@ class PointJacobi(object):
               other //= 2
       return result
 
-  def _naf(self, mult):
+  @staticmethod
+  def _naf(mult):
+      """Calculate non-adjacent form of number."""
       ret = []
       while mult:
           if mult % 2:
@@ -397,11 +424,12 @@ class PointJacobi(object):
 
   @staticmethod
   def _leftmost_bit(x):
-    assert x > 0
-    result = 1
-    while result <= x:
-      result = 2 * result
-    return result // 2
+      """Return integer with the same magnitude as x but hamming weight of 1"""
+      assert x > 0
+      result = 1
+      while result <= x:
+        result = 2 * result
+      return result // 2
 
   def mul_add(self, self_mul, other, other_mul):
       """
@@ -433,6 +461,7 @@ class PointJacobi(object):
       return result
 
   def __neg__(self):
+      """Return negated point."""
       return PointJacobi(self.__curve, self.__x, -self.__y, self.__z,
                          self.__order)
 
