@@ -383,6 +383,55 @@ class PointJacobi(object):
               result = result + self
       return result
 
+  def _mul_add_precompute(self, self_mul, other, other_mul):
+      i = 1
+      result = INFINITY
+      m = max(self_mul, other_mul)
+      while i <= m:
+          if i & self_mul:
+              result = result + self.__precompute[i]
+          if i & other_mul:
+              result = result + other.__precompute[i]
+          i *= 2
+      return result
+
+  @staticmethod
+  def _leftmost_bit(x):
+    assert x > 0
+    result = 1
+    while result <= x:
+      result = 2 * result
+    return result // 2
+
+  def mul_add(self, self_mul, other, other_mul):
+      """
+      Do two multiplications at the same time, add results.
+
+      calculates self*self_mul + other*other_mul
+      """
+      if other is INFINITY or other_mul == 0:
+          return self * self_mul
+      if self_mul == 0:
+          return other * other_mul
+      if self.__precompute and other.__precompute:
+          return self._mul_add_precompute(self_mul, other, other_mul)
+
+      i = self._leftmost_bit(max(self_mul, other_mul))*2
+      result = INFINITY
+      self = self.scale()
+      other = other.scale()
+      both = (self + other).scale()
+      while i > 1:
+          result = result.double()
+          i = i // 2
+          if self_mul & i and other_mul & i:
+              result = result + both
+          elif self_mul & i:
+              result = result + self
+          elif other_mul & i:
+              result = result + other
+      return result
+
 
 class Point(object):
   """A point on an elliptic curve. Altering x and y is forbidding,

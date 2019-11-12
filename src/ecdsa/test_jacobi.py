@@ -35,6 +35,11 @@ class TestJacobi(unittest.TestCase):
     def test_compare_different_curves(self):
         self.assertNotEqual(generator_256, generator_224)
 
+    def test_equality_with_non_point(self):
+        pj = PointJacobi.from_affine(generator_256)
+
+        self.assertNotEqual(pj, "value")
+
     def test_conversion(self):
         pj = PointJacobi.from_affine(generator_256)
         pw = pj.to_affine()
@@ -70,6 +75,13 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(pj, pa)
         self.assertEqual(pa, pj)
+
+    def test_to_affine_with_zero_point(self):
+        pj = PointJacobi(curve_256, 0, 0, 1)
+
+        pa = pj.to_affine()
+
+        self.assertIs(pa, INFINITY)
 
     def test_add_with_affine_point(self):
         pj = PointJacobi.from_affine(generator_256)
@@ -282,3 +294,65 @@ class TestJacobi(unittest.TestCase):
         c = a + b
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
+
+    def test_add_point_3_times(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        self.assertEqual(j_g * 3, j_g + j_g + j_g)
+
+    def test_mul_add_inf(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        self.assertEqual(j_g, j_g.mul_add(1, INFINITY, 1))
+
+    def test_mul_add_same(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        self.assertEqual(j_g * 2, j_g.mul_add(1, j_g, 1))
+
+    def test_mul_add_precompute(self):
+        j_g = PointJacobi.from_affine(generator_256, True)
+        b = PointJacobi.from_affine(j_g * 255, True)
+
+        self.assertEqual(j_g * 256, j_g + b)
+        self.assertEqual(j_g * (5 + 255 * 7), j_g * 5 + b * 7)
+        self.assertEqual(j_g * (5 + 255 * 7), j_g.mul_add(5, b, 7))
+
+    def test_mul_add_precompute_large(self):
+        j_g = PointJacobi.from_affine(generator_256, True)
+        b = PointJacobi.from_affine(j_g * 255, True)
+
+        self.assertEqual(j_g * 256, j_g + b)
+        self.assertEqual(j_g * (0xff00 + 255 * 0xf0f0),
+                         j_g * 0xff00 + b * 0xf0f0)
+        self.assertEqual(j_g * (0xff00 + 255 * 0xf0f0),
+                         j_g.mul_add(0xff00, b, 0xf0f0))
+
+    def test_mul_add_to_mul(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        a = j_g * 3
+        b = j_g.mul_add(2, j_g, 1)
+
+        self.assertEqual(a, b)
+
+    def test_mul_add(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        w_a = generator_256 * 255
+        w_b = generator_256 * (0xa8*0xf0)
+        j_b = j_g * 0xa8
+
+        ret = j_g.mul_add(255, j_b, 0xf0)
+
+        self.assertEqual(ret.to_affine(), w_a + w_b)
+
+    def test_mul_add_large(self):
+        j_g = PointJacobi.from_affine(generator_256)
+        b = PointJacobi.from_affine(j_g * 255)
+
+        self.assertEqual(j_g * 256, j_g + b)
+        self.assertEqual(j_g * (0xff00 + 255 * 0xf0f0),
+                         j_g * 0xff00 + b * 0xf0f0)
+        self.assertEqual(j_g * (0xff00 + 255 * 0xf0f0),
+                         j_g.mul_add(0xff00, b, 0xf0f0))
