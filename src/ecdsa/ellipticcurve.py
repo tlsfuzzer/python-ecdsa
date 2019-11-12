@@ -278,49 +278,42 @@ class PointJacobi(object):
           return INFINITY
       return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
-  def _add_with_z_1(self, X1, Y1, X2, Y2):
+  def _add_with_z_1(self, X1, Y1, X2, Y2, p):
       """add points when both Z1 and Z2 equal 1"""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-mmadd-2007-bl
-      p = self.__curve.p()
       H = X2 - X1
       HH = H * H
       I = 4 * HH % p
       J = H * I
       r = 2 * (Y2 - Y1)
       if not H and not r:
-          return self.double()
+          return self._double_with_z_1(X1, Y1, p, self.__curve.a())
       V = X1 * I
       X3 = (r**2 - J - 2 * V) % p
       Y3 = (r * (V - X3) - 2 * Y1 * J) % p
       Z3 = 2 * H % p
-      if not Y3 or not Z3:
-          return INFINITY
-      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+      return X3, Y3, Z3
 
-  def _add_with_z_eq(self, X1, Y1, Z1, X2, Y2):
+  def _add_with_z_eq(self, X1, Y1, Z1, X2, Y2, p):
       """add points when Z1 == Z2"""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-zadd-2007-m
-      p = self.__curve.p()
       A = (X2 - X1)**2 % p
       B = X1 * A % p
       C = X2 * A
       D = (Y2 - Y1)**2 % p
       if not A and not D:
-          return self.double()
+          return self._double(X1, Y1, Z1, p, self.__curve.a())
       X3 = (D - B - C) % p
       Y3 = ((Y2 - Y1) * (B - X3) - Y1 * (C - B)) % p
       Z3 = Z1 * (X2 - X1) % p
-      if not Y3 or not Z3:
-          return INFINITY
-      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+      return X3, Y3, Z3
 
-  def _add_with_z2_1(self, X1, Y1, Z1, X2, Y2):
+  def _add_with_z2_1(self, X1, Y1, Z1, X2, Y2, p):
       """add points when Z2 == 1"""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-madd-2007-bl
-      p = self.__curve.p()
       Z1Z1 = Z1 * Z1 % p
       U2, S2 = X2 * Z1Z1 % p, Y2 * Z1 * Z1Z1 % p
       H = (U2 - X1) % p
@@ -329,20 +322,17 @@ class PointJacobi(object):
       J = H * I
       r = 2 * (S2 - Y1) % p
       if not r and not H:
-          return self.double()
+          return self._double_with_z_1(X2, Y2, p, self.__curve.a())
       V = X1 * I
       X3 = (r * r - J - 2 * V) % p
       Y3 = (r * (V - X3) - 2 * Y1 * J) % p
       Z3 = ((Z1 + H)**2 - Z1Z1 - HH) % p
-      if not Y3 or not Z3:
-          return INFINITY
-      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+      return X3, Y3, Z3
 
-  def _add_with_z_ne(self, X1, Y1, Z1, X2, Y2, Z2):
+  def _add_with_z_ne(self, X1, Y1, Z1, X2, Y2, Z2, p):
       """add points with arbitrary z"""
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-add-2007-bl
-      p = self.__curve.p()
       Z1Z1 = Z1 * Z1 % p
       Z2Z2 = Z2 * Z2 % p
       U1 = X1 * Z2Z2 % p
@@ -354,20 +344,29 @@ class PointJacobi(object):
       J = H * I % p
       r = 2 * (S2 - S1) % p
       if not H and not r:
-          return self.double()
+          return self._double(X1, Y1, Z1, p, self.__curve.a())
       V = U1 * I
       X3 = (r * r - J - 2 * V) % p
       Y3 = (r * (V - X3) - 2 * S1 * J) % p
       Z3 = ((Z1 + Z2)**2 - Z1Z1 - Z2Z2) * H % p
 
-      if not Y3 or not Z3:
-          return INFINITY
-
-      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
+      return X3, Y3, Z3
 
   def __radd__(self, other):
       """Add other to self."""
       return self + other
+
+  def _add(self, X1, Y1, Z1, X2, Y2, Z2, p):
+      """add two points, select fastest method."""
+      if Z1 == Z2:
+          if Z1 == 1:
+              return self._add_with_z_1(X1, Y1, X2, Y2, p)
+          return self._add_with_z_eq(X1, Y1, Z1, X2, Y2, p)
+      if Z1 == 1:
+          return self._add_with_z2_1(X2, Y2, Z2, X1, Y1, p)
+      if Z2 == 1:
+          return self._add_with_z2_1(X1, Y1, Z1, X2, Y2, p)
+      return self._add_with_z_ne(X1, Y1, Z1, X2, Y2, Z2, p)
 
   def __add__(self, other):
       """Add two points on elliptic curve."""
@@ -380,17 +379,14 @@ class PointJacobi(object):
       if self.__curve != other.__curve:
           raise ValueError("The other point is on different curve")
 
+      p = self.__curve.p()
       X1, Y1, Z1 = self.__x, self.__y, self.__z
       X2, Y2, Z2 = other.__x, other.__y, other.__z
-      if Z1 == Z2:
-          if Z1 == 1:
-              return self._add_with_z_1(X1, Y1, X2, Y2)
-          return self._add_with_z_eq(X1, Y1, Z1, X2, Y2)
-      if Z1 == 1:
-          return self._add_with_z2_1(X2, Y2, Z2, X1, Y1)
-      if Z2 == 1:
-          return self._add_with_z2_1(X1, Y1, Z1, X2, Y2)
-      return self._add_with_z_ne(X1, Y1, Z1, X2, Y2, Z2)
+      X3, Y3, Z3 = self._add(X1, Y1, Z1, X2, Y2, Z2, p)
+
+      if not Y3 or not Z3:
+          return INFINITY
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
   def __rmul__(self, other):
       """Multiply point by an integer."""
