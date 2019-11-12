@@ -270,7 +270,8 @@ def point_is_valid(generator, x, y):
     return False
   if not curve.contains_point(x, y):
     return False
-  if not n * ellipticcurve.Point(curve, x, y) == ellipticcurve.INFINITY:
+  if not n * ellipticcurve.PointJacobi(curve, x, y, 1)\
+        == ellipticcurve.INFINITY:
     return False
   return True
 
