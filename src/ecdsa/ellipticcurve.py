@@ -111,12 +111,12 @@ class PointJacobi(object):
           order *= 2
           doubler = PointJacobi(curve, x, y, z, order)
           order *= 2
-          self.__precompute.append(doubler)
+          self.__precompute.append((doubler.x(), doubler.y()))
 
           while i < order:
               i *= 2
               doubler = doubler.double().scale()
-              self.__precompute.append(doubler)
+              self.__precompute.append((doubler.x(), doubler.y()))
 
   def __eq__(self, other):
       """Compare two points with each-other."""
@@ -247,6 +247,8 @@ class PointJacobi(object):
       """Add a point to itself, arbitrary z."""
       if Z1 == 1:
           return self._double_with_z_1(X1, Y1, p, a)
+      if not Z1:
+          return 0, 0, 1
       # after:
       # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
       XX, YY = X1 * X1 % p, Y1 * Y1 % p
@@ -274,7 +276,7 @@ class PointJacobi(object):
 
       X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
 
-      if not Y3:
+      if not Y3 or not Z3:
           return INFINITY
       return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -358,6 +360,10 @@ class PointJacobi(object):
 
   def _add(self, X1, Y1, Z1, X2, Y2, Z2, p):
       """add two points, select fastest method."""
+      if not Y1 or not Z1:
+          return X2, Y2, Z2
+      if not Y2 or not Z2:
+          return X1, Y1, Z1
       if Z1 == Z2:
           if Z1 == 1:
               return self._add_with_z_1(X1, Y1, X2, Y2, p)
@@ -394,16 +400,22 @@ class PointJacobi(object):
 
   def _mul_precompute(self, other):
       """Multiply point by integer with precomputation table."""
-      result = INFINITY
-      for precomp in self.__precompute:
+      X3, Y3, Z3, p = 0, 0, 1, self.__curve.p()
+      _add = self._add
+      for X2, Y2 in self.__precompute:
           if other % 2:
               if other % 4 >= 2:
-                  other, result = (other + 1)//2, result + (-precomp)
+                  other = (other + 1)//2
+                  X3, Y3, Z3 = _add(X3, Y3, Z3, X2, -Y2, 1, p)
               else:
-                  other, result = (other - 1)//2, result + precomp
+                  other = (other - 1)//2
+                  X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
           else:
               other //= 2
-      return result
+
+      if not Y3 or not Z3:
+          return INFINITY
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
   @staticmethod
   def _naf(mult):
@@ -434,16 +446,24 @@ class PointJacobi(object):
           return self._mul_precompute(other)
 
       self = self.scale()
-      result = INFINITY
+      X2, Y2 = self.__x, self.__y
+      X3, Y3, Z3 = 0, 0, 1
+      p, a = self.__curve.p(), self.__curve.a()
+      _double = self._double
+      _add = self._add
       # since adding points when at least one of them is scaled
       # is quicker, reverse the NAF order
       for i in reversed(self._naf(other)):
-          result = result.double()
+          X3, Y3, Z3 = _double(X3, Y3, Z3, p, a)
           if i < 0:
-              result = result + (-self)
+              X3, Y3, Z3 = _add(X3, Y3, Z3, X2, -Y2, 1, p)
           elif i > 0:
-              result = result + self
-      return result
+              X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
+
+      if not Y3 or not Z3:
+          return INFINITY
+
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
   @staticmethod
   def _leftmost_bit(x):
@@ -467,21 +487,36 @@ class PointJacobi(object):
       if not isinstance(other, PointJacobi):
           other = PointJacobi.from_affine(other)
 
+      if self.__order:
+          self_mul = self_mul % self.__order
+          other_mul = other_mul % self.__order
+
       i = self._leftmost_bit(max(self_mul, other_mul))*2
-      result = INFINITY
+      X3, Y3, Z3 = 0, 0, 1
+      p, a = self.__curve.p(), self.__curve.a()
       self = self.scale()
+      X1, Y1 = self.__x, self.__y
       other = other.scale()
+      X2, Y2 = other.__x, other.__y
       both = (self + other).scale()
+      X4, Y4 = both.__x, both.__y
+      _double = self._double
+      _add = self._add
       while i > 1:
-          result = result.double()
+          X3, Y3, Z3 = _double(X3, Y3, Z3, p, a)
           i = i // 2
+
           if self_mul & i and other_mul & i:
-              result = result + both
+              X3, Y3, Z3 = _add(X3, Y3, Z3, X4, Y4, 1, p)
           elif self_mul & i:
-              result = result + self
+              X3, Y3, Z3 = _add(X3, Y3, Z3, X1, Y1, 1, p)
           elif other_mul & i:
-              result = result + other
-      return result
+              X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
+
+      if not Y3 or not Z3:
+          return INFINITY
+
+      return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
   def __neg__(self):
       """Return negated point."""
