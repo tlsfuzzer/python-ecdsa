@@ -15,7 +15,7 @@ from .ecdsa import Private_key, Public_key, Signature, \
 
 HYP_SETTINGS = {}
 # old hypothesis doesn't have the "deadline" setting
-if sys.version_info > (2, 7):
+if sys.version_info > (2, 7):  # pragma: no branch
     # SEC521p is slow, allow long execution for it
     HYP_SETTINGS["deadline"] = 5000
 

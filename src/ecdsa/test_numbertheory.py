@@ -12,7 +12,7 @@ from hypothesis import given, settings, example
 try:
     from hypothesis import HealthCheck
     HC_PRESENT=True
-except ImportError:
+except ImportError:  # pragma: no cover
     HC_PRESENT=False
 from .numbertheory import (SquareRootError, factorization, gcd, lcm,
                            jacobi, inverse_mod,
@@ -85,7 +85,7 @@ def st_two_nums_rel_prime(draw):
 
 @st.composite
 def st_primes(draw, *args, **kwargs):
-    if "min_value" not in kwargs:
+    if "min_value" not in kwargs:  # pragma: no branch
         kwargs["min_value"] = 1
     prime = draw(st.sampled_from(smallprimes) |
                  st.integers(*args, **kwargs)
@@ -161,7 +161,7 @@ def st_comp_no_com_fac(draw):
 
 
 HYP_SETTINGS = {}
-if HC_PRESENT:
+if HC_PRESENT:  # pragma: no branch
     HYP_SETTINGS['suppress_health_check']=[HealthCheck.filter_too_much,
                                            HealthCheck.too_slow]
     # the factorization() sometimes takes a long time to finish

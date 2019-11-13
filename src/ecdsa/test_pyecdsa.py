@@ -52,9 +52,6 @@ def run_openssl(cmd):
     return stdout.decode()
 
 
-BENCH = False
-
-
 class ECDSA(unittest.TestCase):
     def test_basic(self):
         priv = SigningKey.generate()
@@ -103,8 +100,6 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(len(pub.to_string()), default.verifying_key_length)
         sig = priv.sign(b("data"))
         self.assertEqual(len(sig), default.signature_length)
-        if BENCH:
-            print_()
         for curve in (NIST192p, NIST224p, NIST256p, NIST384p, NIST521p,
                       BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,
                       BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1,
@@ -121,13 +116,6 @@ class ECDSA(unittest.TestCase):
             sig = priv.sign(b("data"))
             sign_time = time.time() - start
             self.assertEqual(len(sig), curve.signature_length)
-            if BENCH:
-                start = time.time()
-                pub1.verify(sig, b("data"))
-                verify_time = time.time() - start
-                print_("%s: siglen=%d, keygen=%0.3fs, sign=%0.3f, verify=%0.3f" \
-                       % (curve.name, curve.signature_length,
-                          keygen_time, sign_time, verify_time))
 
     def test_serialize(self):
         seed = b("secret")
@@ -176,10 +164,6 @@ class ECDSA(unittest.TestCase):
                          priv2.privkey.secret_multiplier)
         self.assertEqual(priv1.privkey.public_key.generator,
                          priv2.privkey.public_key.generator)
-
-    def failIfPrivkeysEqual(self, priv1, priv2):
-        self.failIfEqual(priv1.privkey.secret_multiplier,
-                         priv2.privkey.secret_multiplier)
 
     def test_privkey_creation(self):
         s = b("all the entropy in the entire world, compressed into one line")
@@ -729,9 +713,9 @@ class OpenSSL(unittest.TestCase):
         # e.g. "OpenSSL 1.0.0 29 Mar 2010", or "OpenSSL 1.0.0a 1 Jun 2010",
         # or "OpenSSL 0.9.8o 01 Jun 2010"
         vs = v.split()[1].split(".")
-        if vs >= ["1", "0", "0"]:
+        if vs >= ["1", "0", "0"]:  # pragma: no cover
             return "-SHA1"
-        else:
+        else:  # pragma: no cover
             return "-ecdsa-with-SHA1"
 
     # sk: 1:OpenSSL->python  2:python->OpenSSL
@@ -809,7 +793,7 @@ class OpenSSL(unittest.TestCase):
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
-        if os.path.isdir("t"):
+        if os.path.isdir("t"):  # pragma: no cover
             shutil.rmtree("t")
         os.mkdir("t")
         run_openssl("ecparam -name %s -genkey -out t/privkey.pem" % curvename)
@@ -904,7 +888,7 @@ class OpenSSL(unittest.TestCase):
         # Python: create sk, vk, sign.
         # OpenSSL: read vk(4), checksig(6), read sk(2), sign, check
         mdarg = self.get_openssl_messagedigest_arg()
-        if os.path.isdir("t"):
+        if os.path.isdir("t"):  # pragma: no cover
             shutil.rmtree("t")
         os.mkdir("t")
         sk = SigningKey.generate(curve=curve)
@@ -1019,7 +1003,7 @@ class Util(unittest.TestCase):
             n = util.randrange(order, entropy=entropy)
             self.assertTrue(1 <= n < order, (1, n, order))
 
-    def OFF_test_prove_uniformity(self):
+    def OFF_test_prove_uniformity(self):  # pragma: no cover
         order = 2**8 - 2
         counts = dict([(i, 0) for i in range(1, order)])
         assert 0 not in counts

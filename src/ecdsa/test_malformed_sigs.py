@@ -3,7 +3,7 @@ from __future__ import with_statement, division
 import hashlib
 try:
     from hashlib import algorithms_available
-except ImportError:
+except ImportError:  # pragma: no cover
     algorithms_available = [
         "md5", "sha1", "sha224", "sha256", "sha384", "sha512"]
 from functools import partial
@@ -82,7 +82,7 @@ def st_fuzzed_sig(draw, keys_and_sigs):
     note("Remove bytes: {0}".format(to_remove))
 
     # decide which bytes of the original signature should be changed
-    if sig:
+    if sig:  # pragma: no branch
         xors = draw(st.dictionaries(
             st.integers(min_value=0, max_value=len(sig)-1),
             st.integers(min_value=1, max_value=255)))
@@ -110,7 +110,7 @@ def st_fuzzed_sig(draw, keys_and_sigs):
 
 params = {}
 # not supported in hypothesis 2.0.0
-if sys.version_info >= (2, 7):
+if sys.version_info >= (2, 7):  # pragma: no branch
     from hypothesis import HealthCheck
     # deadline=5s because NIST521p are slow to verify
     params["deadline"] = 5000
@@ -180,7 +180,7 @@ def st_der_integer(*args, **kwargs):
     INTEGER.
     Parameters are passed to hypothesis.strategy.integer.
     """
-    if "min_value" not in kwargs:
+    if "min_value" not in kwargs:  # pragma: no branch
         kwargs["min_value"] = 0
     return st.builds(encode_integer, st.integers(*args, **kwargs))
 

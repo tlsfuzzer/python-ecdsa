@@ -9,14 +9,14 @@ import hypothesis.strategies as st
 try:
     from hypothesis import HealthCheck
     HC_PRESENT=True
-except ImportError:
+except ImportError:  # pragma: no cover
     HC_PRESENT=False
 from .numbertheory import inverse_mod
 from .ellipticcurve import CurveFp, INFINITY, Point
 
 
 HYP_SETTINGS={}
-if HC_PRESENT:
+if HC_PRESENT:  # pragma: no branch
     HYP_SETTINGS['suppress_health_check']=[HealthCheck.too_slow]
     HYP_SETTINGS['deadline'] = 5000
 
