@@ -215,42 +215,42 @@ def test_ecdh_NIST(curve,privatekey,pubkey,secret):
     assert sharedsecret == unhexlify(secret)
 
 
-pem_private_key = (
+pem_local_private_key = (
     "-----BEGIN EC PRIVATE KEY-----\n"
     "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
     "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
     "bA==\n"
     "-----END EC PRIVATE KEY-----\n")
-der_private_key = (
+der_local_private_key = (
     "305f02010104185ec8420bd6ef9252a942e989043ca29f561fa525770eb1c5a00a06082a864"
     "8ce3d030101a13403320004b88177d084ef17f5e45639408028360f9f59b4a4d7264e62da06"
     "51dce47a35a4c5b45cf51593423a8b557b9c2099f36c")
-pem_public_key = (
+pem_remote_public_key = (
     "-----BEGIN PUBLIC KEY-----\n"
     "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEuIF30ITvF/XkVjlAgCg2D59ZtKTX\n"
     "Jk5i2gZR3OR6NaTFtFz1FZNCOotVe5wgmfNs\n"
     "-----END PUBLIC KEY-----\n")
-der_public_key = (
+der_remote_public_key = (
     "3049301306072a8648ce3d020106082a8648ce3d03010103320004b88177d084ef17f5e4563"
     "9408028360f9f59b4a4d7264e62da0651dce47a35a4c5b45cf51593423a8b557b9c2099f36c")
-pem_secret = "8f457e34982478d1c34b9cd2d0c15911b72dd60d869e2cea"
+gshared_secret = "8f457e34982478d1c34b9cd2d0c15911b72dd60d869e2cea"
 
 
 def test_ecdh_pem():
     ecdh = ECDH()
-    ecdh.load_private_key_pem(pem_private_key)
-    ecdh.load_received_public_key_pem(pem_public_key)
+    ecdh.load_private_key_pem(pem_local_private_key)
+    ecdh.load_received_public_key_pem(pem_remote_public_key)
 
     sharedsecret = ecdh.generate_sharedsecret_bytes()
 
-    assert sharedsecret == unhexlify(pem_secret)
+    assert sharedsecret == unhexlify(gshared_secret)
 
 
 def test_ecdh_der():
     ecdh = ECDH()
-    ecdh.load_private_key_der(unhexlify(der_private_key))
-    ecdh.load_received_public_key_der(unhexlify(der_public_key))
+    ecdh.load_private_key_der(unhexlify(der_local_private_key))
+    ecdh.load_received_public_key_der(unhexlify(der_remote_public_key))
 
     sharedsecret = ecdh.generate_sharedsecret_bytes()
 
-    assert sharedsecret == unhexlify(pem_secret)
+    assert sharedsecret == unhexlify(gshared_secret)
