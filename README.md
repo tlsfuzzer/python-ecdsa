@@ -466,3 +466,15 @@ comp_str = '022799c0d0ee09772fdd337d4f28dc155581951d07082fb19a38aa396b67e77759'
 vk = VerifyingKey.from_string(bytearray.fromhex(comp_str), curve=NIST256p)
 print(vk.to_string("uncompressed").hex())
 ```
+
+ECDH key exchange with remote party
+
+```
+from ecdsa import ECDH, NIST256p
+
+ecdh = ECDH(curve=NIST256p)
+local_public_key = ecdh.generate_private_key()
+#send `local_public_key` to remote party and receive `remote_public_key`
+ecdh.load_received_public_key(remote_public_key)
+secret = ecdh1.generate_sharedsecret_bytes()
+```
