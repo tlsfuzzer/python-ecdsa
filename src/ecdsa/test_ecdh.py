@@ -272,9 +272,18 @@ def run_openssl(cmd):
     return stdout.decode()
 
 
+OPENSSL_SUPPORTED_CURVES = set(c.split(':')[0].strip() for c in
+                                   run_openssl("ecparam -list_curves")
+                                   .split('\n'))
+
+
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
 def test_ecdh_with_openssl(vcurve):
     assert vcurve.openssl_name
+
+    if vcurve.openssl_name not in OPENSSL_SUPPORTED_CURVES:
+        pytest.skip("system openssl does not support " + vcurve.openssl_name)
+        return
 
     if os.path.isdir("t"):
         shutil.rmtree("t")
