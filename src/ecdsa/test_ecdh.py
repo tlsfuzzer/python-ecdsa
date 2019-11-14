@@ -1,4 +1,7 @@
 
+import os
+import shutil
+import subprocess
 import pytest
 from binascii import hexlify, unhexlify
 
@@ -6,7 +9,7 @@ from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
 from .curves import curves
 from .ecdh import ECDH, InvalidCurveError, \
                 InvalidSharedSecretError, NoKeyError
-from .keys import SigningKey
+from .keys import SigningKey, VerifyingKey
 
 
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
@@ -254,3 +257,66 @@ def test_ecdh_der():
     sharedsecret = ecdh.generate_sharedsecret_bytes()
 
     assert sharedsecret == unhexlify(gshared_secret)
+
+
+def run_openssl(cmd):
+    OPENSSL = "openssl"
+    p = subprocess.Popen([OPENSSL] + cmd.split(),
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+    stdout, ignored = p.communicate()
+    if p.returncode != 0:
+        raise subprocess.SubprocessError(
+            "cmd '%s %s' failed: rc=%s, stdout/err was %s" %
+            (OPENSSL, cmd, p.returncode, stdout))
+    return stdout.decode()
+
+
+@pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
+def test_ecdh_with_openssl(vcurve):
+    assert vcurve.openssl_name
+
+    if os.path.isdir("t"):
+        shutil.rmtree("t")
+    os.mkdir("t")
+    run_openssl("ecparam -name %s -genkey -out t/privkey1.pem" % vcurve.openssl_name)
+    run_openssl("ecparam -name %s -genkey -out t/privkey2.pem" % vcurve.openssl_name)
+    run_openssl("ec -in t/privkey1.pem -pubout -out t/pubkey1.pem")
+    run_openssl("ec -in t/privkey2.pem -pubout -out t/pubkey2.pem")
+
+    ecdh1 = ECDH(curve=vcurve)
+    ecdh2 = ECDH(curve=vcurve)
+    with open("t/privkey1.pem") as e:
+        key = e.read()
+    ecdh1.load_private_key_pem(key)
+    with open("t/privkey2.pem") as e:
+        key = e.read()
+    ecdh2.load_private_key_pem(key)
+
+    with open("t/pubkey1.pem") as e:
+        key = e.read()
+    vk1 = VerifyingKey.from_pem(key)
+    with open("t/pubkey2.pem") as e:
+        key = e.read()
+    vk2 = VerifyingKey.from_pem(key)
+
+    assert vk1.to_string() == ecdh1.get_public_key().to_string()
+    assert vk2.to_string() == ecdh2.get_public_key().to_string()
+
+    ecdh1.load_received_public_key(vk2)
+    ecdh2.load_received_public_key(vk1)
+    secret1 = ecdh1.generate_sharedsecret_bytes()
+    secret2 = ecdh2.generate_sharedsecret_bytes()
+
+    assert secret1 == secret2
+
+    run_openssl("pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1")
+    run_openssl("pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2")
+
+    with open("t/secret1", "rb") as e:
+        ssl_secret1 = e.read()
+    with open("t/secret1", "rb") as e:
+        ssl_secret2 = e.read()
+
+    assert ssl_secret1 == ssl_secret2
+    assert secret1 == ssl_secret1
