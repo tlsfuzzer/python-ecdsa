@@ -139,6 +139,13 @@ class VerifyingKey(object):
         pub_key = self.to_string("compressed")
         return "VerifyingKey.from_string({0!r}, {1!r}, {2})".format(
             pub_key, self.curve, self.default_hashfunc().name)
+        
+    def __eq__(self, other):
+        """Return True if the points are identical, False otherwise."""
+        if isinstance(other, VerifyingKey):  
+            return self.curve == other.curve \
+                and self.pubkey == other.pubkey
+        return False
 
     @classmethod
     def from_public_point(cls, point, curve=NIST192p, hashfunc=sha1):
@@ -649,6 +656,15 @@ class SigningKey(object):
         self.baselen = None
         self.verifying_key = None
         self.privkey = None
+        
+    def __eq__(self, other):
+        """Return True if the points are identical, False otherwise."""
+        if isinstance(other, SigningKey):  
+            return self.curve == other.curve \
+                and self.default_hashfunc == other.default_hashfunc \
+                and self.verifying_key == other.verifying_key \
+                and self.privkey == other.privkey
+        return False
 
     @classmethod
     def generate(cls, curve=NIST192p, entropy=None, hashfunc=sha1):
