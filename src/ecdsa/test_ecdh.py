@@ -285,6 +285,11 @@ def test_ecdh_with_openssl(vcurve):
         pytest.skip("system openssl does not support " + vcurve.openssl_name)
         return
 
+    hlp = run_openssl("pkeyutl -help")
+    if hlp.find("-derive") == 0:
+        pytest.skip("system openssl does not support `pkeyutl -derive`")
+        return
+
     if os.path.isdir("t"):
         shutil.rmtree("t")
     os.mkdir("t")
@@ -316,17 +321,17 @@ def test_ecdh_with_openssl(vcurve):
 
     assert secret1 == secret2
 
-    run_openssl("pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1")
-    run_openssl("pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2")
-
     try:
-        with open("t/secret1", "rb") as e:
-            ssl_secret1 = e.read()
-        with open("t/secret1", "rb") as e:
-            ssl_secret2 = e.read()
-    except FileNotFoundError:
+        run_openssl("pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1")
+        run_openssl("pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2")
+    except subprocess.SubprocessError:
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
+
+    with open("t/secret1", "rb") as e:
+        ssl_secret1 = e.read()
+    with open("t/secret1", "rb") as e:
+        ssl_secret2 = e.read()
 
     if len(ssl_secret1) != vk1.curve.baselen:
         pytest.skip("system openssl does not support `pkeyutl -derive`")
