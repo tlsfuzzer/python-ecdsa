@@ -479,5 +479,5 @@ local_public_key = ecdh.get_public_key()
 with open("remote_public_key.pem") as e:
     remote_public_key = e.read()
 ecdh.load_received_public_key_pem(remote_public_key)
-secret = ecdh1.generate_sharedsecret_bytes()
+secret = ecdh.generate_sharedsecret_bytes()
 ```

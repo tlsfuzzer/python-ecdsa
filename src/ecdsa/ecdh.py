@@ -47,8 +47,10 @@ class ECDH(object):
         """
         ECDH init.
 
-        Class can be init without parameters and then it will needs to set
-        all of them for proper operation.
+        Call can be initialised without parameters, then the first operation
+        (loading either the key) will set the used curve.
+        All parameters must be ultimately set before share secret
+        calculation will be allowed.
 
         :param curve: curve for operations
         :type curve: Curve
@@ -86,9 +88,9 @@ class ECDH(object):
 
     def set_curve(self, key_curve):
         """
-        Set working curve for ecdh operation.
+        Set the working curve for ecdh operations.
 
-        :param key_curve: curve from `curves`
+        :param key_curve: curve from `curves` module
         :type key_curve: Curve
         :return: none
         """
@@ -101,15 +103,16 @@ class ECDH(object):
         :raises NoCurveError: Curve must be set before key generation.
 
         :return: public (verifying) key from this private key.
-        :rtype: byte string
+        :rtype: VerifyingKey object
         """
-        if self.curve is None:
+        if not self.curve:
             raise NoCurveError("Curve must be set prior to key generation.")
         return self.load_private_key(SigningKey.generate(curve=self.curve))
 
     def load_private_key(self, private_key):
         """
         Load private key from SigningKey (keys.py) object.
+
         Needs to have the same curve as was set with set_curve method.
         If curve is not set - it sets from this SigningKey
 
@@ -119,9 +122,9 @@ class ECDH(object):
         :raises InvalidCurveError: private_key curve not the same as self.curve
 
         :return: public (verifying) key from this private key.
-        :rtype: byte string
+        :rtype: VerifyingKey object
         """
-        if self.curve is None:
+        if not self.curve:
             self.curve = private_key.curve
         if self.curve != private_key.curve:
             raise InvalidCurveError("Curve mismatch.")
@@ -131,41 +134,45 @@ class ECDH(object):
     def load_private_key_bytes(self, private_key):
         """
         Load private key from byte string.
+
         Uses current curve and checks if the provided key matches
         the curve of ECDH key agreement.
+        Key loads via from_string method of SigningKey class
 
         :param private_key: private key in bytes string format
-        :type private_key: byte string
+        :type private_key: :term:`bytes-like object`
 
         :raises NoCurveError: Curve must be set before loading.
 
         :return: public (verifying) key from this private key.
-        :rtype: byte string
+        :rtype: VerifyingKey object
         """
-        if self.curve is None:
+        if not self.curve:
             raise NoCurveError("Curve must be set prior to key load.")
         return self.load_private_key(
             SigningKey.from_string(private_key, curve=self.curve))
 
-    def load_private_key_der(self, private_key):
+    def load_private_key_der(self, private_key_der):
         """
         Load private key from DER byte string.
+
         Compares the curve of the DER-encoded key with the ECDH set curve,
         uses the former if unset.
 
         Note, the only DER format supported is the RFC5915
         Look at keys.py:SigningKey.from_der()
 
-        :param private_key: binary string with the DER encoding of private ECDSA key
-        :type private_key:   string
+        :param private_key_der: string with the DER encoding of private ECDSA key
+        :type private_key_der: string
         :return: public (verifying) key from this private key.
-        :rtype: byte string
+        :rtype: VerifyingKey object
         """
-        return self.load_private_key(SigningKey.from_der(private_key))
+        return self.load_private_key(SigningKey.from_der(private_key_der))
 
-    def load_private_key_pem(self, private_key):
+    def load_private_key_pem(self, private_key_pem):
         """
         Load private key from PEM string.
+
         Compares the curve of the DER-encoded key with the ECDH set curve,
         uses the former if unset.
 
@@ -173,26 +180,28 @@ class ECDH(object):
         Look at keys.py:SigningKey.from_pem()
         it needs to have `EC PRIVATE KEY` section
 
-        :param private_key: text with PEM-encoded private ECDSA key
-        :type private_key: string
+        :param private_key_pem: string with PEM-encoded private ECDSA key
+        :type private_key_pem: string
         :return: public (verifying) key from this private key.
-        :rtype: byte string
+        :rtype: VerifyingKey object
         """
-        return self.load_private_key(SigningKey.from_pem(private_key))
+        return self.load_private_key(SigningKey.from_pem(private_key_pem))
 
     def get_public_key(self):
         """
         Provides a public key that matches the local private key.
+
         Needs to be sent to the remote party.
 
         :return: public (verifying) key from local private key.
-        :rtype: byte string
+        :rtype: VerifyingKey object
        """
         return self.private_key.get_verifying_key()
 
     def load_received_public_key(self, public_key):
         """
         Load public key from VerifyingKey (keys.py) object.
+
         Needs to have the same curve as set as current for ecdh operation.
         If curve is not set - it sets it from VerifyingKey.
 
@@ -200,10 +209,8 @@ class ECDH(object):
         :type public_key: VerifyingKey
 
         :raises InvalidCurveError: public_key curve not the same as self.curve
-
-        :return: none
         """
-        if self.curve is None:
+        if not self.curve:
             self.curve = public_key.curve
         if self.curve != public_key.curve:
             raise InvalidCurveError("Curve mismatch.")
@@ -212,49 +219,51 @@ class ECDH(object):
     def load_received_public_key_bytes(self, public_key_str):
         """
         Load public key from byte string.
+
         Uses current curve and checks if key length corresponds to
         the current curve.
+        Key loads via from_string method of VerifyingKey class
 
         :param public_key_str: public key in bytes string format
-        :type public_key_str: byte string
-        :return: none
+        :type public_key_str: :term:`bytes-like object`
         """
         return self.load_received_public_key(
             VerifyingKey.from_string(public_key_str, self.curve))
 
-    def load_received_public_key_der(self, public_key_str):
+    def load_received_public_key_der(self, public_key_der):
         """
         Load public key from DER byte string.
+
         Compares the curve of the DER-encoded key with the ECDH set curve,
         uses the former if unset.
 
         Note, the only DER format supported is the RFC5912
         Look at keys.py:VerifyingKey.from_der()
 
-        :param public_key_str: byte string with the DER encoding of public ECDSA key
-        :type public_key_str: byte string
-        :return: none
+        :param public_key_der: string with the DER encoding of public ECDSA key
+        :type public_key_der: string
         """
-        return self.load_received_public_key(VerifyingKey.from_der(public_key_str))
+        return self.load_received_public_key(VerifyingKey.from_der(public_key_der))
 
-    def load_received_public_key_pem(self, public_key_str):
+    def load_received_public_key_pem(self, public_key_pem):
         """
         Load public key from PEM string.
+
         Compares the curve of the PEM-encoded key with the ECDH set curve,
         uses the former if unset.
 
         Note, the only PEM format supported is the RFC5912
         Look at keys.py:VerifyingKey.from_pem()
 
-        :param public_key_str: text with PEM-encoded public ECDSA key
-        :type public_key_str: string
-        :return: none
+        :param public_key_pem: string with PEM-encoded public ECDSA key
+        :type public_key_pem: string
         """
-        return self.load_received_public_key(VerifyingKey.from_pem(public_key_str))
+        return self.load_received_public_key(VerifyingKey.from_pem(public_key_pem))
 
     def generate_sharedsecret_bytes(self):
         """
         Generate shared secret from local private key and remote public key.
+
         The objects needs to have both private key and received public key
         before generation is allowed.
 
@@ -271,10 +280,11 @@ class ECDH(object):
     def generate_sharedsecret(self):
         """
         Generate shared secret from local private key and remote public key.
+
         The objects needs to have both private key and received public key
         before generation is allowed.
 
-        It the same for local and remote parties.
+        It's the same for local and remote party.
         shared secret(local private key, remote public key ) ==
                 shared secret (local public key, remote private key)
 
