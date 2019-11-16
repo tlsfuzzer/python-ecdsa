@@ -291,7 +291,6 @@ def test_ecdh_with_openssl(vcurve):
     run_openssl("ecparam -name %s -genkey -out t/privkey1.pem" % vcurve.openssl_name)
     run_openssl("ecparam -name %s -genkey -out t/privkey2.pem" % vcurve.openssl_name)
     run_openssl("ec -in t/privkey1.pem -pubout -out t/pubkey1.pem")
-    run_openssl("ec -in t/privkey2.pem -pubout -out t/pubkey2.pem")
 
     ecdh1 = ECDH(curve=vcurve)
     ecdh2 = ECDH(curve=vcurve)
@@ -305,12 +304,10 @@ def test_ecdh_with_openssl(vcurve):
     with open("t/pubkey1.pem") as e:
         key = e.read()
     vk1 = VerifyingKey.from_pem(key)
-    with open("t/pubkey2.pem") as e:
-        key = e.read()
-    vk2 = VerifyingKey.from_pem(key)
-
     assert vk1.to_string() == ecdh1.get_public_key().to_string()
-    assert vk2.to_string() == ecdh2.get_public_key().to_string()
+    vk2 = ecdh2.get_public_key()
+    with open("t/pubkey2.pem", "wb") as e:
+        e.write(vk2.to_pem())
 
     ecdh1.load_received_public_key(vk2)
     ecdh2.load_received_public_key(vk1)
@@ -322,10 +319,18 @@ def test_ecdh_with_openssl(vcurve):
     run_openssl("pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1")
     run_openssl("pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2")
 
-    with open("t/secret1", "rb") as e:
-        ssl_secret1 = e.read()
-    with open("t/secret1", "rb") as e:
-        ssl_secret2 = e.read()
+    try:
+        with open("t/secret1", "rb") as e:
+            ssl_secret1 = e.read()
+        with open("t/secret1", "rb") as e:
+            ssl_secret2 = e.read()
+    except FileNotFoundError:
+        pytest.skip("system openssl does not support `pkeyutl -derive`")
+        return
+
+    if len(ssl_secret1) != vk1.curve.baselen:
+        pytest.skip("system openssl does not support `pkeyutl -derive`")
+        return
 
     assert ssl_secret1 == ssl_secret2
     assert secret1 == ssl_secret1
