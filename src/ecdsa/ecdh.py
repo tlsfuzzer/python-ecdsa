@@ -52,9 +52,9 @@ class ECDH(object):
 
         :param curve: curve for operations
         :type curve: Curve
-        :param private_key: `my` private key for ecdh
+        :param private_key: `my` private key for ECDH
         :type private_key: SigningKey
-        :param public_key:  `their` public key for ecdh
+        :param public_key:  `their` public key for ECDH
         :type public_key: VerifyingKey
        """
         self.curve = curve
