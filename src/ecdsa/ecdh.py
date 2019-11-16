@@ -68,10 +68,10 @@ class ECDH(object):
             self.load_received_public_key(public_key)
 
     def _get_shared_secret(self, remote_public_key):
-        if self.private_key is None:
+        if not self.private_key:
             raise NoKeyError(
                 "Private key needs to be set to create shared secret")
-        if self.public_key is None:
+        if not self.public_key:
             raise NoKeyError(
                 "Public key needs to be set to create shared secret")
         if not (self.private_key.curve == self.curve == remote_public_key.curve):
@@ -92,7 +92,6 @@ class ECDH(object):
 
         :param key_curve: curve from `curves` module
         :type key_curve: Curve
-        :return: none
         """
         self.curve = key_curve
 
