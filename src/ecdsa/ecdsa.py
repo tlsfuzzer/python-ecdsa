@@ -112,7 +112,7 @@ class Public_key(object):
     """
     Low level ECDSA public key object.
 
-    :param generator: the Point that generates the group
+    :param generator: the Point that generates the group (the base point)
     :param point: the Point that defines the public key
     :param bool verify: if True check if point is valid point on curve
 
@@ -124,8 +124,9 @@ class Public_key(object):
     self.generator = generator
     self.point = point
     n = generator.order()
-    if point.x() < 0 or n <= point.x() or point.y() < 0 or n <= point.y():
-      raise InvalidPointError("Generator point has x or y out of range.")
+    p = self.curve.p()
+    if not (0 <= point.x() < p) or not (0 <= point.y() < p):
+      raise InvalidPointError("The public point has x or y out of range.")
     if verify and not self.curve.contains_point(point.x(), point.y()):
         raise InvalidPointError("Point does not lie on the curve")
     if not n:
@@ -266,7 +267,8 @@ def point_is_valid(generator, x, y):
 
   n = generator.order()
   curve = generator.curve()
-  if x < 0 or n <= x or y < 0 or n <= y:
+  p = curve.p()
+  if not (0 <= x < p) or not (0 <= y < p):
     return False
   if not curve.contains_point(x, y):
     return False

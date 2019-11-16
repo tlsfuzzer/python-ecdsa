@@ -621,7 +621,7 @@ class ECDSA(unittest.TestCase):
             VerifyingKey.from_string(b('\x00'))
 
     def test_not_lying_on_curve(self):
-        enc = number_to_string(NIST192p.order, NIST192p.order+1)
+        enc = number_to_string(NIST192p.curve.p(), NIST192p.curve.p()+1)
 
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b('\x02') + enc)
