@@ -131,7 +131,11 @@ class Public_key(object):
         raise InvalidPointError("Point does not lie on the curve")
     if not n:
       raise InvalidPointError("Generator point must have order.")
-    if verify and not n * point == ellipticcurve.INFINITY:
+    # for curve parameters with base point with cofactor 1, all points
+    # that are on the curve are scalar multiples of the base point, so
+    # verifying that is not necessary. See Section 3.2.2.1 of SEC 1 v2
+    if verify and self.curve.cofactor() != 1 and \
+            not n * point == ellipticcurve.INFINITY:
       raise InvalidPointError("Generator point order is bad.")
 
   def __eq__(self, other):
@@ -272,7 +276,8 @@ def point_is_valid(generator, x, y):
     return False
   if not curve.contains_point(x, y):
     return False
-  if not n * ellipticcurve.PointJacobi(curve, x, y, 1)\
+  if curve.cofactor() != 1 and \
+        not n * ellipticcurve.PointJacobi(curve, x, y, 1)\
         == ellipticcurve.INFINITY:
     return False
   return True
@@ -287,7 +292,7 @@ _b = 0x64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1
 _Gx = 0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012
 _Gy = 0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811
 
-curve_192 = ellipticcurve.CurveFp(_p, -3, _b)
+curve_192 = ellipticcurve.CurveFp(_p, -3, _b, 1)
 generator_192 = ellipticcurve.PointJacobi(
     curve_192, _Gx, _Gy, 1, _r, generator=True)
 
@@ -301,7 +306,7 @@ _b = 0xb4050a850c04b3abf54132565044b0b7d7bfd8ba270b39432355ffb4
 _Gx = 0xb70e0cbd6bb4bf7f321390b94a03c1d356c21122343280d6115c1d21
 _Gy = 0xbd376388b5f723fb4c22dfe6cd4375a05a07476444d5819985007e34
 
-curve_224 = ellipticcurve.CurveFp(_p, -3, _b)
+curve_224 = ellipticcurve.CurveFp(_p, -3, _b, 1)
 generator_224 = ellipticcurve.PointJacobi(
     curve_224, _Gx, _Gy, 1, _r, generator=True)
 
@@ -314,7 +319,7 @@ _b = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b
 _Gx = 0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296
 _Gy = 0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5
 
-curve_256 = ellipticcurve.CurveFp(_p, -3, _b)
+curve_256 = ellipticcurve.CurveFp(_p, -3, _b, 1)
 generator_256 = ellipticcurve.PointJacobi(
     curve_256, _Gx, _Gy, 1, _r, generator=True)
 
@@ -327,7 +332,7 @@ _b = 0xb3312fa7e23ee7e4988e056be3f82d19181d9c6efe8141120314088f5013875ac656398d8
 _Gx = 0xaa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7
 _Gy = 0x3617de4a96262c6f5d9e98bf9292dc29f8f41dbd289a147ce9da3113b5f0b8c00a60b1ce1d7e819d7a431d7c90ea0e5f
 
-curve_384 = ellipticcurve.CurveFp(_p, -3, _b)
+curve_384 = ellipticcurve.CurveFp(_p, -3, _b, 1)
 generator_384 = ellipticcurve.PointJacobi(
     curve_384, _Gx, _Gy, 1, _r, generator=True)
 
@@ -340,7 +345,7 @@ _b = 0x051953eb9618e1c9a1f929a21a0b68540eea2da725b99b315f3b8b489918ef109e1561939
 _Gx = 0xc6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66
 _Gy = 0x11839296a789a3bc0045c8a5fb42c7d1bd998f54449579b446817afbd17273e662c97ee72995ef42640c550b9013fad0761353c7086a272c24088be94769fd16650
 
-curve_521 = ellipticcurve.CurveFp(_p, -3, _b)
+curve_521 = ellipticcurve.CurveFp(_p, -3, _b, 1)
 generator_521 = ellipticcurve.PointJacobi(
     curve_521, _Gx, _Gy, 1, _r, generator=True)
 
@@ -352,7 +357,7 @@ _Gx = 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
 _Gy = 0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8
 _r = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141
 
-curve_secp256k1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_secp256k1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_secp256k1 = ellipticcurve.PointJacobi(
     curve_secp256k1, _Gx, _Gy, 1, _r, generator=True)
 
@@ -364,7 +369,7 @@ _Gx = 0xBED5AF16EA3F6A4F62938C4631EB5AF7BDBCDBC3
 _Gy = 0x1667CB477A1A8EC338F94741669C976316DA6321
 _q = 0xE95E4A5F737059DC60DF5991D45029409E60FC09
 
-curve_brainpoolp160r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp160r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp160r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp160r1, _Gx, _Gy, 1, _q, generator=True)
 
@@ -376,7 +381,7 @@ _Gx = 0xC0A0647EAAB6A48753B033C56CB0F0900A2F5C4853375FD6
 _Gy = 0x14B690866ABD5BB88B5F4828C1490002E6773FA2FA299B8F
 _q = 0xC302F41D932A36CDA7A3462F9E9E916B5BE8F1029AC4ACC1
 
-curve_brainpoolp192r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp192r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp192r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp192r1, _Gx, _Gy, 1, _q, generator=True)
 
@@ -388,7 +393,7 @@ _Gx = 0x0D9029AD2C7E5CF4340823B2A87DC68C9E4CE3174C1E6EFDEE12C07D
 _Gy = 0x58AA56F772C0726F24C6B89E4ECDAC24354B9E99CAA3F6D3761402CD
 _q = 0xD7C134AA264366862A18302575D0FB98D116BC4B6DDEBCA3A5A7939F
 
-curve_brainpoolp224r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp224r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp224r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp224r1, _Gx, _Gy, 1, _q, generator=True)
 
@@ -400,7 +405,7 @@ _Gx = 0x8BD2AEB9CB7E57CB2C4B482FFC81B7AFB9DE27E1E3BD23C23A4453BD9ACE3262
 _Gy = 0x547EF835C3DAC4FD97F8461A14611DC9C27745132DED8E545C1D54C72F046997
 _q = 0xA9FB57DBA1EEA9BC3E660A909D838D718C397AA3B561A6F7901E0E82974856A7
 
-curve_brainpoolp256r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp256r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp256r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp256r1, _Gx, _Gy, 1, _q, generator=True)
 
@@ -412,7 +417,7 @@ _Gx = 0x43BD7E9AFB53D8B85289BCC48EE5BFE6F20137D10A087EB6E7871E2A10A599C710AF8D0D
 _Gy = 0x14FDD05545EC1CC8AB4093247F77275E0743FFED117182EAA9C77877AAAC6AC7D35245D1692E8EE1
 _q = 0xD35E472036BC4FB7E13C785ED201E065F98FCFA5B68F12A32D482EC7EE8658E98691555B44C59311
 
-curve_brainpoolp320r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp320r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp320r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp320r1, _Gx, _Gy, 1, _q, generator=True)
 
@@ -424,7 +429,7 @@ _Gx = 0x1D1C64F068CF45FFA2A63A81B7C13F6B8847A3E77EF14FE3DB7FCAFE0CBD10E8E826E034
 _Gy = 0x8ABE1D7520F9C2A45CB1EB8E95CFD55262B70B29FEEC5864E19C054FF99129280E4646217791811142820341263C5315
 _q = 0x8CB91E82A3386D280F5D6F7E50E641DF152F7109ED5456B31F166E6CAC0425A7CF3AB6AF6B7FC3103B883202E9046565
 
-curve_brainpoolp384r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp384r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp384r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp384r1, _Gx, _Gy, 1, _q, generator=True)
 
@@ -436,6 +441,6 @@ _Gx = 0x81AEE4BDD82ED9645A21322E9C4C6A9385ED9F70B5D916C1B43B62EEF4D0098EFF3B1F78
 _Gy = 0x7DDE385D566332ECC0EABFA9CF7822FDF209F70024A57B1AA000C55B881F8111B2DCDE494A5F485E5BCA4BD88A2763AED1CA2B2FA8F0540678CD1E0F3AD80892
 _q = 0xAADD9DB8DBE9C48B3FD4E6AE33C9FC07CB308DB3B3C9D20ED6639CCA70330870553E5C414CA92619418661197FAC10471DB1D381085DDADDB58796829CA90069
 
-curve_brainpoolp512r1 = ellipticcurve.CurveFp(_p, _a, _b)
+curve_brainpoolp512r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp512r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp512r1, _Gx, _Gy, 1, _q, generator=True)

@@ -41,11 +41,19 @@ from . import numbertheory
 @python_2_unicode_compatible
 class CurveFp(object):
   """Elliptic Curve over the field of integers modulo a prime."""
-  def __init__(self, p, a, b):
-    """The curve of points satisfying y^2 = x^3 + a*x + b (mod p)."""
+  def __init__(self, p, a, b, h=None):
+    """
+    The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
+
+    h is an integer that is the cofactor of the elliptic curve domain
+    parameters; it is the number of points satisfying the elliptic curve
+    equation divided by the order of the base point. It is used for selection
+    of efficient algorithm for public point verification.
+    """
     self.__p = p
     self.__a = a
     self.__b = b
+    self.__h = h
     
   def __eq__(self, other):
     if isinstance(other, CurveFp):    
@@ -64,12 +72,16 @@ class CurveFp(object):
   def b(self):
     return self.__b
 
+  def cofactor(self):
+    return self.__h
+
   def contains_point(self, x, y):
     """Is the point (x,y) on this curve?"""
     return (y * y - ((x * x + self.__a) * x + self.__b)) % self.__p == 0
 
   def __str__(self):
-    return "CurveFp(p=%d, a=%d, b=%d)" % (self.__p, self.__a, self.__b)
+    return "CurveFp(p=%d, a=%d, b=%d, h=%d)" % (
+        self.__p, self.__a, self.__b, self.__h)
 
 
 class PointJacobi(object):
@@ -536,7 +548,10 @@ class Point(object):
     # self.curve is allowed to be None only for INFINITY:
     if self.__curve:
       assert self.__curve.contains_point(x, y)
-    if order:
+    # for curves with cofactor 1, all points that are on the curve are scalar
+    # multiples of the base point, so performing multiplication is not
+    # necessary to verify that. See Section 3.2.2.1 of SEC 1 v2
+    if curve and curve.cofactor() != 1 and order:
       assert self * order == INFINITY
 
   def __eq__(self, other):
