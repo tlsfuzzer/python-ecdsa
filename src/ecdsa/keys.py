@@ -145,7 +145,7 @@ class VerifyingKey(object):
         if isinstance(other, VerifyingKey):  
             return self.curve == other.curve \
                 and self.pubkey == other.pubkey
-        return False
+        return NotImplemented
 
     @classmethod
     def from_public_point(cls, point, curve=NIST192p, hashfunc=sha1):
@@ -661,10 +661,9 @@ class SigningKey(object):
         """Return True if the points are identical, False otherwise."""
         if isinstance(other, SigningKey):  
             return self.curve == other.curve \
-                and self.default_hashfunc == other.default_hashfunc \
                 and self.verifying_key == other.verifying_key \
                 and self.privkey == other.privkey
-        return False
+        return NotImplemented
 
     @classmethod
     def generate(cls, curve=NIST192p, entropy=None, hashfunc=sha1):

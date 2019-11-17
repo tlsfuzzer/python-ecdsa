@@ -52,7 +52,7 @@ class CurveFp(object):
       return self.__p == other.__p \
         and self.__a == other.__a \
         and self.__b == other.__b
-    return False
+    return NotImplemented
 
   def p(self):
     return self.__p
@@ -91,10 +91,10 @@ class Point(object):
       return self.__curve == other.__curve \
         and self.__x == other.__x \
         and self.__y == other.__y
-    return False
+    return NotImplemented
 
   def __neg__(self):
-    return Point(self.__curve, self.__x, self.__curve.p() - self.__y, self.__order)
+    return Point(self.__curve, self.__x, self.__curve.p() - self.__y)
 
   def __add__(self, other):
     """Add one point to another point."""
@@ -120,7 +120,7 @@ class Point(object):
     x3 = (l * l - self.__x - other.__x) % p
     y3 = (l * (self.__x - x3) - self.__y) % p
 
-    return Point(self.__curve, x3, y3, self.__order)
+    return Point(self.__curve, x3, y3)
 
   def __mul__(self, other):
     """Multiply a point by an integer."""
@@ -185,7 +185,7 @@ class Point(object):
     x3 = (l * l - 2 * self.__x) % p
     y3 = (l * (self.__x - x3) - self.__y) % p
 
-    return Point(self.__curve, x3, y3, self.__order)
+    return Point(self.__curve, x3, y3)
 
   def x(self):
     return self.__x

@@ -124,6 +124,7 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         cls.key_bytes = unpem(key_str)
         assert isinstance(cls.key_bytes, bytes)
         cls.vk = VerifyingKey.from_pem(key_str)
+        cls.sk = SigningKey.from_pem(prv_key_str)
 
     def test_bytes(self):
         vk = VerifyingKey.from_der(self.key_bytes)
@@ -156,7 +157,29 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         vk = VerifyingKey.from_der(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
+        
+    def test_equality_on_verifying_keys(self):     
+        self.assertEqual(self.vk, self.sk.get_verifying_key())
 
+
+class TestSigningKey(unittest.TestCase):
+    """
+    Verify that ecdsa.keys.SigningKey.from_der() can be used with
+    bytes-like objects.
+    """
+    @classmethod
+    def setUpClass(cls):
+        prv_key_str = (
+            "-----BEGIN EC PRIVATE KEY-----\n"
+            "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
+            "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
+            "bA==\n"
+            "-----END EC PRIVATE KEY-----\n")
+        cls.sk = SigningKey.from_pem(prv_key_str) 
+        
+    def test_equality_on_signing_keys(self):        
+        sk2 = SigningKey.from_secret_exponent(self.sk.privkey.secret_multiplier, self.sk.curve)
+        self.assertEqual(self.sk, sk2)
 
 # test VerifyingKey.verify()
 prv_key_str = (

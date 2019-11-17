@@ -124,7 +124,7 @@ class Public_key(object):
       """Return True if the points are identical, False otherwise."""
       return self.curve == other.curve \
         and self.point == other.point
-    return False
+    return NotImplemented
 
   def verifies(self, hash, signature):
     """Verify that signature is a valid signature of hash.
@@ -166,7 +166,7 @@ class Private_key(object):
       """Return True if the points are identical, False otherwise."""
       return self.public_key == other.public_key \
         and self.secret_multiplier == other.secret_multiplier
-    return False
+    return NotImplemented
 
   def sign(self, hash, random_k):
     """Return a signature for the provided hash, using the provided

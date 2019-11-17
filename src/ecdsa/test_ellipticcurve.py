@@ -126,3 +126,34 @@ def test_multiply(c, x1, y1, m, x3, y3):
     ids=["g_23 test with mult {0}".format(i) for i in range(9)])
 def test_add_and_mult_equivalence(p, m, check):
     assert p * m == check
+    
+    
+class TestCurve(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.c_23 = CurveFp(23, 1, 1)
+        
+    def test_equality_curves(self):
+        self.assertEqual(self.c_23, CurveFp(23, 1, 1))
+        
+    def test_inequality_curves(self):
+        c192 = CurveFp(p, -3, b)
+        self.assertNotEqual(self.c_23, c192)
+        
+
+class TestPoint(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.c_23 = CurveFp(23, 1, 1)
+        cls.g_23 = Point(cls.c_23, 13, 7, 7)
+        
+    def test_equality_points(self):
+        self.assertEqual(self.g_23, Point(self.c_23, 13, 7, 7))
+        
+    def test_inequality_points(self):
+        c = CurveFp(100, -3, 100)
+        p = Point(c, 100, 100, 100)
+        self.assertNotEqual(self.g_23, p)
+        
