@@ -285,8 +285,12 @@ def test_ecdh_with_openssl(vcurve):
         pytest.skip("system openssl does not support " + vcurve.openssl_name)
         return
 
-    hlp = run_openssl("pkeyutl -help")
-    if hlp.find("-derive") == 0:
+    try:
+        hlp = run_openssl("pkeyutl -help")
+        if hlp.find("-derive") == 0:
+            pytest.skip("system openssl does not support `pkeyutl -derive`")
+            return
+    except subprocess.SubprocessError:
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
 
