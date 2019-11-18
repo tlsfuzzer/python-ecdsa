@@ -48,8 +48,8 @@ class ECDH(object):
         ECDH init.
 
         Call can be initialised without parameters, then the first operation
-        (loading either the key) will set the used curve.
-        All parameters must be ultimately set before share secret
+        (loading either key) will set the used curve.
+        All parameters must be ultimately set before shared secret
         calculation will be allowed.
 
         :param curve: curve for operations
@@ -163,6 +163,9 @@ class ECDH(object):
 
         :param private_key_der: string with the DER encoding of private ECDSA key
         :type private_key_der: string
+
+        :raises InvalidCurveError: private_key curve not the same as self.curve
+
         :return: public (verifying) key from this private key.
         :rtype: VerifyingKey object
         """
@@ -181,6 +184,9 @@ class ECDH(object):
 
         :param private_key_pem: string with PEM-encoded private ECDSA key
         :type private_key_pem: string
+
+        :raises InvalidCurveError: private_key curve not the same as self.curve
+
         :return: public (verifying) key from this private key.
         :rtype: VerifyingKey object
         """
@@ -241,6 +247,8 @@ class ECDH(object):
 
         :param public_key_der: string with the DER encoding of public ECDSA key
         :type public_key_der: string
+
+        :raises InvalidCurveError: public_key curve not the same as self.curve
         """
         return self.load_received_public_key(VerifyingKey.from_der(public_key_der))
 
@@ -256,6 +264,8 @@ class ECDH(object):
 
         :param public_key_pem: string with PEM-encoded public ECDSA key
         :type public_key_pem: string
+
+        :raises InvalidCurveError: public_key curve not the same as self.curve
         """
         return self.load_received_public_key(VerifyingKey.from_pem(public_key_pem))
 
