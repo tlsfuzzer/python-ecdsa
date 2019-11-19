@@ -290,7 +290,7 @@ def test_ecdh_with_openssl(vcurve):
         if hlp.find("-derive") == 0:
             pytest.skip("system openssl does not support `pkeyutl -derive`")
             return
-    except (subprocess.SubprocessError, AttributeError):
+    except AttributeError:
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
 
