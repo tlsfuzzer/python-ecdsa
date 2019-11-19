@@ -61,11 +61,7 @@ class TestP192FromX9_62(unittest.TestCase):
 
 
 class TestPublicKey(unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        pass
-        
+       
     def test_equality_public_keys(self):
         gen = generator_192
         x = 0xc58d61f88d905293bcd4cd0080bcb1b7f811f2ffa41979f6
@@ -88,6 +84,14 @@ class TestPublicKey(unittest.TestCase):
         pub_key1 = Public_key(gen, point1)
         pub_key2 = Public_key(gen, point2)
         self.assertNotEqual(pub_key1, pub_key2)
+        
+    def test_inequality_public_key_not_implemented(self):
+        gen = generator_192
+        x = 0xc58d61f88d905293bcd4cd0080bcb1b7f811f2ffa41979f6
+        y = 0x8804dc7a7c4c7f8b5d437f5156f3312ca7d6de8a0e11867f        
+        point = ellipticcurve.Point(gen.curve(), x, y)
+        pub_key = Public_key(gen, point)
+        self.assertNotEqual(pub_key, None)
 
 
 class TestPrivateKey(unittest.TestCase):
@@ -109,6 +113,10 @@ class TestPrivateKey(unittest.TestCase):
         pr_key1 = Private_key(self.pub_key, 100)
         pr_key2 = Private_key(self.pub_key, 200)
         self.assertNotEqual(pr_key1, pr_key2)
+        
+    def test_inequality_private_keys_not_implemented(self):
+        pr_key = Private_key(self.pub_key, 100)
+        self.assertNotEqual(pr_key, None)
         
 
 # Testing point validity, as per ECDSAVS.pdf B.2.2:
@@ -437,5 +445,3 @@ def test_sig_verify(args):
     assert pubkey.verifies(msg, signature)
 
     assert not pubkey.verifies(msg - 1, signature)
-
-

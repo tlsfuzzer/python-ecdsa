@@ -48,7 +48,7 @@ class CurveFp(object):
     
   def __eq__(self, other):
     if isinstance(other, CurveFp):    
-      """Return True if the points are identical, False otherwise."""
+      """Return True if the curves are identical, False otherwise."""
       return self.__p == other.__p \
         and self.__a == other.__a \
         and self.__b == other.__b
@@ -202,4 +202,3 @@ class Point(object):
 
 # This one point is the Point At Infinity for all purposes:
 INFINITY = Point(None, None, None)
-
