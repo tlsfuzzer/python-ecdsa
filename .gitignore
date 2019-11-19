@@ -43,6 +43,9 @@ t/
 .project
 .pydevproject
 
+#vscode
+.vscode
+
 # Backup files
 *.swp
 *~

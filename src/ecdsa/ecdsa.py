@@ -119,6 +119,13 @@ class Public_key(object):
     if point.x() < 0 or n <= point.x() or point.y() < 0 or n <= point.y():
       raise RuntimeError("Generator point has x or y out of range.")
 
+  def __eq__(self, other):
+    if isinstance(other, Public_key):    
+      """Return True if the points are identical, False otherwise."""
+      return self.curve == other.curve \
+        and self.point == other.point
+    return NotImplemented
+
   def verifies(self, hash, signature):
     """Verify that signature is a valid signature of hash.
     Return True if the signature is valid.
@@ -153,6 +160,13 @@ class Private_key(object):
 
     self.public_key = public_key
     self.secret_multiplier = secret_multiplier
+    
+  def __eq__(self, other):
+    if isinstance(other, Private_key):    
+      """Return True if the points are identical, False otherwise."""
+      return self.public_key == other.public_key \
+        and self.secret_multiplier == other.secret_multiplier
+    return NotImplemented
 
   def sign(self, hash, random_k):
     """Return a signature for the provided hash, using the provided
