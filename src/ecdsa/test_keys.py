@@ -120,11 +120,20 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
             "-----BEGIN PUBLIC KEY-----\n"
             "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEuIF30ITvF/XkVjlAgCg2D59ZtKTX\n"
             "Jk5i2gZR3OR6NaTFtFz1FZNCOotVe5wgmfNs\n"
-            "-----END PUBLIC KEY-----\n")
+            "-----END PUBLIC KEY-----\n")       
+        
         cls.key_bytes = unpem(key_str)
         assert isinstance(cls.key_bytes, bytes)
         cls.vk = VerifyingKey.from_pem(key_str)
         cls.sk = SigningKey.from_pem(prv_key_str)
+        
+        key_str = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4H3iRbG4TSrsSRb/gusPQB/4YcN8\n"
+            "Poqzgjau4kfxBPyZimeRfuY/9g/wMmPuhGl4BUve51DsnKJFRr8psk0ieA==\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+        cls.vk2 = VerifyingKey.from_pem(key_str)
 
     def test_bytes(self):
         vk = VerifyingKey.from_der(self.key_bytes)
@@ -160,6 +169,12 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         
     def test_equality_on_verifying_keys(self):     
         self.assertEqual(self.vk, self.sk.get_verifying_key())
+        
+    def test_inequality_on_verifying_keys(self):     
+        self.assertNotEqual(self.vk, self.vk2)
+        
+    def test_inequality_on_verifying_keys_not_implemented(self):     
+        self.assertNotEqual(self.vk, None)
 
 
 class TestSigningKey(unittest.TestCase):
@@ -175,11 +190,25 @@ class TestSigningKey(unittest.TestCase):
             "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
             "bA==\n"
             "-----END EC PRIVATE KEY-----\n")
-        cls.sk = SigningKey.from_pem(prv_key_str) 
+        cls.sk1 = SigningKey.from_pem(prv_key_str) 
+        
+        prv_key_str = (
+            "-----BEGIN EC PRIVATE KEY-----\n"
+            "MHcCAQEEIKlL2EAm5NPPZuXwxRf4nXMk0A80y6UUbiQ17be/qFhRoAoGCCqGSM49\n"
+            "AwEHoUQDQgAE4H3iRbG4TSrsSRb/gusPQB/4YcN8Poqzgjau4kfxBPyZimeRfuY/\n"
+            "9g/wMmPuhGl4BUve51DsnKJFRr8psk0ieA==\n"
+            "-----END EC PRIVATE KEY-----\n")
+        cls.sk2 = SigningKey.from_pem(prv_key_str) 
         
     def test_equality_on_signing_keys(self):        
-        sk2 = SigningKey.from_secret_exponent(self.sk.privkey.secret_multiplier, self.sk.curve)
-        self.assertEqual(self.sk, sk2)
+        sk = SigningKey.from_secret_exponent(self.sk1.privkey.secret_multiplier, self.sk1.curve)
+        self.assertEqual(self.sk1, sk)
+        
+    def test_inequality_on_signing_keys(self):
+        self.assertNotEqual(self.sk1, self.sk2)
+        
+    def test_inequality_on_signing_keys_not_implemented(self):
+        self.assertNotEqual(self.sk1, None)
 
 # test VerifyingKey.verify()
 prv_key_str = (

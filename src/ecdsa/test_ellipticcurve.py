@@ -30,9 +30,11 @@ b = 0x64210519e59c80e70fa7e9ab72243049feb8deecc146b9b1
 Gx = 0x188da80eb03090f67cbf20eb43a18800f4ff0afd82ff1012
 Gy = 0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811
 
-
 c192 = CurveFp(p, -3, b)
 p192 = Point(c192, Gx, Gy, r)
+
+c_23 = CurveFp(23, 1, 1)
+g_23 = Point(c_23, 13, 7, 7)
 
 
 @settings(**HYP_SETTINGS)
@@ -42,7 +44,25 @@ def test_p192_mult_tests(multiple):
 
     p1 = p192 * multiple
     assert p1 * inv_m == p192
+    
+    
+def add_n_times(point, n):
+    ret = INFINITY
+    i = 0
+    while i <= n:
+        yield ret
+        ret = ret + point
+        i += 1
+        
 
+# From X9.62 I.1 (p. 96):
+@pytest.mark.parametrize(
+    "p, m, check",
+    [(g_23, n, exp) for n, exp in enumerate(add_n_times(g_23, 8))],
+    ids=["g_23 test with mult {0}".format(i) for i in range(9)])
+def test_add_and_mult_equivalence(p, m, check):
+    assert p * m == check
+    
 
 class TestCurve(unittest.TestCase):
 
@@ -74,16 +94,8 @@ class TestPoint(unittest.TestCase):
         Gy = 0x07192b95ffc8da78631011ed6b24cdd573f977a11e794811
         
         cls.c192 = CurveFp(p, -3, b)
-        cls.p192 = Point(cls.c192, Gx, Gy, r)
-        
-    def _add_n_times(self, point, n):
-        ret = INFINITY
-        i = 0
-        while i <= n:
-            yield ret
-            ret = ret + point
-            i += 1
-            
+        cls.p192 = Point(cls.c192, Gx, Gy, r)        
+           
     def test_p192(self):
         # Checking against some sample computations presented
         # in X9.62:
@@ -107,13 +119,8 @@ class TestPoint(unittest.TestCase):
         p3 = p1.double()
         self.assertEqual(p1, p3)
         self.assertEqual(p3.x(), p1.x())
-        self.assertEqual(p3.y(), p3.y())
-        
-    # From X9.62 I.1 (p. 96):
-    def test_add_and_mult_equivalence(self):        
-        for n, exp in enumerate(self._add_n_times(self.g_23, 8)):
-            self.assertEqual(self.g_23 * n, exp)
-       
+        self.assertEqual(p3.y(), p3.y())        
+      
     def test_double(self):
         x1, y1, x3, y3 = (3, 10, 7, 12)
         
@@ -133,14 +140,22 @@ class TestPoint(unittest.TestCase):
     def test_add(self):
         """We expect that on curve c, (x1,y1) + (x2, y2 ) = (x3, y3)."""
         
-        data = [(3, 10, 9, 7, 17, 20), # real add
-                (3, 10, 3, 10, 7, 12)] # double
-        for (x1, y1, x2, y2, x3, y3) in data:        
-            p1 = Point(self.c_23, x1, y1)
-            p2 = Point(self.c_23, x2, y2)
-            p3 = p1 + p2
-            self.assertEqual(p3.x(), x3)
-            self.assertEqual(p3.y(), y3)
+        x1, y1, x2, y2, x3, y3 = (3, 10, 9, 7, 17, 20)
+        p1 = Point(self.c_23, x1, y1)
+        p2 = Point(self.c_23, x2, y2)
+        p3 = p1 + p2
+        self.assertEqual(p3.x(), x3)
+        self.assertEqual(p3.y(), y3)
+            
+    def test_add_as_double(self):
+        """We expect that on curve c, (x1,y1) + (x2, y2 ) = (x3, y3)."""
+        
+        x1, y1, x2, y2, x3, y3 = (3, 10, 3, 10, 7, 12)  
+        p1 = Point(self.c_23, x1, y1)
+        p2 = Point(self.c_23, x2, y2)
+        p3 = p1 + p2
+        self.assertEqual(p3.x(), x3)
+        self.assertEqual(p3.y(), y3)
     
     def test_equality_points(self):
         self.assertEqual(self.g_23, Point(self.c_23, 13, 7, 7))
