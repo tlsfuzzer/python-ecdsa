@@ -259,6 +259,11 @@ def test_ecdh_der():
     assert sharedsecret == unhexlify(gshared_secret)
 
 
+# Exception classes used by run_openssl.
+class RunOpenSslError(Exception):
+    pass
+
+
 def run_openssl(cmd):
     OPENSSL = "openssl"
     p = subprocess.Popen([OPENSSL] + cmd.split(),
@@ -266,15 +271,15 @@ def run_openssl(cmd):
                          stderr=subprocess.STDOUT)
     stdout, ignored = p.communicate()
     if p.returncode != 0:
-        raise subprocess.SubprocessError(
+        raise RunOpenSslError(
             "cmd '%s %s' failed: rc=%s, stdout/err was %s" %
             (OPENSSL, cmd, p.returncode, stdout))
     return stdout.decode()
 
 
 OPENSSL_SUPPORTED_CURVES = set(c.split(':')[0].strip() for c in
-                                   run_openssl("ecparam -list_curves")
-                                   .split('\n'))
+                               run_openssl("ecparam -list_curves")
+                               .split('\n'))
 
 
 @pytest.mark.parametrize("vcurve", curves, ids=[curve.name for curve in curves])
@@ -290,7 +295,7 @@ def test_ecdh_with_openssl(vcurve):
         if hlp.find("-derive") == 0:
             pytest.skip("system openssl does not support `pkeyutl -derive`")
             return
-    except AttributeError:
+    except RunOpenSslError:
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
 
@@ -328,7 +333,7 @@ def test_ecdh_with_openssl(vcurve):
     try:
         run_openssl("pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1")
         run_openssl("pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2")
-    except subprocess.SubprocessError:
+    except RunOpenSslError:
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
 
