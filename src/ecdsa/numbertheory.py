@@ -17,6 +17,11 @@ try:
     xrange
 except NameError:
     xrange = range
+try:
+    from gmpy2 import powmod
+    GMPY2=True
+except ImportError:
+    GMPY2=False
 
 import math
 import warnings
@@ -201,19 +206,26 @@ def square_root_mod_prime(a, p):
   raise RuntimeError("No b found.")
 
 
-def inverse_mod(a, m):
-    """Inverse of a mod m."""
+if GMPY2:
+    def inverse_mod(a, m):
+        """Inverse of a mod m."""
+        if a == 0:
+            return 0
+        return powmod(a, -1, m)
+else:
+    def inverse_mod(a, m):
+        """Inverse of a mod m."""
 
-    if a == 0:
-        return 0
+        if a == 0:
+            return 0
 
-    lm, hm = 1, 0
-    low, high = a % m, m
-    while low > 1:
-        r = high // low
-        lm, low, hm, high = hm - lm * r, high - low * r, lm, low
+        lm, hm = 1, 0
+        low, high = a % m, m
+        while low > 1:
+            r = high // low
+            lm, low, hm, high = hm - lm * r, high - low * r, lm, low
 
-    return lm % m
+        return lm % m
 
 
 try:

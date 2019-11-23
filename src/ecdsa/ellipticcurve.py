@@ -35,25 +35,50 @@
 
 from __future__ import division
 
+try:
+    from gmpy2 import mpz
+    GMPY2=True
+except ImportError:
+    GMPY2=False
+
 from six import python_2_unicode_compatible
 from . import numbertheory
+
 
 @python_2_unicode_compatible
 class CurveFp(object):
   """Elliptic Curve over the field of integers modulo a prime."""
-  def __init__(self, p, a, b, h=None):
-    """
-    The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
 
-    h is an integer that is the cofactor of the elliptic curve domain
-    parameters; it is the number of points satisfying the elliptic curve
-    equation divided by the order of the base point. It is used for selection
-    of efficient algorithm for public point verification.
-    """
-    self.__p = p
-    self.__a = a
-    self.__b = b
-    self.__h = h
+  if GMPY2:
+      def __init__(self, p, a, b, h=None):
+        """
+        The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
+
+        h is an integer that is the cofactor of the elliptic curve domain
+        parameters; it is the number of points satisfying the elliptic curve
+        equation divided by the order of the base point. It is used for selection
+        of efficient algorithm for public point verification.
+        """
+        self.__p = mpz(p)
+        self.__a = mpz(a)
+        self.__b = mpz(b)
+        # h is not used in calculations and it can be None, so don't use
+        # gmpy with it
+        self.__h = h
+  else:
+      def __init__(self, p, a, b, h=None):
+        """
+        The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
+
+        h is an integer that is the cofactor of the elliptic curve domain
+        parameters; it is the number of points satisfying the elliptic curve
+        equation divided by the order of the base point. It is used for selection
+        of efficient algorithm for public point verification.
+        """
+        self.__p = p
+        self.__a = a
+        self.__b = b
+        self.__h = h
     
   def __eq__(self, other):
     if isinstance(other, CurveFp):    
@@ -112,10 +137,16 @@ class PointJacobi(object):
         cause to precompute multiplication table for it
       """
       self.__curve = curve
-      self.__x = x
-      self.__y = y
-      self.__z = z
-      self.__order = order
+      if GMPY2:
+          self.__x = mpz(x)
+          self.__y = mpz(y)
+          self.__z = mpz(z)
+          self.__order = order and mpz(order)
+      else:
+          self.__x = x
+          self.__y = y
+          self.__z = z
+          self.__order = order
       self.__precompute=[]
       if generator:
           assert order
@@ -542,9 +573,14 @@ class Point(object):
   def __init__(self, curve, x, y, order=None):
     """curve, x, y, order; order (optional) is the order of this point."""
     self.__curve = curve
-    self.__x = x
-    self.__y = y
-    self.__order = order
+    if GMPY2:
+        self.__x = x and mpz(x)
+        self.__y = y and mpz(y)
+        self.__order = order and mpz(order)
+    else:
+        self.__x = x
+        self.__y = y
+        self.__order = order
     # self.curve is allowed to be None only for INFINITY:
     if self.__curve:
       assert self.__curve.contains_point(x, y)

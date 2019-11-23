@@ -32,7 +32,11 @@ curves over prime fields.
 
 This library uses only Python and the 'six' package. It is compatible with
 Python 2.6, 2.7 and 3.3+. It also supports execution on the alternative
-implementations like pypy and pypy3
+implementations like pypy and pypy3.
+
+If `gmpy2` is installed, it will be used for faster arithmetic.
+`gmpy2` can be installed after this library is installed, `python-ecdsa` will
+detect presence of `gmpy2` on start-up and use it automatically.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
@@ -67,10 +71,29 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
  BRAINPOOLP384r1:     96   0.00112s    892.44   0.00119s    841.48   0.00229s    436.71
  BRAINPOOLP512r1:    128   0.00214s    467.05   0.00226s    441.64   0.00422s    237.13
 ```
+To test performance with `gmpy2` loaded, use `tox -e speedgmp2`.
+On the same machine I'm getting the following performance with `gmpy2`:
+```
+                  siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
+        NIST192p:     48   0.00016s   6180.12   0.00017s   5846.30   0.00033s   3029.51
+        NIST224p:     56   0.00021s   4861.86   0.00021s   4662.63   0.00042s   2366.47
+        NIST256p:     64   0.00023s   4343.93   0.00024s   4152.79   0.00047s   2148.83
+        NIST384p:     96   0.00040s   2507.97   0.00041s   2435.99   0.00079s   1260.01
+        NIST521p:    132   0.00088s   1135.13   0.00089s   1121.94   0.00139s    721.07
+       SECP256k1:     64   0.00023s   4360.83   0.00024s   4147.61   0.00044s   2254.53
+ BRAINPOOLP160r1:     40   0.00014s   7261.37   0.00015s   6824.47   0.00031s   3248.21
+ BRAINPOOLP192r1:     48   0.00016s   6219.18   0.00017s   5862.93   0.00034s   2933.74
+ BRAINPOOLP224r1:     56   0.00021s   4876.48   0.00022s   4640.40   0.00041s   2413.48
+ BRAINPOOLP256r1:     64   0.00023s   4397.89   0.00024s   4178.48   0.00044s   2272.76
+ BRAINPOOLP320r1:     80   0.00031s   3246.64   0.00032s   3138.38   0.00063s   1593.14
+ BRAINPOOLP384r1:     96   0.00040s   2491.04   0.00041s   2421.67   0.00079s   1262.64
+ BRAINPOOLP512r1:    128   0.00062s   1618.30   0.00063s   1577.42   0.00125s    799.29
+```
 
 For comparison, a highly optimised implementation (including curve-specific
-assembly) like OpenSSL provides following performance numbers on the same
-machine. Run `openssl speed ecdsa` to reproduce it:
+assembly for some curves), like the one in OpenSSL, provides following
+performance numbers on the same machine.
+Run `openssl speed ecdsa` to reproduce it:
 ```
                               sign    verify    sign/s verify/s
  192 bits ecdsa (nistp192)   0.0002s   0.0002s   4785.6   5380.7

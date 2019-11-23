@@ -417,7 +417,7 @@ def st_random_gen_key_msg_nonce(draw):
     name = draw(st.sampled_from(sorted(name_gen.keys())))
     note("Generator used: {0}".format(name))
     generator = name_gen[name]
-    order = generator.order()
+    order = int(generator.order())
 
     key = draw(st.integers(min_value=1, max_value=order))
     msg = draw(st.integers(min_value=1, max_value=order))

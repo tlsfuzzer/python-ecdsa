@@ -144,7 +144,7 @@ def st_random_der_ecdsa_sig_value(draw):
     """
     name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
     note("Configuration: {0}".format(name))
-    order = verifying_key.curve.order
+    order = int(verifying_key.curve.order)
 
     # the encode_integer doesn't suport negative numbers, would be nice
     # to generate them too, but we have coverage for remove_integer()

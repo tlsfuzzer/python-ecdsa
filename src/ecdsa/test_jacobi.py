@@ -14,16 +14,16 @@ from .numbertheory import inverse_mod
 class TestJacobi(unittest.TestCase):
     def test___init__(self):
         curve = object()
-        x = object()
-        y = object()
+        x = 2
+        y = 3
         z = 1
-        order = object()
+        order = 4
         pj = PointJacobi(curve, x, y, z, order)
 
-        self.assertIs(pj.order(), order)
+        self.assertEqual(pj.order(), order)
         self.assertIs(pj.curve(), curve)
-        self.assertIs(pj.x(), x)
-        self.assertIs(pj.y(), y)
+        self.assertEqual(pj.x(), x)
+        self.assertEqual(pj.y(), y)
 
     def test_add_with_different_curves(self):
         p_a = PointJacobi.from_affine(generator_256)
@@ -179,7 +179,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(dbl, mlpl)
 
     @settings(max_examples=10)
-    @given(st.integers(min_value=0, max_value=generator_256.order()))
+    @given(st.integers(min_value=0, max_value=int(generator_256.order())))
     def test_multiplications(self, mul):
         pj = PointJacobi.from_affine(generator_256)
         pw = pj.to_affine() * mul
@@ -190,9 +190,9 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(pj, pw)
 
     @settings(max_examples=10)
-    @given(st.integers(min_value=0, max_value=generator_256.order()))
+    @given(st.integers(min_value=0, max_value=int(generator_256.order())))
     @example(0)
-    @example(generator_256.order())
+    @example(int(generator_256.order()))
     def test_precompute(self, mul):
         precomp = PointJacobi.from_affine(generator_256, True)
         pj = PointJacobi.from_affine(generator_256)
@@ -203,8 +203,8 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(a, b)
 
     @settings(max_examples=10)
-    @given(st.integers(min_value=1, max_value=generator_256.order()),
-           st.integers(min_value=1, max_value=generator_256.order()))
+    @given(st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.integers(min_value=1, max_value=int(generator_256.order())))
     @example(3, 3)
     def test_add_scaled_points(self, a_mul, b_mul):
         j_g = PointJacobi.from_affine(generator_256)
@@ -216,9 +216,9 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
     @settings(max_examples=10)
-    @given(st.integers(min_value=1, max_value=generator_256.order()),
-           st.integers(min_value=1, max_value=generator_256.order()),
-           st.integers(min_value=1, max_value=curve_256.p()-1))
+    @given(st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.integers(min_value=1, max_value=int(curve_256.p()-1)))
     def test_add_one_scaled_point(self, a_mul, b_mul, new_z):
         j_g = PointJacobi.from_affine(generator_256)
         a = PointJacobi.from_affine(j_g * a_mul)
@@ -238,13 +238,13 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
     @settings(max_examples=10)
-    @given(st.integers(min_value=1, max_value=generator_256.order()),
-           st.integers(min_value=1, max_value=generator_256.order()),
-           st.integers(min_value=1, max_value=curve_256.p()-1))
+    @given(st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.integers(min_value=1, max_value=int(curve_256.p()-1)))
     @example(1, 1, 1)
     @example(3, 3, 3)
-    @example(2, generator_256.order()-2, 1)
-    @example(2, generator_256.order()-2, 3)
+    @example(2, int(generator_256.order()-2), 1)
+    @example(2, int(generator_256.order()-2), 3)
     def test_add_same_scale_points(self, a_mul, b_mul, new_z):
         j_g = PointJacobi.from_affine(generator_256)
         a = PointJacobi.from_affine(j_g * a_mul)
@@ -266,14 +266,14 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
     @settings(max_examples=14)
-    @given(st.integers(min_value=1, max_value=generator_256.order()),
-           st.integers(min_value=1, max_value=generator_256.order()),
-           st.lists(st.integers(min_value=1, max_value=curve_256.p()-1),
+    @given(st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.integers(min_value=1, max_value=int(generator_256.order())),
+           st.lists(st.integers(min_value=1, max_value=int(curve_256.p()-1)),
                     min_size=2, max_size=2, unique=True))
     @example(2, 2, [2, 1])
     @example(2, 2, [2, 3])
-    @example(2, generator_256.order()-2, [2, 3])
-    @example(2, generator_256.order()-2, [2, 1])
+    @example(2, int(generator_256.order()-2), [2, 3])
+    @example(2, int(generator_256.order()-2), [2, 1])
     def test_add_different_scale_points(self, a_mul, b_mul, new_z):
         j_g = PointJacobi.from_affine(generator_256)
         a = PointJacobi.from_affine(j_g * a_mul)
