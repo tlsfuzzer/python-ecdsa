@@ -42,6 +42,22 @@ To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
 1.0.0a, 1.0.2f and 1.1.1d (among others).
 
+
+## Installation
+
+This library is available on PyPI, it's recommended to install it using `pip`:
+
+```
+pip install ecdsa
+```
+
+In case higher performance is wanted and using native code is not a problem,
+it's possible to specify installation together with `gmpy2`:
+
+```
+pip install ecdsa[gmpy2]
+```
+
 ## Speed
 
 The following table shows how long this library takes to generate keypairs
