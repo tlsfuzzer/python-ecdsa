@@ -6,7 +6,7 @@ language: python
 cache: pip
 addons:
   apt_packages:
-      # needed for gmpy2
+      # needed for gmpy and gmpy2
       - libgmp-dev
       - libmpfr-dev
       - libmpc-dev
@@ -24,7 +24,9 @@ matrix:
       - python: 2.7
         env: TOX_ENV=py27_old_six
       - python: 2.7
-        env: TOX_ENV=gmppy27
+        env: TOX_ENV=gmpypy27
+      - python: 2.7
+        env: TOX_ENV=gmpy2py27
       - python: 3.3
         env: TOX_ENV=py33
       - python: 3.4
@@ -42,7 +44,11 @@ matrix:
         dist: xenial
         sudo: true
       - python: 3.8
-        env: TOX_ENV=gmppy38
+        env: TOX_ENV=gmpypy38
+        dist: xenial
+        sudo: true
+      - python: 3.8
+        env: TOX_ENV=gmpy2py38
         dist: xenial
         sudo: true
       - python: nightly
@@ -87,12 +93,15 @@ install:
       else
         travis_retry pip install -r build-requirements.txt;
       fi
-  - if [[ $TOX_ENV =~ gmp ]]; then travis_retry pip install gmpy2; fi
+  - if [[ $TOX_ENV =~ gmpy2 ]]; then travis_retry pip install gmpy2; fi
+  - if [[ $TOX_ENV =~ gmpyp ]]; then travis_retry pip install gmpy; fi
   - if [[ $INSTRUMENTAL ]]; then travis_retry pip install instrumental; fi
   - pip list
 script:
   - if [[ $TOX_ENV ]]; then tox -e $TOX_ENV; fi
-  - if [[ $TOX_ENV =~ gmp ]]; then tox -e speedgmp2; else tox -e speed; fi
+  - if [[ $TOX_ENV =~ gmpy2 ]]; then tox -e speedgmpy2; fi
+  - if [[ $TOX_ENV =~ gmpyp ]]; then tox -e speedgmpy; fi
+  - if ! [[ $TOX_ENV =~ gmpy ]]; then tox -e speed; fi
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
         git checkout $PR_FIRST^

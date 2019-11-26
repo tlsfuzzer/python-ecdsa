@@ -20,8 +20,14 @@ except NameError:
 try:
     from gmpy2 import powmod
     GMPY2=True
+    GMPY=False
 except ImportError:
     GMPY2=False
+    try:
+        from gmpy import mpz
+        GMPY=True
+    except ImportError:
+        GMPY=False
 
 import math
 import warnings
@@ -212,6 +218,25 @@ if GMPY2:
         if a == 0:
             return 0
         return powmod(a, -1, m)
+elif GMPY:
+    def inverse_mod(a, m):
+        """Inverse of a mod m."""
+        # while libgmp likely does support inverses modulo, it is accessible
+        # only using the native `pow()` function, and `pow()` sanity checks
+        # the parameters before passing them on to underlying implementation
+        # on Python2
+        if a == 0:
+            return 0
+        a = mpz(a)
+        m = mpz(m)
+
+        lm, hm = mpz(1), mpz(0)
+        low, high = a % m, m
+        while low > 1:
+            r = high // low
+            lm, low, hm, high = hm - lm * r, high - low * r, lm, low
+
+        return lm % m
 else:
     def inverse_mod(a, m):
         """Inverse of a mod m."""

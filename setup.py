@@ -43,5 +43,6 @@ setup(name="ecdsa",
       install_requires=['six>=1.9.0'],
       extras_require={
             'gmpy2': 'gmpy2',
+            'gmpy': 'gmpy',
           },
       )

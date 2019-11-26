@@ -37,9 +37,14 @@ from __future__ import division
 
 try:
     from gmpy2 import mpz
-    GMPY2=True
+    GMPY=True
 except ImportError:
-    GMPY2=False
+    try:
+        from gmpy import mpz
+        GMPY=True
+    except ImportError:
+        GMPY=False
+
 
 from six import python_2_unicode_compatible
 from . import numbertheory
@@ -49,7 +54,7 @@ from . import numbertheory
 class CurveFp(object):
   """Elliptic Curve over the field of integers modulo a prime."""
 
-  if GMPY2:
+  if GMPY:
       def __init__(self, p, a, b, h=None):
         """
         The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
@@ -137,7 +142,7 @@ class PointJacobi(object):
         cause to precompute multiplication table for it
       """
       self.__curve = curve
-      if GMPY2:
+      if GMPY:
           self.__x = mpz(x)
           self.__y = mpz(y)
           self.__z = mpz(z)
@@ -573,7 +578,7 @@ class Point(object):
   def __init__(self, curve, x, y, order=None):
     """curve, x, y, order; order (optional) is the order of this point."""
     self.__curve = curve
-    if GMPY2:
+    if GMPY:
         self.__x = x and mpz(x)
         self.__y = y and mpz(y)
         self.__order = order and mpz(order)

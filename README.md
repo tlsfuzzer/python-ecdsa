@@ -34,9 +34,10 @@ This library uses only Python and the 'six' package. It is compatible with
 Python 2.6, 2.7 and 3.3+. It also supports execution on the alternative
 implementations like pypy and pypy3.
 
-If `gmpy2` is installed, it will be used for faster arithmetic.
-`gmpy2` can be installed after this library is installed, `python-ecdsa` will
-detect presence of `gmpy2` on start-up and use it automatically.
+If `gmpy2` or `gmpy` is installed, they will be used for faster arithmetic.
+Either of them can be installed after this library is installed,
+`python-ecdsa` will detect their presence on start-up and use them
+automatically.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
@@ -56,6 +57,11 @@ it's possible to specify installation together with `gmpy2`:
 
 ```
 pip install ecdsa[gmpy2]
+```
+
+or (slower, legacy option):
+```
+pip install ecdsa[gmpy]
 ```
 
 ## Speed
@@ -87,7 +93,7 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
  BRAINPOOLP384r1:     96   0.00112s    892.44   0.00119s    841.48   0.00229s    436.71
  BRAINPOOLP512r1:    128   0.00214s    467.05   0.00226s    441.64   0.00422s    237.13
 ```
-To test performance with `gmpy2` loaded, use `tox -e speedgmp2`.
+To test performance with `gmpy2` loaded, use `tox -e speedgmpy2`.
 On the same machine I'm getting the following performance with `gmpy2`:
 ```
                   siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
@@ -105,6 +111,8 @@ On the same machine I'm getting the following performance with `gmpy2`:
  BRAINPOOLP384r1:     96   0.00040s   2491.04   0.00041s   2421.67   0.00079s   1262.64
  BRAINPOOLP512r1:    128   0.00062s   1618.30   0.00063s   1577.42   0.00125s    799.29
 ```
+
+(there's also `gmpy` version, execute it using `tox -e speedgmpy`)
 
 For comparison, a highly optimised implementation (including curve-specific
 assembly for some curves), like the one in OpenSSL, provides following
