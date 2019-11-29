@@ -48,7 +48,7 @@ added.
 
 Deprecations:
 Python 2.5 is not supported any more - dead code removal.
-`from keys import *` will now import only objects defined in that module.
+`from ecdsa.keys import *` will now import only objects defined in that module.
 Trying to decode a malformed point using `VerifyingKey.from_string`
 will rise now the `MalformedPointError` exception (that inherits from
 `AssertionError` but is not it).
