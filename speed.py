@@ -45,3 +45,22 @@ for curve in [i.name for i in curves]:
         name=curve, sep=":", siglen=len(sig), unit="s", keygen=keygen,
         keygen_inv=1.0/keygen, sign=sign, sign_inv=1.0/sign, verify=verf,
         verify_inv=1.0/verf, form=".5f", form_inv=".2f"))
+
+print('')
+
+ecdh_form = ("{name:>16}{sep:1} {ecdh:>9{form}}{unit:1} "
+    "{ecdh_inv:>9{form_inv}}")
+
+print(ecdh_form.format(ecdh="ecdh", ecdh_inv="ecdh/s", name="", sep="",
+                       unit="", form="", form_inv=""))
+
+for curve in [i.name for i in curves]:
+    S1 = "from ecdsa import SigningKey, ECDH, {0}".format(curve)
+    S2 = "our = SigningKey.generate({0})".format(curve)
+    S3 = "remote = SigningKey.generate({0}).verifying_key".format(curve)
+    S4 = "ecdh = ECDH(private_key=our, public_key=remote)"
+    S5 = "ecdh.generate_sharedsecret_bytes()"
+    ecdh = do([S1, S2, S3, S4], S5)
+    print(ecdh_form.format(
+        name=curve, sep=":", unit="s", form=".5f", form_inv=".2f",
+        ecdh=ecdh, ecdh_inv=1.0/ecdh))
