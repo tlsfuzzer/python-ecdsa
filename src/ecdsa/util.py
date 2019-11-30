@@ -27,7 +27,8 @@ else:
         return ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
 
 
-if sys.version < '2.7':  #Can't add a method to a built-in type so we are stuck with this
+if sys.version < '2.7':
+    # Can't add a method to a built-in type so we are stuck with this
     def bit_length(x):
         return len(bin(x)) - 2
 else:
