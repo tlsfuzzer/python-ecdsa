@@ -469,7 +469,7 @@ print(vk.to_string("uncompressed").hex())
 
 ECDH key exchange with remote party
 
-```
+```python
 from ecdsa import ECDH, NIST256p
 
 ecdh = ECDH(curve=NIST256p)
