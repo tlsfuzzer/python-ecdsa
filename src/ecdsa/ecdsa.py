@@ -139,10 +139,10 @@ class Public_key(object):
       raise InvalidPointError("Generator point order is bad.")
 
   def __eq__(self, other):
-    if isinstance(other, Public_key):    
+    if isinstance(other, Public_key):
       """Return True if the points are identical, False otherwise."""
       return self.curve == other.curve \
-        and self.point == other.point
+          and self.point == other.point
     return NotImplemented
 
   def verifies(self, hash, signature):
@@ -182,12 +182,12 @@ class Private_key(object):
 
     self.public_key = public_key
     self.secret_multiplier = secret_multiplier
-    
+
   def __eq__(self, other):
-    if isinstance(other, Private_key):    
+    if isinstance(other, Private_key):
       """Return True if the points are identical, False otherwise."""
       return self.public_key == other.public_key \
-        and self.secret_multiplier == other.secret_multiplier
+          and self.secret_multiplier == other.secret_multiplier
     return NotImplemented
 
   def sign(self, hash, random_k):
@@ -220,8 +220,8 @@ class Private_key(object):
     r = p1.x() % n
     if r == 0:
       raise RSZeroError("amazingly unlucky random number r")
-    s = (numbertheory.inverse_mod(k, n) *
-         (hash + (self.secret_multiplier * r) % n)) % n
+    s = (numbertheory.inverse_mod(k, n)
+         * (hash + (self.secret_multiplier * r) % n)) % n
     if s == 0:
       raise RSZeroError("amazingly unlucky random number s")
     return Signature(r, s)
@@ -277,8 +277,8 @@ def point_is_valid(generator, x, y):
   if not curve.contains_point(x, y):
     return False
   if curve.cofactor() != 1 and \
-        not n * ellipticcurve.PointJacobi(curve, x, y, 1)\
-        == ellipticcurve.INFINITY:
+      not n * ellipticcurve.PointJacobi(curve, x, y, 1)\
+          == ellipticcurve.INFINITY:
     return False
   return True
 
@@ -361,7 +361,7 @@ curve_secp256k1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_secp256k1 = ellipticcurve.PointJacobi(
     curve_secp256k1, _Gx, _Gy, 1, _r, generator=True)
 
- # Brainpool P-160-r1
+# Brainpool P-160-r1
 _a = 0x340E7BE2A280EB74E2BE61BADA745D97E8F7C300
 _b = 0x1E589A8595423412134FAA2DBDEC95C8D8675E58
 _p = 0xE95E4A5F737059DC60DFC7AD95B3D8139515620F
