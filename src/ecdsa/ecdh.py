@@ -38,8 +38,8 @@ class InvalidSharedSecretError(Exception):
 class ECDH(object):
     """
     Elliptic-curve Diffie-Hellman (ECDH). A key agreement protocol.
-    
-    Allows two parties, each having an elliptic-curve public-private key 
+
+    Allows two parties, each having an elliptic-curve public-private key
     pair, to establish a shared secret over an insecure channel
     """""
 
@@ -283,8 +283,8 @@ class ECDH(object):
         :rtype: byte string
         """
         return number_to_string(
-                    self.generate_sharedsecret(),
-                    self.private_key.curve.order)
+            self.generate_sharedsecret(),
+            self.private_key.curve.order)
 
     def generate_sharedsecret(self):
         """
