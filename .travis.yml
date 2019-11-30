@@ -22,6 +22,10 @@ matrix:
       - python: 2.7
         env: TOX_ENV=py27
       - python: 2.7
+        env: TOX_ENV=py27_old_gmpy
+      - python: 2.7
+        env: TOX_ENV=py27_old_gmpy2
+      - python: 2.7
         env: TOX_ENV=py27_old_six
       - python: 2.7
         env: TOX_ENV=gmpypy27
