@@ -1,8 +1,8 @@
 from .keys import SigningKey, VerifyingKey, BadSignatureError, BadDigestError,\
-        MalformedPointError
+    MalformedPointError
 from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p,\
-        SECP256k1, BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,\
-        BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1, BRAINPOOLP512r1
+    SECP256k1, BRAINPOOLP160r1, BRAINPOOLP192r1, BRAINPOOLP224r1,\
+    BRAINPOOLP256r1, BRAINPOOLP320r1, BRAINPOOLP384r1, BRAINPOOLP512r1
 from .ecdh import ECDH, NoKeyError, NoCurveError, InvalidCurveError, \
     InvalidSharedSecretError
 from .der import UnexpectedDER
