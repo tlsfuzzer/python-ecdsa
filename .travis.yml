@@ -44,6 +44,10 @@ matrix:
         dist: xenial
         sudo: true
       - python: 3.8
+        env: TOX_ENV=codechecks
+        dist: xenial
+        sudo: true
+      - python: 3.8
         env: TOX_ENV=py38
         dist: xenial
         sudo: true
