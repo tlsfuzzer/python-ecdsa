@@ -17,16 +17,22 @@ from ._compat import normalise_bytes
 oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
 
-if sys.version > '3': 
-    entropy_to_bits = lambda ent_256: bin(int.from_bytes(ent_256, 'big'))[2:].zfill(len(ent_256)*8)
-else: 
-    entropy_to_bits = lambda ent_256: ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
+if sys.version > '3':
+    def entropy_to_bits(ent_256):
+        """Convert a bytestring to string of 0's and 1's"""
+        return bin(int.from_bytes(ent_256, 'big'))[2:].zfill(len(ent_256)*8)
+else:
+    def entropy_to_bits(ent_256):
+        """Convert a bytestring to string of 0's and 1's"""
+        return ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
+
+
 if sys.version < '2.7':  #Can't add a method to a built-in type so we are stuck with this
-    bit_length = lambda x: len(bin(x)) - 2
-else: 
-    bit_length = lambda x: x.bit_length() or 1
-    
-        
+    def bit_length(x):
+        return len(bin(x)) - 2
+else:
+    def bit_length(x):
+        return x.bit_length() or 1
 
 
 def orderlen(order):
@@ -35,7 +41,8 @@ def orderlen(order):
 
 def randrange(order, entropy=None):
     """Return a random integer k such that 1 <= k < order, uniformly
-    distributed across that range. Worst case should be a mean of 2 loops at (2**k)+2. 
+    distributed across that range. Worst case should be a mean of 2 loops at
+    (2**k)+2.
 
     Note that this function is not declared to be forwards-compatible: we may
     change the behavior in future releases. The entropy= argument (which
@@ -47,14 +54,13 @@ def randrange(order, entropy=None):
     if entropy is None:
         entropy = os.urandom
     upper_2 = bit_length(order-2)
-    upper_256 = upper_2//8 + 1 
-    while True:  #I don't think this needs a counter with bit-wise randrange
-        ent_256 = entropy(upper_256) 
-        ent_2=entropy_to_bits(ent_256)
-        rand_num = int(ent_2[:upper_2], base=2) +1
-        if 0 < rand_num < order: return rand_num
-        else:continue
-
+    upper_256 = upper_2//8 + 1
+    while True:  # I don't think this needs a counter with bit-wise randrange
+        ent_256 = entropy(upper_256)
+        ent_2 = entropy_to_bits(ent_256)
+        rand_num = int(ent_2[:upper_2], base=2) + 1
+        if 0 < rand_num < order:
+            return rand_num
 
 
 class PRNG:
