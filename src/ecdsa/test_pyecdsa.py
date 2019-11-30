@@ -11,6 +11,8 @@ import subprocess
 import pytest
 from binascii import hexlify, unhexlify
 from hashlib import sha1, sha256, sha512
+import hashlib
+from functools import partial
 
 from hypothesis import given
 import hypothesis.strategies as st
@@ -708,15 +710,15 @@ class OpenSSL(unittest.TestCase):
                                    run_openssl("ecparam -list_curves")
                                    .split('\n'))
 
-    def get_openssl_messagedigest_arg(self):
+    def get_openssl_messagedigest_arg(self, hash_name):
         v = run_openssl("version")
         # e.g. "OpenSSL 1.0.0 29 Mar 2010", or "OpenSSL 1.0.0a 1 Jun 2010",
         # or "OpenSSL 0.9.8o 01 Jun 2010"
         vs = v.split()[1].split(".")
         if vs >= ["1", "0", "0"]:  # pragma: no cover
-            return "-SHA1"
+            return "-{0}".format(hash_name)
         else:  # pragma: no cover
-            return "-ecdsa-with-SHA1"
+            return "-ecdsa-with-{0}".format(hash_name)
 
     # sk: 1:OpenSSL->python  2:python->OpenSSL
     # vk: 3:OpenSSL->python  4:python->OpenSSL
@@ -727,6 +729,11 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist192p(self):
         return self.do_test_from_openssl(NIST192p)
 
+    @pytest.mark.skipif("prime192v1" not in OPENSSL_SUPPORTED_CURVES,
+                        reason="system openssl does not support prime192v1")
+    def test_from_openssl_nist192p_sha256(self):
+        return self.do_test_from_openssl(NIST192p, "SHA256")
+
     @pytest.mark.skipif("secp224r1" not in OPENSSL_SUPPORTED_CURVES,
                         reason="system openssl does not support secp224r1")
     def test_from_openssl_nist224p(self):
@@ -736,6 +743,16 @@ class OpenSSL(unittest.TestCase):
                         reason="system openssl does not support prime256v1")
     def test_from_openssl_nist256p(self):
         return self.do_test_from_openssl(NIST256p)
+
+    @pytest.mark.skipif("prime256v1" not in OPENSSL_SUPPORTED_CURVES,
+                        reason="system openssl does not support prime256v1")
+    def test_from_openssl_nist256p_sha384(self):
+        return self.do_test_from_openssl(NIST256p, "SHA384")
+
+    @pytest.mark.skipif("prime256v1" not in OPENSSL_SUPPORTED_CURVES,
+                        reason="system openssl does not support prime256v1")
+    def test_from_openssl_nist256p_sha512(self):
+        return self.do_test_from_openssl(NIST256p, "SHA512")
 
     @pytest.mark.skipif("secp384r1" not in OPENSSL_SUPPORTED_CURVES,
                         reason="system openssl does not support secp384r1")
@@ -787,12 +804,12 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp512r1(self):
         return self.do_test_from_openssl(BRAINPOOLP512r1)
 
-    def do_test_from_openssl(self, curve):
+    def do_test_from_openssl(self, curve, hash_name="SHA1"):
         curvename = curve.openssl_name
         assert curvename
         # OpenSSL: create sk, vk, sign.
         # Python: read vk(3), checksig(5), read sk(1), sign, check
-        mdarg = self.get_openssl_messagedigest_arg()
+        mdarg = self.get_openssl_messagedigest_arg(hash_name)
         if os.path.isdir("t"):  # pragma: no cover
             shutil.rmtree("t")
         os.mkdir("t")
@@ -809,18 +826,29 @@ class OpenSSL(unittest.TestCase):
         with open("t/data.sig", "rb") as e:
           sig_der = e.read()
         self.assertTrue(vk.verify(sig_der, data,  # 5
-                                  hashfunc=sha1, sigdecode=sigdecode_der))
+                                  hashfunc=partial(hashlib.new, hash_name),
+                                  sigdecode=sigdecode_der))
 
         with open("t/privkey.pem") as e:
           fp = e.read()
         sk = SigningKey.from_pem(fp)  # 1
-        sig = sk.sign(data)
-        self.assertTrue(vk.verify(sig, data))
+        sig = sk.sign(
+                data,
+                hashfunc=partial(hashlib.new, hash_name),
+                )
+        self.assertTrue(vk.verify(sig,
+                                  data,
+                                  hashfunc=partial(hashlib.new, hash_name)))
 
     @pytest.mark.skipif("prime192v1" not in OPENSSL_SUPPORTED_CURVES,
                         reason="system openssl does not support prime192v1")
     def test_to_openssl_nist192p(self):
         self.do_test_to_openssl(NIST192p)
+
+    @pytest.mark.skipif("prime192v1" not in OPENSSL_SUPPORTED_CURVES,
+                        reason="system openssl does not support prime192v1")
+    def test_to_openssl_nist192p_sha256(self):
+        self.do_test_to_openssl(NIST192p, "SHA256")
 
     @pytest.mark.skipif("secp224r1" not in OPENSSL_SUPPORTED_CURVES,
                         reason="system openssl does not support secp224r1")
@@ -831,6 +859,16 @@ class OpenSSL(unittest.TestCase):
                         reason="system openssl does not support prime256v1")
     def test_to_openssl_nist256p(self):
         self.do_test_to_openssl(NIST256p)
+
+    @pytest.mark.skipif("prime256v1" not in OPENSSL_SUPPORTED_CURVES,
+                        reason="system openssl does not support prime256v1")
+    def test_to_openssl_nist256p_sha384(self):
+        self.do_test_to_openssl(NIST256p, "SHA384")
+
+    @pytest.mark.skipif("prime256v1" not in OPENSSL_SUPPORTED_CURVES,
+                        reason="system openssl does not support prime256v1")
+    def test_to_openssl_nist256p_sha512(self):
+        self.do_test_to_openssl(NIST256p, "SHA512")
 
     @pytest.mark.skipif("secp384r1" not in OPENSSL_SUPPORTED_CURVES,
                         reason="system openssl does not support secp384r1")
@@ -882,12 +920,12 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp512r1(self):
         self.do_test_to_openssl(BRAINPOOLP512r1)
 
-    def do_test_to_openssl(self, curve):
+    def do_test_to_openssl(self, curve, hash_name="SHA1"):
         curvename = curve.openssl_name
         assert curvename
         # Python: create sk, vk, sign.
         # OpenSSL: read vk(4), checksig(6), read sk(2), sign, check
-        mdarg = self.get_openssl_messagedigest_arg()
+        mdarg = self.get_openssl_messagedigest_arg(hash_name)
         if os.path.isdir("t"):  # pragma: no cover
             shutil.rmtree("t")
         os.mkdir("t")
@@ -898,7 +936,8 @@ class OpenSSL(unittest.TestCase):
           e.write(vk.to_der())  # 4
         with open("t/pubkey.pem", "wb") as e:
           e.write(vk.to_pem())  # 4
-        sig_der = sk.sign(data, hashfunc=sha1, sigencode=sigencode_der)
+        sig_der = sk.sign(data, hashfunc=partial(hashlib.new, hash_name),
+                          sigencode=sigencode_der)
 
         with open("t/data.sig", "wb") as e:
           e.write(sig_der)  # 6
