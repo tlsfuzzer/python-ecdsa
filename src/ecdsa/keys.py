@@ -142,7 +142,7 @@ class VerifyingKey(object):
 
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise."""
-        if isinstance(other, VerifyingKey):  
+        if isinstance(other, VerifyingKey):
             return self.curve == other.curve \
                 and self.pubkey == other.pubkey
         return NotImplemented
@@ -245,9 +245,9 @@ class VerifyingKey(object):
         point = cls._from_raw_encoding(string[1:], curve)
 
         # but validate if it's self-consistent if we're asked to do that
-        if validate_point and \
-                (point.y() & 1 and string[:1] != b('\x07') or
-                 (not point.y() & 1) and string[:1] != b('\x06')):
+        if validate_point \
+                and (point.y() & 1 and string[:1] != b('\x07')
+                     or (not point.y() & 1) and string[:1] != b('\x06')):
             raise MalformedPointError("Inconsistent hybrid point encoding")
 
         return point
@@ -677,10 +677,10 @@ class SigningKey(object):
         self.baselen = None
         self.verifying_key = None
         self.privkey = None
-        
+
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise."""
-        if isinstance(other, SigningKey):  
+        if isinstance(other, SigningKey):
             return self.curve == other.curve \
                 and self.verifying_key == other.verifying_key \
                 and self.privkey == other.privkey
@@ -967,8 +967,7 @@ class SigningKey(object):
             der.encode_integer(1),
             der.encode_octet_string(self.to_string()),
             der.encode_constructed(0, self.curve.encoded_oid),
-            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
-            )
+            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)))
 
     def get_verifying_key(self):
         """
