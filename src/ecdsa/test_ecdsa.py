@@ -1,7 +1,7 @@
 from __future__ import print_function
 import sys
 import hypothesis.strategies as st
-from hypothesis import given, settings, note
+from hypothesis import given, settings, note, example
 try:
     import unittest2 as unittest
 except ImportError:
@@ -429,6 +429,7 @@ def st_random_gen_key_msg_nonce(draw):
 SIG_VER_SETTINGS = dict(HYP_SETTINGS)
 SIG_VER_SETTINGS["max_examples"] = 10
 @settings(**SIG_VER_SETTINGS)
+@example((generator_224, 4, 1, 1))
 @given(st_random_gen_key_msg_nonce())
 def test_sig_verify(args):
     """
