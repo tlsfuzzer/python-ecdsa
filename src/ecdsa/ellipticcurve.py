@@ -534,6 +534,10 @@ class PointJacobi(object):
           return other * other_mul
       if not isinstance(other, PointJacobi):
           other = PointJacobi.from_affine(other)
+      # when the points have precomputed answers, then multiplying them alone
+      # is faster (as it uses NAF)
+      if self.__precompute and other.__precompute:
+          return self * self_mul + other * other_mul
 
       if self.__order:
           self_mul = self_mul % self.__order
