@@ -9,14 +9,14 @@ import hypothesis.strategies as st
 try:
     from hypothesis import HealthCheck
     HC_PRESENT=True
-except ImportError:
+except ImportError:  # pragma: no cover
     HC_PRESENT=False
 from .numbertheory import inverse_mod
 from .ellipticcurve import CurveFp, INFINITY, Point
 
 
 HYP_SETTINGS={}
-if HC_PRESENT:
+if HC_PRESENT:  # pragma: no branch
     HYP_SETTINGS['suppress_health_check']=[HealthCheck.too_slow]
     HYP_SETTINGS['deadline'] = 5000
 
@@ -37,7 +37,11 @@ c_23 = CurveFp(23, 1, 1)
 g_23 = Point(c_23, 13, 7, 7)
 
 
-@settings(**HYP_SETTINGS)
+HYP_SLOW_SETTINGS=dict(HYP_SETTINGS)
+HYP_SLOW_SETTINGS["max_examples"]=10
+
+
+@settings(**HYP_SLOW_SETTINGS)
 @given(st.integers(min_value=1, max_value=r+1))
 def test_p192_mult_tests(multiple):
     inv_m = inverse_mod(multiple, r)

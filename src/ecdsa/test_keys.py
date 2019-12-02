@@ -97,7 +97,7 @@ class TestVerifyingKeyFromString(unittest.TestCase):
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
-    def test_bytearray_uncompressed(self):
+    def test_bytearray_compressed(self):
         vk = VerifyingKey.from_string(bytearray(b'\x02' + self.key_bytes[:24]))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())

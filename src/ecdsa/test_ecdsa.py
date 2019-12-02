@@ -1,7 +1,7 @@
 from __future__ import print_function
 import sys
 import hypothesis.strategies as st
-from hypothesis import given, settings, note
+from hypothesis import given, settings, note, example
 try:
     import unittest2 as unittest
 except ImportError:
@@ -15,7 +15,7 @@ from .ecdsa import Private_key, Public_key, Signature, \
 
 HYP_SETTINGS = {}
 # old hypothesis doesn't have the "deadline" setting
-if sys.version_info > (2, 7):
+if sys.version_info > (2, 7):  # pragma: no branch
     # SEC521p is slow, allow long execution for it
     HYP_SETTINGS["deadline"] = 5000
 
@@ -417,7 +417,7 @@ def st_random_gen_key_msg_nonce(draw):
     name = draw(st.sampled_from(sorted(name_gen.keys())))
     note("Generator used: {0}".format(name))
     generator = name_gen[name]
-    order = generator.order()
+    order = int(generator.order())
 
     key = draw(st.integers(min_value=1, max_value=order))
     msg = draw(st.integers(min_value=1, max_value=order))
@@ -429,6 +429,7 @@ def st_random_gen_key_msg_nonce(draw):
 SIG_VER_SETTINGS = dict(HYP_SETTINGS)
 SIG_VER_SETTINGS["max_examples"] = 10
 @settings(**SIG_VER_SETTINGS)
+@example((generator_224, 4, 1, 1))
 @given(st_random_gen_key_msg_nonce())
 def test_sig_verify(args):
     """

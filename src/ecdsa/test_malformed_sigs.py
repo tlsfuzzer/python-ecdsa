@@ -3,7 +3,7 @@ from __future__ import with_statement, division
 import hashlib
 try:
     from hashlib import algorithms_available
-except ImportError:
+except ImportError:  # pragma: no cover
     algorithms_available = [
         "md5", "sha1", "sha224", "sha256", "sha384", "sha512"]
 from functools import partial
@@ -82,7 +82,7 @@ def st_fuzzed_sig(draw, keys_and_sigs):
     note("Remove bytes: {0}".format(to_remove))
 
     # decide which bytes of the original signature should be changed
-    if sig:
+    if sig:  # pragma: no branch
         xors = draw(st.dictionaries(
             st.integers(min_value=0, max_value=len(sig)-1),
             st.integers(min_value=1, max_value=255)))
@@ -110,13 +110,16 @@ def st_fuzzed_sig(draw, keys_and_sigs):
 
 params = {}
 # not supported in hypothesis 2.0.0
-if sys.version_info >= (2, 7):
+if sys.version_info >= (2, 7):  # pragma: no branch
     from hypothesis import HealthCheck
     # deadline=5s because NIST521p are slow to verify
     params["deadline"] = 5000
     params["suppress_health_check"] = [HealthCheck.data_too_large,
                                        HealthCheck.filter_too_much,
                                        HealthCheck.too_slow]
+
+slow_params = dict(params)
+slow_params["max_examples"] = 10
 
 
 @settings(**params)
@@ -141,7 +144,7 @@ def st_random_der_ecdsa_sig_value(draw):
     """
     name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
     note("Configuration: {0}".format(name))
-    order = verifying_key.curve.order
+    order = int(verifying_key.curve.order)
 
     # the encode_integer doesn't suport negative numbers, would be nice
     # to generate them too, but we have coverage for remove_integer()
@@ -158,7 +161,7 @@ def st_random_der_ecdsa_sig_value(draw):
     return verifying_key, sig
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st_random_der_ecdsa_sig_value())
 def test_random_der_ecdsa_sig_value(params):
     """
@@ -177,7 +180,7 @@ def st_der_integer(*args, **kwargs):
     INTEGER.
     Parameters are passed to hypothesis.strategy.integer.
     """
-    if "min_value" not in kwargs:
+    if "min_value" not in kwargs:  # pragma: no branch
         kwargs["min_value"] = 0
     return st.builds(encode_integer, st.integers(*args, **kwargs))
 
