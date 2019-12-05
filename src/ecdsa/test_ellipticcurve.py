@@ -80,7 +80,21 @@ class TestCurve(unittest.TestCase):
     def test_inequality_curves(self):
         c192 = CurveFp(p, -3, b)
         self.assertNotEqual(self.c_23, c192)
-        
+
+    def test_usability_in_a_hashed_collection_curves(self):
+        {self.c_23: None}
+
+    def test_hashability_curves(self):
+        hash(self.c_23)
+
+    def test_conflation_curves(self):
+        ne1, ne2, ne3 = CurveFp(24, 1, 1), CurveFp(23, 2, 1), CurveFp(23, 1, 2)
+        eq1, eq2, eq3 = CurveFp(23, 1, 1), CurveFp(23, 1, 1), self.c_23
+        self.assertEqual(len(set((c_23, eq1, eq2, eq3))), 1)
+        self.assertEqual(len(set((c_23, ne1, ne2, ne3))), 4)
+        self.assertDictEqual({c_23: None}, {eq1: None})
+        self.assertTrue(eq2 in {eq3: None})
+
 
 class TestPoint(unittest.TestCase):
 

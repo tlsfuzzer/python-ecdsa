@@ -93,6 +93,9 @@ class CurveFp(object):
         and self.__b == other.__b
     return NotImplemented
 
+  def __hash__(self):
+    return hash((self.__p, self.__a, self.__b))
+
   def p(self):
     return self.__p
 
