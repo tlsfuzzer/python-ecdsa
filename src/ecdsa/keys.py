@@ -589,8 +589,6 @@ class VerifyingKey(object):
         :type sigdecode: callable
 
         :raises BadSignatureError: if the signature is invalid or malformed
-        :raises BadDigestError: if the provided hash is too big for the curve
-            associated with this VerifyingKey
 
         :return: True if the verification was successful
         :rtype: bool
@@ -601,9 +599,10 @@ class VerifyingKey(object):
 
         hashfunc = hashfunc or self.default_hashfunc
         digest = hashfunc(data).digest()
-        return self.verify_digest(signature, digest, sigdecode)
+        return self.verify_digest(signature, digest, sigdecode, True)
 
-    def verify_digest(self, signature, digest, sigdecode=sigdecode_string):
+    def verify_digest(self, signature, digest, sigdecode=sigdecode_string,
+                      allow_truncate=False):
         """
         Verify a signature made over provided hash value.
 
@@ -623,10 +622,14 @@ class VerifyingKey(object):
             second one. See :func:`ecdsa.util.sigdecode_string` and
             :func:`ecdsa.util.sigdecode_der` for examples.
         :type sigdecode: callable
+        :param bool allow_truncate: if True, the provided digest can have
+            bigger bit-size than the order of the curve, the extra bits (at
+            the end of the digest) will be truncated. Use it when verifying
+            SHA-384 output using NIST256p or in similar situations.
 
         :raises BadSignatureError: if the signature is invalid or malformed
-        :raises BadDigestError: if the provided hash is too big for the curve
-            associated with this VerifyingKey
+        :raises BadDigestError: if the provided digest is too big for the curve
+            associated with this VerifyingKey and allow_truncate was not set
 
         :return: True if the verification was successful
         :rtype: bool
@@ -634,6 +637,8 @@ class VerifyingKey(object):
         # signature doesn't have to be a bytes-like-object so don't normalise
         # it, the decoders will do that
         digest = normalise_bytes(digest)
+        if allow_truncate:
+            digest = digest[:self.curve.baselen]
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,
@@ -1017,11 +1022,11 @@ class SigningKey(object):
 
         return self.sign_digest_deterministic(
             digest, hashfunc=hashfunc, sigencode=sigencode,
-            extra_entropy=extra_entropy)
+            extra_entropy=extra_entropy, allow_truncate=True)
 
     def sign_digest_deterministic(self, digest, hashfunc=None,
                                   sigencode=sigencode_string,
-                                  extra_entropy=b''):
+                                  extra_entropy=b'', allow_truncate=False):
         """
         Create signature for digest using the deterministic RFC6679 algorithm.
 
@@ -1050,6 +1055,10 @@ class SigningKey(object):
         :param extra_entropy: additional data that will be fed into the random
             number generator used in the RFC6979 process. Entirely optional.
         :type extra_entropy: bytes like object
+        :param bool allow_truncate: if True, the provided digest can have
+            bigger bit-size than the order of the curve, the extra bits (at
+            the end of the digest) will be truncated. Use it when signing
+            SHA-384 output using NIST256p or in similar situations.
 
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependant type
@@ -1068,7 +1077,10 @@ class SigningKey(object):
                 self.curve.generator.order(), secexp, hashfunc, digest,
                 retry_gen=retry_gen, extra_entropy=extra_entropy)
             try:
-                r, s, order = self.sign_digest(digest, sigencode=simple_r_s, k=k)
+                r, s, order = self.sign_digest(digest,
+                                               sigencode=simple_r_s,
+                                               k=k,
+                                               allow_truncate=allow_truncate)
                 break
             except RSZeroError:
                 retry_gen += 1
@@ -1123,10 +1135,10 @@ class SigningKey(object):
         hashfunc = hashfunc or self.default_hashfunc
         data = normalise_bytes(data)
         h = hashfunc(data).digest()
-        return self.sign_digest(h, entropy, sigencode, k)
+        return self.sign_digest(h, entropy, sigencode, k, allow_truncate=True)
 
     def sign_digest(self, digest, entropy=None, sigencode=sigencode_string,
-                    k=None):
+                    k=None, allow_truncate=False):
         """
         Create signature over digest using the probabilistic ECDSA algorithm.
 
@@ -1152,6 +1164,10 @@ class SigningKey(object):
         :param int k: a pre-selected nonce for calculating the signature.
             In typical use cases, it should be set to None (the default) to
             allow its generation from an entropy source.
+        :param bool allow_truncate: if True, the provided digest can have
+            bigger bit-size than the order of the curve, the extra bits (at
+            the end of the digest) will be truncated. Use it when signing
+            SHA-384 output using NIST256p or in similar situations.
 
         :raises RSZeroError: in the unlikely event when "r" parameter or
             "s" parameter is equal 0 as that would leak the key. Calee should
@@ -1161,6 +1177,8 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         digest = normalise_bytes(digest)
+        if allow_truncate:
+            digest = digest[:self.curve.baselen]
         if len(digest) > self.curve.baselen:
             raise BadDigestError("this curve (%s) is too short "
                                  "for your digest (%d)" % (self.curve.name,
