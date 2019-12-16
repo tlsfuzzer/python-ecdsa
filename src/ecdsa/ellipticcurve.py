@@ -48,6 +48,7 @@ except ImportError:
 
 from six import python_2_unicode_compatible
 from . import numbertheory
+from ._rwlock import RWLock
 
 
 @python_2_unicode_compatible
@@ -145,6 +146,9 @@ class PointJacobi(object):
         cause to precompute multiplication table for it
       """
       self.__curve = curve
+      # since it's generally better (faster) to use scaled points vs unscaled
+      # ones, use writer-biased RWLock for locking:
+      self._scale_lock = RWLock()
       if GMPY:
           self.__x = mpz(x)
           self.__y = mpz(y)
@@ -171,19 +175,25 @@ class PointJacobi(object):
 
   def __eq__(self, other):
       """Compare two points with each-other."""
-      if (not self.__y or not self.__z) and other is INFINITY:
-          return True
-      if self.__y and self.__z and other is INFINITY:
-          return False
+      try:
+          self._scale_lock.reader_acquire()
+          if other is INFINITY:
+              return not self.__y or not self.__z
+          x1, y1, z1 = self.__x, self.__y, self.__z
+      finally:
+          self._scale_lock.reader_release()
       if isinstance(other, Point):
           x2, y2, z2 = other.x(), other.y(), 1
       elif isinstance(other, PointJacobi):
-          x2, y2, z2 = other.__x, other.__y, other.__z
+          try:
+              other._scale_lock.reader_acquire()
+              x2, y2, z2 = other.__x, other.__y, other.__z
+          finally:
+              other._scale_lock.reader_release()
       else:
           return NotImplemented
       if self.__curve != other.curve():
           return False
-      x1, y1, z1 = self.__x, self.__y, self.__z
       p = self.__curve.p()
 
       zz1 = z1 * z1 % p
@@ -214,11 +224,17 @@ class PointJacobi(object):
       call x() and y() on the returned instance. Or call `scale()`
       and then x() and y() on the returned instance.
       """
-      if self.__z == 1:
-          return self.__x
+      try:
+          self._scale_lock.reader_acquire()
+          if self.__z == 1:
+              return self.__x
+          x = self.__x
+          z = self.__z
+      finally:
+          self._scale_lock.reader_release()
       p = self.__curve.p()
-      z = numbertheory.inverse_mod(self.__z, p)
-      return self.__x * z**2 % p
+      z = numbertheory.inverse_mod(z, p)
+      return x * z**2 % p
 
   def y(self):
       """
@@ -229,11 +245,17 @@ class PointJacobi(object):
       call x() and y() on the returned instance. Or call `scale()`
       and then x() and y() on the returned instance.
       """
-      if self.__z == 1:
-          return self.__y
+      try:
+          self._scale_lock.reader_acquire()
+          if self.__z == 1:
+              return self.__y
+          y = self.__y
+          z = self.__z
+      finally:
+          self._scale_lock.reader_release()
       p = self.__curve.p()
-      z = numbertheory.inverse_mod(self.__z, p)
-      return self.__y * z**3 % p
+      z = numbertheory.inverse_mod(z, p)
+      return y * z**3 % p
 
   def scale(self):
       """
@@ -241,12 +263,28 @@ class PointJacobi(object):
 
       Modifies point in place, returns self.
       """
-      p = self.__curve.p()
-      z_inv = numbertheory.inverse_mod(self.__z, p)
-      zz_inv = z_inv * z_inv % p
-      self.__x = self.__x * zz_inv % p
-      self.__y = self.__y * zz_inv * z_inv % p
-      self.__z = 1
+      try:
+          self._scale_lock.reader_acquire()
+          if self.__z == 1:
+              return self
+      finally:
+          self._scale_lock.reader_release()
+
+      try:
+          self._scale_lock.writer_acquire()
+          # scaling already scaled point is safe (as inverse of 1 is 1) and
+          # quick so we don't need to optimise for the unlikely event when
+          # two threads hit the lock at the same time
+          p = self.__curve.p()
+          z_inv = numbertheory.inverse_mod(self.__z, p)
+          zz_inv = z_inv * z_inv % p
+          self.__x = self.__x * zz_inv % p
+          self.__y = self.__y * zz_inv * z_inv % p
+          # we are setting the z last so that the check above will return true
+          # only after all values were already updated
+          self.__z = 1
+      finally:
+          self._scale_lock.writer_release()
       return self
 
   def to_affine(self):
@@ -254,6 +292,7 @@ class PointJacobi(object):
       if not self.__y or not self.__z:
           return INFINITY
       self.scale()
+      # after point is scaled, it's immutable, so no need to perform locking
       return Point(self.__curve, self.__x,
                    self.__y, self.__order)
 
@@ -323,7 +362,11 @@ class PointJacobi(object):
 
       p, a = self.__curve.p(), self.__curve.a()
 
-      X1, Y1, Z1 = self.__x, self.__y, self.__z
+      try:
+          self._scale_lock.reader_acquire()
+          X1, Y1, Z1 = self.__x, self.__y, self.__z
+      finally:
+          self._scale_lock.reader_release()
 
       X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
 
@@ -437,8 +480,16 @@ class PointJacobi(object):
           raise ValueError("The other point is on different curve")
 
       p = self.__curve.p()
-      X1, Y1, Z1 = self.__x, self.__y, self.__z
-      X2, Y2, Z2 = other.__x, other.__y, other.__z
+      try:
+          self._scale_lock.reader_acquire()
+          X1, Y1, Z1 = self.__x, self.__y, self.__z
+      finally:
+          self._scale_lock.reader_release()
+      try:
+          other._scale_lock.reader_acquire()
+          X2, Y2, Z2 = other.__x, other.__y, other.__z
+      finally:
+          other._scale_lock.reader_release()
       X3, Y3, Z3 = self._add(X1, Y1, Z1, X2, Y2, Z2, p)
 
       if not Y3 or not Z3:
@@ -497,6 +548,7 @@ class PointJacobi(object):
           return self._mul_precompute(other)
 
       self = self.scale()
+      # once scaled, point is immutable, not need to lock
       X2, Y2 = self.__x, self.__y
       X3, Y3, Z3 = 0, 0, 1
       p, a = self.__curve.p(), self.__curve.a()
@@ -550,6 +602,7 @@ class PointJacobi(object):
       X3, Y3, Z3 = 0, 0, 1
       p, a = self.__curve.p(), self.__curve.a()
       self = self.scale()
+      # after scaling, point is immutable, no need for locking
       X1, Y1 = self.__x, self.__y
       other = other.scale()
       X2, Y2 = other.__x, other.__y
@@ -575,8 +628,12 @@ class PointJacobi(object):
 
   def __neg__(self):
       """Return negated point."""
-      return PointJacobi(self.__curve, self.__x, -self.__y, self.__z,
-                         self.__order)
+      try:
+          self._scale_lock.reader_acquire()
+          return PointJacobi(self.__curve, self.__x, -self.__y, self.__z,
+                             self.__order)
+      finally:
+          self._scale_lock.reader_release()
 
 
 class Point(object):
