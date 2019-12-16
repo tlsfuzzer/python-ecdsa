@@ -139,7 +139,7 @@ class VerifyingKey(object):
         pub_key = self.to_string("compressed")
         return "VerifyingKey.from_string({0!r}, {1!r}, {2})".format(
             pub_key, self.curve, self.default_hashfunc().name)
-        
+
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise."""
         if isinstance(other, VerifyingKey):  
@@ -306,7 +306,7 @@ class VerifyingKey(object):
                                      validate_point)
 
     @classmethod
-    def from_pem(cls, string):
+    def from_pem(cls, string, hashfunc=sha1):
         """
         Initialise from public key stored in :term:`PEM` format.
 
@@ -324,10 +324,10 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
-        return cls.from_der(der.unpem(string))
+        return cls.from_der(der.unpem(string), hashfunc=hashfunc)
 
     @classmethod
-    def from_der(cls, string):
+    def from_der(cls, string, hashfunc=sha1):
         """
         Initialise the key stored in :term:`DER` format.
 
@@ -380,7 +380,7 @@ class VerifyingKey(object):
         # raw encoding of point is invalid in DER files
         if len(point_str) == curve.verifying_key_length:
             raise der.UnexpectedDER("Malformed encoding of public point")
-        return cls.from_string(point_str, curve)
+        return cls.from_string(point_str, curve, hashfunc=hashfunc)
 
     @classmethod
     def from_public_key_recovery(cls, signature, data, curve, hashfunc=sha1,

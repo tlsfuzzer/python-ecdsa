@@ -120,13 +120,14 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
             "-----BEGIN PUBLIC KEY-----\n"
             "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEuIF30ITvF/XkVjlAgCg2D59ZtKTX\n"
             "Jk5i2gZR3OR6NaTFtFz1FZNCOotVe5wgmfNs\n"
-            "-----END PUBLIC KEY-----\n")       
-        
+            "-----END PUBLIC KEY-----\n")
+        cls.key_pem = key_str
+
         cls.key_bytes = unpem(key_str)
         assert isinstance(cls.key_bytes, bytes)
         cls.vk = VerifyingKey.from_pem(key_str)
         cls.sk = SigningKey.from_pem(prv_key_str)
-        
+
         key_str = (
             "-----BEGIN PUBLIC KEY-----\n"
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4H3iRbG4TSrsSRb/gusPQB/4YcN8\n"
@@ -134,6 +135,16 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
             "-----END PUBLIC KEY-----\n"
         )
         cls.vk2 = VerifyingKey.from_pem(key_str)
+
+    def test_custom_hashfunc(self):
+        vk = VerifyingKey.from_der(self.key_bytes, hashlib.sha256)
+
+        self.assertIs(vk.default_hashfunc, hashlib.sha256)
+
+    def test_from_pem_with_custom_hashfunc(self):
+        vk = VerifyingKey.from_pem(self.key_pem, hashlib.sha256)
+
+        self.assertIs(vk.default_hashfunc, hashlib.sha256)
 
     def test_bytes(self):
         vk = VerifyingKey.from_der(self.key_bytes)
@@ -166,14 +177,14 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         vk = VerifyingKey.from_der(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
-        
-    def test_equality_on_verifying_keys(self):     
+
+    def test_equality_on_verifying_keys(self):
         self.assertEqual(self.vk, self.sk.get_verifying_key())
-        
-    def test_inequality_on_verifying_keys(self):     
+
+    def test_inequality_on_verifying_keys(self):
         self.assertNotEqual(self.vk, self.vk2)
-        
-    def test_inequality_on_verifying_keys_not_implemented(self):     
+
+    def test_inequality_on_verifying_keys_not_implemented(self):
         self.assertNotEqual(self.vk, None)
 
 
