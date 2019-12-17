@@ -329,6 +329,25 @@ sk2 = make_key(b"2-"+seed)  # different key
 assert sk1a.to_string() != sk2.to_string()
 ```
 
+In case the application will verify a lot of signatures made with a single
+key, it's possible to precompute some of the internal values to make
+signature verification significantly faster. The break-even point occurs at
+about 100 signatures verified.
+
+To perform precomputation, you can call the `precompute()` method
+on `VerifyingKey` instance:
+```python
+from ecdsa import SigningKey, NIST384p
+sk = SigningKey.generate(curve=NIST384p)
+vk = sk.verifying_key
+vk.precompute()
+signature = sk.sign(b"message")
+assert vk.verify(signature, b"message")
+```
+
+Once `precompute()` was called, all signature verifications with this key will
+be faster to execute.
+
 ## OpenSSL Compatibility
 
 To produce signatures that can be verified by OpenSSL tools, or to verify
