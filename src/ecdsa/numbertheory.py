@@ -19,15 +19,15 @@ except NameError:
     xrange = range
 try:
     from gmpy2 import powmod
-    GMPY2=True
-    GMPY=False
+    GMPY2 = True
+    GMPY = False
 except ImportError:
-    GMPY2=False
+    GMPY2 = False
     try:
         from gmpy import mpz
-        GMPY=True
+        GMPY = True
     except ImportError:
-        GMPY=False
+        GMPY = False
 
 import math
 import warnings
