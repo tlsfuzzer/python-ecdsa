@@ -14,7 +14,8 @@ def do(setup_statements, statement):
             break
     return x / number
 
-prnt_form = ("{name:>16}{sep:1} {siglen:>6} {keygen:>9{form}}{unit:1} "
+prnt_form = (
+    "{name:>16}{sep:1} {siglen:>6} {keygen:>9{form}}{unit:1} "
     "{keygen_inv:>9{form_inv}} {sign:>9{form}}{unit:1} "
     "{sign_inv:>9{form_inv}} {verify:>9{form}}{unit:1} "
     "{verify_inv:>9{form_inv}}")
@@ -49,7 +50,8 @@ for curve in [i.name for i in curves]:
 
 print('')
 
-ecdh_form = ("{name:>16}{sep:1} {ecdh:>9{form}}{unit:1} "
+ecdh_form = (
+    "{name:>16}{sep:1} {ecdh:>9{form}}{unit:1} "
     "{ecdh_inv:>9{form_inv}}")
 
 print(ecdh_form.format(ecdh="ecdh", ecdh_inv="ecdh/s", name="", sep="",

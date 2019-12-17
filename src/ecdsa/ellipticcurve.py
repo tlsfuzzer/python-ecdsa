@@ -37,13 +37,13 @@ from __future__ import division
 
 try:
     from gmpy2 import mpz
-    GMPY=True
+    GMPY = True
 except ImportError:
     try:
         from gmpy import mpz
-        GMPY=True
+        GMPY = True
     except ImportError:
-        GMPY=False
+        GMPY = False
 
 
 from six import python_2_unicode_compatible
@@ -84,13 +84,13 @@ class CurveFp(object):
         self.__a = a
         self.__b = b
         self.__h = h
-    
+
   def __eq__(self, other):
-    if isinstance(other, CurveFp):    
+    if isinstance(other, CurveFp):
       """Return True if the curves are identical, False otherwise."""
       return self.__p == other.__p \
-        and self.__a == other.__a \
-        and self.__b == other.__b
+          and self.__a == other.__a \
+          and self.__b == other.__b
     return NotImplemented
 
   def __hash__(self):
@@ -155,7 +155,7 @@ class PointJacobi(object):
           self.__y = y
           self.__z = z
           self.__order = order
-      self.__precompute=[]
+      self.__precompute = []
       if generator:
           assert order
           i = 1
@@ -192,7 +192,7 @@ class PointJacobi(object):
       # compare the fractions by bringing them to the same denominator
       # depend on short-circuit to save 4 multiplications in case of inequality
       return (x1 * zz2 - x2 * zz1) % p == 0 and \
-              (y1 * zz2 * z2 - y2 * zz1 * z1) % p == 0
+             (y1 * zz2 * z2 - y2 * zz1 * z1) % p == 0
 
   def order(self):
       """Return the order of the point.
@@ -604,10 +604,10 @@ class Point(object):
 
   def __eq__(self, other):
     """Return True if the points are identical, False otherwise."""
-    if isinstance(other, Point):  
+    if isinstance(other, Point):
       return self.__curve == other.__curve \
-        and self.__x == other.__x \
-        and self.__y == other.__y
+          and self.__x == other.__x \
+          and self.__y == other.__y
     return NotImplemented
 
   def __neg__(self):
