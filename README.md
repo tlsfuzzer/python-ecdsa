@@ -2,7 +2,7 @@
 
 [![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
 [![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
-[![condition coverage](https://img.shields.io/badge/condition%20coverage-84%25-yellow)](https://travis-ci.org/warner/python-ecdsa/jobs/606048635#L711)
+[![condition coverage](https://img.shields.io/badge/condition%20coverage-81%25-yellow)](https://travis-ci.org/warner/python-ecdsa/jobs/626479178#L776)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 
 
