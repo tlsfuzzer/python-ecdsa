@@ -2,7 +2,7 @@
 
 [![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
 [![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
-[![condition coverage](https://img.shields.io/badge/condition%20coverage-84%25-yellow)](https://travis-ci.org/warner/python-ecdsa/jobs/606048635#L711)
+[![condition coverage](https://img.shields.io/badge/condition%20coverage-81%25-yellow)](https://travis-ci.org/warner/python-ecdsa/jobs/626479178#L776)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 
 
@@ -79,45 +79,76 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
 ```
                   siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-        NIST192p:     48   0.00033s   3062.43   0.00036s   2748.08   0.00062s   1605.66
-        NIST224p:     56   0.00041s   2424.07   0.00046s   2196.71   0.00083s   1205.81
-        NIST256p:     64   0.00053s   1892.05   0.00058s   1735.23   0.00106s    944.82
-        NIST384p:     96   0.00110s    904.98   0.00118s    847.82   0.00217s    460.26
-        NIST521p:    132   0.00234s    428.24   0.00245s    408.54   0.00443s    225.95
-       SECP256k1:     64   0.00053s   1891.93   0.00058s   1734.46   0.00109s    913.35
- BRAINPOOLP160r1:     40   0.00025s   3982.49   0.00029s   3490.15   0.00053s   1878.51
- BRAINPOOLP192r1:     48   0.00032s   3086.07   0.00036s   2761.68   0.00063s   1578.22
- BRAINPOOLP224r1:     56   0.00041s   2412.41   0.00046s   2185.52   0.00076s   1311.65
- BRAINPOOLP256r1:     64   0.00054s   1866.84   0.00058s   1719.45   0.00110s    906.85
- BRAINPOOLP320r1:     80   0.00077s   1306.97   0.00083s   1201.59   0.00158s    632.82
- BRAINPOOLP384r1:     96   0.00112s    892.44   0.00119s    841.48   0.00229s    436.71
- BRAINPOOLP512r1:    128   0.00214s    467.05   0.00226s    441.64   0.00422s    237.13
+        NIST192p:     48   0.00035s   2893.02   0.00038s   2620.53   0.00069s   1458.92
+        NIST224p:     56   0.00043s   2307.11   0.00048s   2092.00   0.00088s   1131.33
+        NIST256p:     64   0.00056s   1793.70   0.00061s   1639.87   0.00113s    883.79
+        NIST384p:     96   0.00116s    864.33   0.00124s    806.29   0.00233s    429.87
+        NIST521p:    132   0.00221s    452.16   0.00234s    427.31   0.00460s    217.19
+       SECP256k1:     64   0.00056s   1772.65   0.00061s   1628.73   0.00110s    912.13
+ BRAINPOOLP160r1:     40   0.00026s   3801.86   0.00029s   3401.11   0.00052s   1930.47
+ BRAINPOOLP192r1:     48   0.00034s   2925.73   0.00038s   2634.34   0.00070s   1438.06
+ BRAINPOOLP224r1:     56   0.00044s   2287.98   0.00048s   2083.87   0.00088s   1137.52
+ BRAINPOOLP256r1:     64   0.00056s   1774.11   0.00061s   1628.25   0.00112s    890.71
+ BRAINPOOLP320r1:     80   0.00081s   1238.18   0.00087s   1146.71   0.00151s    661.95
+ BRAINPOOLP384r1:     96   0.00117s    855.47   0.00124s    804.56   0.00241s    414.83
+ BRAINPOOLP512r1:    128   0.00223s    447.99   0.00234s    427.49   0.00437s    229.09
+
+                       ecdh     ecdh/s
+        NIST192p:   0.00110s    910.70
+        NIST224p:   0.00143s    701.17
+        NIST256p:   0.00178s    560.44
+        NIST384p:   0.00383s    261.03
+        NIST521p:   0.00745s    134.23
+       SECP256k1:   0.00168s    596.23
+ BRAINPOOLP160r1:   0.00085s   1174.02
+ BRAINPOOLP192r1:   0.00113s    883.47
+ BRAINPOOLP224r1:   0.00145s    687.82
+ BRAINPOOLP256r1:   0.00195s    514.03
+ BRAINPOOLP320r1:   0.00277s    360.80
+ BRAINPOOLP384r1:   0.00412s    242.58
+ BRAINPOOLP512r1:   0.00787s    127.12
 ```
+
 To test performance with `gmpy2` loaded, use `tox -e speedgmpy2`.
 On the same machine I'm getting the following performance with `gmpy2`:
 ```
                   siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-        NIST192p:     48   0.00016s   6180.12   0.00017s   5846.30   0.00033s   3029.51
-        NIST224p:     56   0.00021s   4861.86   0.00021s   4662.63   0.00042s   2366.47
-        NIST256p:     64   0.00023s   4343.93   0.00024s   4152.79   0.00047s   2148.83
-        NIST384p:     96   0.00040s   2507.97   0.00041s   2435.99   0.00079s   1260.01
-        NIST521p:    132   0.00088s   1135.13   0.00089s   1121.94   0.00139s    721.07
-       SECP256k1:     64   0.00023s   4360.83   0.00024s   4147.61   0.00044s   2254.53
- BRAINPOOLP160r1:     40   0.00014s   7261.37   0.00015s   6824.47   0.00031s   3248.21
- BRAINPOOLP192r1:     48   0.00016s   6219.18   0.00017s   5862.93   0.00034s   2933.74
- BRAINPOOLP224r1:     56   0.00021s   4876.48   0.00022s   4640.40   0.00041s   2413.48
- BRAINPOOLP256r1:     64   0.00023s   4397.89   0.00024s   4178.48   0.00044s   2272.76
- BRAINPOOLP320r1:     80   0.00031s   3246.64   0.00032s   3138.38   0.00063s   1593.14
- BRAINPOOLP384r1:     96   0.00040s   2491.04   0.00041s   2421.67   0.00079s   1262.64
- BRAINPOOLP512r1:    128   0.00062s   1618.30   0.00063s   1577.42   0.00125s    799.29
+        NIST192p:     48   0.00017s   5945.50   0.00018s   5544.66   0.00033s   3002.54
+        NIST224p:     56   0.00021s   4742.14   0.00022s   4463.52   0.00044s   2248.59
+        NIST256p:     64   0.00024s   4155.73   0.00025s   3994.28   0.00047s   2105.34
+        NIST384p:     96   0.00041s   2415.06   0.00043s   2316.41   0.00085s   1177.18
+        NIST521p:    132   0.00072s   1391.14   0.00074s   1359.63   0.00140s    716.31
+       SECP256k1:     64   0.00024s   4216.50   0.00025s   3994.52   0.00047s   2120.57
+ BRAINPOOLP160r1:     40   0.00014s   7038.99   0.00015s   6501.55   0.00029s   3397.79
+ BRAINPOOLP192r1:     48   0.00017s   5983.18   0.00018s   5626.08   0.00035s   2843.62
+ BRAINPOOLP224r1:     56   0.00021s   4727.54   0.00022s   4464.86   0.00043s   2326.84
+ BRAINPOOLP256r1:     64   0.00024s   4221.00   0.00025s   4010.26   0.00049s   2046.40
+ BRAINPOOLP320r1:     80   0.00032s   3142.14   0.00033s   3009.15   0.00061s   1652.88
+ BRAINPOOLP384r1:     96   0.00041s   2415.98   0.00043s   2340.35   0.00083s   1198.77
+ BRAINPOOLP512r1:    128   0.00064s   1567.27   0.00066s   1526.33   0.00127s    788.51
+
+                       ecdh     ecdh/s
+        NIST192p:   0.00051s   1960.26
+        NIST224p:   0.00067s   1502.97
+        NIST256p:   0.00073s   1376.12
+        NIST384p:   0.00132s    758.68
+        NIST521p:   0.00231s    433.23
+       SECP256k1:   0.00072s   1387.18
+ BRAINPOOLP160r1:   0.00042s   2366.60
+ BRAINPOOLP192r1:   0.00049s   2026.80
+ BRAINPOOLP224r1:   0.00067s   1486.52
+ BRAINPOOLP256r1:   0.00076s   1310.31
+ BRAINPOOLP320r1:   0.00101s    986.16
+ BRAINPOOLP384r1:   0.00131s    761.35
+ BRAINPOOLP512r1:   0.00211s    473.30
 ```
 
 (there's also `gmpy` version, execute it using `tox -e speedgmpy`)
 
 For comparison, a highly optimised implementation (including curve-specific
-assembly for some curves), like the one in OpenSSL, provides following
+assembly for some curves), like the one in OpenSSL 1.1.1d, provides following
 performance numbers on the same machine.
-Run `openssl speed ecdsa` to reproduce it:
+Run `openssl speed ecdsa` and `openssl speed ecdh` to reproduce it:
 ```
                               sign    verify    sign/s verify/s
  192 bits ecdsa (nistp192)   0.0002s   0.0002s   4785.6   5380.7
@@ -128,6 +159,16 @@ Run `openssl speed ecdsa` to reproduce it:
  256 bits ecdsa (brainpoolP256r1)   0.0003s   0.0003s   2983.5   3333.2
  384 bits ecdsa (brainpoolP384r1)   0.0008s   0.0007s   1258.8   1528.1
  512 bits ecdsa (brainpoolP512r1)   0.0015s   0.0012s    675.1    860.1
+
+                               op      op/s
+ 192 bits ecdh (nistp192)   0.0002s   4853.4
+ 224 bits ecdh (nistp224)   0.0001s  15252.1
+ 256 bits ecdh (nistp256)   0.0001s  18436.3
+ 384 bits ecdh (nistp384)   0.0008s   1292.7
+ 521 bits ecdh (nistp521)   0.0003s   2884.7
+ 256 bits ecdh (brainpoolP256r1)   0.0003s   3066.5
+ 384 bits ecdh (brainpoolP384r1)   0.0008s   1298.0
+ 512 bits ecdh (brainpoolP512r1)   0.0014s    694.8
 ```
 
 Keys and signature can be serialized in different ways (see Usage, below).
