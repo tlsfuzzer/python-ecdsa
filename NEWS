@@ -1,3 +1,46 @@
+* Release 0.15 (02 Jan 2020)
+
+Bug fixes:
+`from curves import *` will now correctly import `BRAINPOOLP256r1` and
+`BRAINPOOLP320r1` curves.
+
+New features:
+ECDH operations have a public explicit API.
+Large hashes are now supported with small curves (e.g. SHA-256 can be used
+with NIST192p).
+`VerifyingKey` now supports the `precompute()` method to further speed up
+signature verification with the given instance of the key.
+
+New API:
+`VerifyingKey`, `SigningKey`, `Public_key`, `Private_key` and
+`CurveFp` now have `__eq__` methods.
+`ecdsa.ecdh` module and `ECDH` class.
+`PointJacobi` added.
+`VerifyingKey.verify_digest`, `SigningKey.sign_digest` and
+`SigningKey.sign_digest_deterministic` methods now accept `allow_truncate`
+argument to enable use of hashes larger than the curve order.
+`VerifyingKey` `from_pem` and `from_der` now accept `hashfunc` parameter
+like other `from*` methods.
+`VerifyingKey` has `precompute` method now.
+`VerifyingKey.from_public_point` may now not perform validation of public
+point when `validate_point=False` argument is passed to method.
+`CurveFp` constructor now accepts the `h` parameter - the cofactor of the
+elliptic curve, it's used for selection of algorithm of public point
+verification.
+
+Performance:
+`randrange` now will now perform much fewer calls to system random number
+generator.
+`PointJacobi` introduced and used as the underlying implementation; speeds up
+the library by a factor of about 20.
+Library has now optional dependencies on `gmpy` and `gmpy2`. When they are
+availbale, the elliptic curve calculations will be about 3 times faster.
+
+Maintenance:
+expected minimum version of `six` module (1.9.0) is now specified explicitly
+in `setup.py` and tested against.
+Significantly faster test suite execution.
+
 * Release 0.14.1 (06 Nov 2019)
 
 Remove the obsolete `six.py` file from wheel
