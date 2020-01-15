@@ -5,7 +5,7 @@ import math
 import binascii
 import sys
 from hashlib import sha256
-from six import PY3, int2byte, b, next
+from six import PY2, int2byte, b, next
 from . import der
 from ._compat import normalise_bytes
 
@@ -76,10 +76,10 @@ class PRNG:
     def __call__(self, numbytes):
         a = [next(self.generator) for i in range(numbytes)]
 
-        if PY3:
-            return bytes(a)
-        else:
+        if PY2:
             return "".join(a)
+        else:
+            return bytes(a)
 
     def block_generator(self, seed):
         counter = 0
