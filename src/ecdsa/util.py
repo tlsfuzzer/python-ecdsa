@@ -5,7 +5,7 @@ import math
 import binascii
 import sys
 from hashlib import sha256
-from six import PY3, int2byte, b, next
+from six import PY2, int2byte, b, next
 from . import der
 from ._compat import normalise_bytes
 
@@ -17,7 +17,7 @@ from ._compat import normalise_bytes
 oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
 
-if sys.version > '3':
+if sys.version_info >= (3,):
     def entropy_to_bits(ent_256):
         """Convert a bytestring to string of 0's and 1's"""
         return bin(int.from_bytes(ent_256, 'big'))[2:].zfill(len(ent_256)*8)
@@ -27,7 +27,7 @@ else:
         return ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
 
 
-if sys.version < '2.7':
+if sys.version_info < (2, 7):
     # Can't add a method to a built-in type so we are stuck with this
     def bit_length(x):
         return len(bin(x)) - 2
@@ -76,10 +76,10 @@ class PRNG:
     def __call__(self, numbytes):
         a = [next(self.generator) for i in range(numbytes)]
 
-        if PY3:
-            return bytes(a)
-        else:
+        if PY2:
             return "".join(a)
+        else:
+            return bytes(a)
 
     def block_generator(self, seed):
         counter = 0

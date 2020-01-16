@@ -68,7 +68,7 @@ Primary classes for performing signing and verification operations.
 
 import binascii
 from hashlib import sha1
-from six import PY3, b
+from six import PY2, b
 from . import ecdsa
 from . import der
 from . import rfc6979
@@ -823,7 +823,7 @@ class SigningKey(object):
         """
         # the privkey pem may have multiple sections, commonly it also has
         # "EC PARAMETERS", we need just "EC PRIVATE KEY".
-        if PY3 and isinstance(string, str):
+        if not PY2 and isinstance(string, str):
             string = string.encode()
         privkey_pem = string[string.index(b("-----BEGIN EC PRIVATE KEY-----")):]
         return cls.from_der(der.unpem(privkey_pem), hashfunc)

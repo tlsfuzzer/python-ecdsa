@@ -11,7 +11,7 @@
 
 from __future__ import division
 
-from six import integer_types, PY3
+from six import integer_types, PY2
 from six.moves import reduce
 try:
     xrange
@@ -198,11 +198,11 @@ def square_root_mod_prime(a, p):
       return (2 * a * pow(4 * a, (p - 5) // 8, p)) % p
     raise RuntimeError("Shouldn't get here.")
 
-  if PY3:
-    range_top = p
-  else:
+  if PY2:
     # xrange on python2 can take integers representable as C long only
     range_top = min(0x7fffffff, p)
+  else:
+      range_top = p
   for b in xrange(2, range_top):
     if jacobi(b * b - 4 * a, p) == -1:
       f = (a, -b, 1)
