@@ -3,3 +3,4 @@ coveralls<1.3.0
 idna<2.8
 unittest2
 hypothesis<3
+coverage==4.5.4
