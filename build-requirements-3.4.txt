@@ -2,4 +2,5 @@ tox
 python-coveralls
 hypothesis
 pytest>=4.6.0
+PyYAML<5.3
 coverage==4.5.4
