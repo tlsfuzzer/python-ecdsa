@@ -531,7 +531,10 @@ class VerifyingKey(object):
             implementations, it is as big as "uncompressed".
 
         :return: portable encoding of the public key
-        :rtype: str
+        :rtype: bytes
+
+        .. warning:: The PEM is encoded to US-ASCII, it needs to be
+            re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
         return der.topem(self.to_der(point_encoding), "PUBLIC KEY")
 
@@ -937,7 +940,10 @@ class SigningKey(object):
         :param str point_encoding: format to use for encoding public point
 
         :return: PEM encoded private key
-        :rtype: str
+        :rtype: bytes
+
+        .. warning:: The PEM is encoded to US-ASCII, it needs to be
+            re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
         # TODO: "BEGIN ECPARAMETERS"
         return der.topem(self.to_der(point_encoding), "EC PRIVATE KEY")
