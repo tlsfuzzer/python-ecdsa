@@ -18,26 +18,33 @@ oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
 
 if sys.version_info >= (3,):
+
     def entropy_to_bits(ent_256):
         """Convert a bytestring to string of 0's and 1's"""
-        return bin(int.from_bytes(ent_256, 'big'))[2:].zfill(len(ent_256)*8)
+        return bin(int.from_bytes(ent_256, "big"))[2:].zfill(len(ent_256) * 8)
+
+
 else:
+
     def entropy_to_bits(ent_256):
         """Convert a bytestring to string of 0's and 1's"""
-        return ''.join(bin(ord(x))[2:].zfill(8) for x in ent_256)
+        return "".join(bin(ord(x))[2:].zfill(8) for x in ent_256)
 
 
 if sys.version_info < (2, 7):
     # Can't add a method to a built-in type so we are stuck with this
     def bit_length(x):
         return len(bin(x)) - 2
+
+
 else:
+
     def bit_length(x):
         return x.bit_length() or 1
 
 
 def orderlen(order):
-    return (1+len("%x" % order))//2  # bytes
+    return (1 + len("%x" % order)) // 2  # bytes
 
 
 def randrange(order, entropy=None):
@@ -54,8 +61,8 @@ def randrange(order, entropy=None):
     assert order > 1
     if entropy is None:
         entropy = os.urandom
-    upper_2 = bit_length(order-2)
-    upper_256 = upper_2//8 + 1
+    upper_2 = bit_length(order - 2)
+    upper_256 = upper_2 // 8 + 1
     while True:  # I don't think this needs a counter with bit-wise randrange
         ent_256 = entropy(upper_256)
         ent_2 = entropy_to_bits(ent_256)
@@ -84,7 +91,9 @@ class PRNG:
     def block_generator(self, seed):
         counter = 0
         while True:
-            for byte in sha256(("prng-%d-%s" % (counter, seed)).encode()).digest():
+            for byte in sha256(
+                ("prng-%d-%s" % (counter, seed)).encode()
+            ).digest():
                 yield byte
             counter += 1
 
@@ -123,6 +132,7 @@ def bits_and_bytes(order):
 #   seed = os.urandom(curve.baselen) # or other starting point
 #   secexp = ecdsa.util.randrange_from_seed__trytryagain(sed, curve.order)
 #   sk = SigningKey.from_secret_exponent(secexp, curve)
+
 
 def randrange_from_seed__truncate_bytes(seed, order, hashmod=sha256):
     # hash the seed, then turn the digest into a number in [1,order), but
@@ -200,6 +210,7 @@ def string_to_number_fixedlen(string, order):
 # these methods are useful for the sigencode= argument to SK.sign() and the
 # sigdecode= argument to VK.verify(), and control how the signature is packed
 # or unpacked.
+
 
 def sigencode_strings(r, s, order):
     r_str = number_to_string(r, order)
@@ -313,8 +324,8 @@ def sigdecode_string(signature, order):
     if not len(signature) == 2 * l:
         raise MalformedSignature(
             "Invalid length of signature, expected {0} bytes long, "
-            "provided string is {1} bytes long"
-            .format(2 * l, len(signature)))
+            "provided string is {1} bytes long".format(2 * l, len(signature))
+        )
     r = string_to_number_fixedlen(signature[:l], order)
     s = string_to_number_fixedlen(signature[l:], order)
     return r, s
@@ -341,8 +352,10 @@ def sigdecode_strings(rs_strings, order):
     """
     if not len(rs_strings) == 2:
         raise MalformedSignature(
-            "Invalid number of strings provided: {0}, expected 2"
-            .format(len(rs_strings)))
+            "Invalid number of strings provided: {0}, expected 2".format(
+                len(rs_strings)
+            )
+        )
     (r_str, s_str) = rs_strings
     r_str = normalise_bytes(r_str)
     s_str = normalise_bytes(s_str)
@@ -350,13 +363,17 @@ def sigdecode_strings(rs_strings, order):
     if not len(r_str) == l:
         raise MalformedSignature(
             "Invalid length of first string ('r' parameter), "
-            "expected {0} bytes long, provided string is {1} bytes long"
-            .format(l, len(r_str)))
+            "expected {0} bytes long, provided string is {1} bytes long".format(
+                l, len(r_str)
+            )
+        )
     if not len(s_str) == l:
         raise MalformedSignature(
             "Invalid length of second string ('s' parameter), "
-            "expected {0} bytes long, provided string is {1} bytes long"
-            .format(l, len(s_str)))
+            "expected {0} bytes long, provided string is {1} bytes long".format(
+                l, len(s_str)
+            )
+        )
     r = string_to_number_fixedlen(r_str, order)
     s = string_to_number_fixedlen(s_str, order)
     return r, s
@@ -391,11 +408,13 @@ def sigdecode_der(sig_der, order):
     # return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
     rs_strings, empty = der.remove_sequence(sig_der)
     if empty != b"":
-        raise der.UnexpectedDER("trailing junk after DER sig: %s" %
-                                binascii.hexlify(empty))
+        raise der.UnexpectedDER(
+            "trailing junk after DER sig: %s" % binascii.hexlify(empty)
+        )
     r, rest = der.remove_integer(rs_strings)
     s, empty = der.remove_integer(rest)
     if empty != b"":
-        raise der.UnexpectedDER("trailing junk after DER numbers: %s" %
-                                binascii.hexlify(empty))
+        raise der.UnexpectedDER(
+            "trailing junk after DER numbers: %s" % binascii.hexlify(empty)
+        )
     return r, s

@@ -14,6 +14,7 @@ def str_idx_as_int(string, index):
 
 
 if sys.version_info < (3, 0):
+
     def normalise_bytes(buffer_object):
         """Cast the input into array of bytes."""
         # flake8 runs on py3 where `buffer` indeed doesn't exist...
@@ -21,6 +22,7 @@ if sys.version_info < (3, 0):
 
     def hmac_compat(ret):
         return ret
+
 
 else:
     if sys.version_info < (3, 4):
@@ -30,10 +32,12 @@ else:
             if not isinstance(data, bytes):
                 return bytes(data)
             return data
+
     else:
+
         def hmac_compat(data):
             return data
 
     def normalise_bytes(buffer_object):
         """Cast the input into array of bytes."""
-        return memoryview(buffer_object).cast('B')
+        return memoryview(buffer_object).cast("B")
