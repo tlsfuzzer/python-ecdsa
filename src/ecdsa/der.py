@@ -77,7 +77,7 @@ def encode_bitstring(s, unused=_sentry):
     len_extra = 0
     if unused is _sentry:
         warnings.warn(
-            "Legacy call convention used, unused= needs to be " "specified",
+            "Legacy call convention used, unused= needs to be specified",
             DeprecationWarning,
         )
     elif unused is not None:
@@ -129,7 +129,7 @@ def remove_constructed(string):
     s0 = str_idx_as_int(string, 0)
     if (s0 & 0xE0) != 0xA0:
         raise UnexpectedDER(
-            "wanted type 'constructed tag' (0xa0-0xbf), " "got 0x%02x" % s0
+            "wanted type 'constructed tag' (0xa0-0xbf), got 0x%02x" % s0
         )
     tag = s0 & 0x1F
     length, llen = read_length(string[1:])
@@ -197,7 +197,7 @@ def remove_object(string):
 def remove_integer(string):
     if not string:
         raise UnexpectedDER(
-            "Empty string is an invalid encoding of an " "integer"
+            "Empty string is an invalid encoding of an integer"
         )
     if string[:1] != b"\x02":
         n = str_idx_as_int(string, 0)

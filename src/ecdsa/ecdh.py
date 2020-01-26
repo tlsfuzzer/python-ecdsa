@@ -46,7 +46,7 @@ class ECDH(object):
 
     Allows two parties, each having an elliptic-curve public-private key
     pair, to establish a shared secret over an insecure channel
-    """ ""
+    """
 
     def __init__(self, curve=None, private_key=None, public_key=None):
         """

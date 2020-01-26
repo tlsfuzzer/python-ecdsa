@@ -135,7 +135,7 @@ class VerifyingKey(object):
         """Unsupported, please use one of the classmethods to initialise."""
         if not _error__please_use_generate:
             raise TypeError(
-                "Please use VerifyingKey.generate() to " "construct me"
+                "Please use VerifyingKey.generate() to construct me"
             )
         self.curve = None
         self.default_hashfunc = None
@@ -932,13 +932,13 @@ class SigningKey(object):
         one, s = der.remove_integer(s)
         if one != 1:
             raise der.UnexpectedDER(
-                "expected '1' at start of DER privkey," " got %d" % one
+                "expected '1' at start of DER privkey, got %d" % one
             )
         privkey_str, s = der.remove_octet_string(s)
         tag, curve_oid_str, s = der.remove_constructed(s)
         if tag != 0:
             raise der.UnexpectedDER(
-                "expected tag 0 in DER privkey," " got %d" % tag
+                "expected tag 0 in DER privkey, got %d" % tag
             )
         curve_oid, empty = der.remove_object(curve_oid_str)
         if empty != b(""):

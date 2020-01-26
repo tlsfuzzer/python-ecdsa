@@ -78,7 +78,7 @@ for curve in [i.name for i in curves]:
 print("")
 
 ecdh_form = (
-    "{name:>16}{sep:1} {ecdh:>9{form}}{unit:1} " "{ecdh_inv:>9{form_inv}}"
+    "{name:>16}{sep:1} {ecdh:>9{form}}{unit:1} {ecdh_inv:>9{form_inv}}"
 )
 
 print(
