@@ -68,8 +68,8 @@ def modular_exp(base, exponent, modulus):  # pragma: no cover
 def polynomial_reduce_mod(poly, polymod, p):
     """Reduce poly by polymod, integer arithmetic modulo p.
 
-  Polynomials are represented as lists of coefficients
-  of increasing powers of x."""
+    Polynomials are represented as lists of coefficients
+    of increasing powers of x."""
 
     # This module has been tested only by extensive use
     # in calculating modular square roots.
@@ -91,8 +91,8 @@ def polynomial_reduce_mod(poly, polymod, p):
 def polynomial_multiply_mod(m1, m2, polymod, p):
     """Polynomial multiplication modulo a polynomial over ints mod p.
 
-  Polynomials are represented as lists of coefficients
-  of increasing powers of x."""
+    Polynomials are represented as lists of coefficients
+    of increasing powers of x."""
 
     # This is just a seat-of-the-pants implementation.
 
@@ -115,8 +115,8 @@ def polynomial_multiply_mod(m1, m2, polymod, p):
 def polynomial_exp_mod(base, exponent, polymod, p):
     """Polynomial exponentiation modulo a polynomial over ints mod p.
 
-  Polynomials are represented as lists of coefficients
-  of increasing powers of x."""
+    Polynomials are represented as lists of coefficients
+    of increasing powers of x."""
 
     # Based on the Handbook of Applied Cryptography, algorithm 2.227.
 
@@ -281,9 +281,9 @@ except AttributeError:
 def gcd(*a):
     """Greatest common divisor.
 
-  Usage: gcd([ 2, 4, 6 ])
-  or:    gcd(2, 4, 6)
-  """
+    Usage: gcd([ 2, 4, 6 ])
+    or:    gcd(2, 4, 6)
+    """
 
     if len(a) > 1:
         return reduce(gcd2, a)
@@ -301,9 +301,9 @@ def lcm2(a, b):
 def lcm(*a):
     """Least common multiple.
 
-  Usage: lcm([ 3, 4, 5 ])
-  or:    lcm(3, 4, 5)
-  """
+    Usage: lcm([ 3, 4, 5 ])
+    or:    lcm(3, 4, 5)
+    """
 
     if len(a) > 1:
         return reduce(lcm2, a)
@@ -397,9 +397,9 @@ def phi(n):  # pragma: no cover
 def carmichael(n):  # pragma: no cover
     """Return Carmichael function of n.
 
-  Carmichael(n) is the smallest integer x such that
-  m**x = 1 mod n for all m relatively prime to n.
-  """
+    Carmichael(n) is the smallest integer x such that
+    m**x = 1 mod n for all m relatively prime to n.
+    """
     # deprecated in 0.14
     warnings.warn(
         "Function is unused by library code. If you use this code, "
@@ -413,8 +413,8 @@ def carmichael(n):  # pragma: no cover
 
 def carmichael_of_factorized(f_list):  # pragma: no cover
     """Return the Carmichael function of a number that is
-  represented as a list of (prime,exponent) pairs.
-  """
+    represented as a list of (prime,exponent) pairs.
+    """
     # deprecated in 0.14
     warnings.warn(
         "Function is unused by library code. If you use this code, "
@@ -434,8 +434,7 @@ def carmichael_of_factorized(f_list):  # pragma: no cover
 
 
 def carmichael_of_ppower(pp):  # pragma: no cover
-    """Carmichael function of the given power of the given prime.
-  """
+    """Carmichael function of the given power of the given prime."""
     # deprecated in 0.14
     warnings.warn(
         "Function is unused by library code. If you use this code, "
@@ -452,8 +451,7 @@ def carmichael_of_ppower(pp):  # pragma: no cover
 
 
 def order_mod(x, m):  # pragma: no cover
-    """Return the order of x in the multiplicative group mod m.
-  """
+    """Return the order of x in the multiplicative group mod m."""
     # deprecated in 0.14
     warnings.warn(
         "Function is unused by library code. If you use this code, "
@@ -479,8 +477,7 @@ def order_mod(x, m):  # pragma: no cover
 
 
 def largest_factor_relatively_prime(a, b):  # pragma: no cover
-    """Return the largest factor of a relatively prime to b.
-  """
+    """Return the largest factor of a relatively prime to b."""
     # deprecated in 0.14
     warnings.warn(
         "Function is unused by library code. If you use this code, "
@@ -504,8 +501,8 @@ def largest_factor_relatively_prime(a, b):  # pragma: no cover
 
 def kinda_order_mod(x, m):  # pragma: no cover
     """Return the order of x in the multiplicative group mod m',
-  where m' is the largest factor of m relatively prime to x.
-  """
+    where m' is the largest factor of m relatively prime to x.
+    """
     # deprecated in 0.14
     warnings.warn(
         "Function is unused by library code. If you use this code, "
@@ -520,18 +517,18 @@ def kinda_order_mod(x, m):  # pragma: no cover
 def is_prime(n):
     """Return True if x is prime, False otherwise.
 
-  We use the Miller-Rabin test, as given in Menezes et al. p. 138.
-  This test is not exact: there are composite values n for which
-  it returns True.
+    We use the Miller-Rabin test, as given in Menezes et al. p. 138.
+    This test is not exact: there are composite values n for which
+    it returns True.
 
-  In testing the odd numbers from 10000001 to 19999999,
-  about 66 composites got past the first test,
-  5 got past the second test, and none got past the third.
-  Since factors of 2, 3, 5, 7, and 11 were detected during
-  preliminary screening, the number of numbers tested by
-  Miller-Rabin was (19999999 - 10000001)*(2/3)*(4/5)*(6/7)
-  = 4.57 million.
-  """
+    In testing the odd numbers from 10000001 to 19999999,
+    about 66 composites got past the first test,
+    5 got past the second test, and none got past the third.
+    Since factors of 2, 3, 5, 7, and 11 were detected during
+    preliminary screening, the number of numbers tested by
+    Miller-Rabin was (19999999 - 10000001)*(2/3)*(4/5)*(6/7)
+    = 4.57 million.
+    """
 
     # (This is used to study the risk of false positives:)
     global miller_rabin_test_count
@@ -596,7 +593,7 @@ def is_prime(n):
 
 
 def next_prime(starting_value):
-    "Return the smallest prime larger than the starting value."
+    """Return the smallest prime larger than the starting value."""
 
     if starting_value < 2:
         return 2

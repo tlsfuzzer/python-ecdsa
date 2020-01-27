@@ -68,8 +68,7 @@ class InvalidPointError(RuntimeError):
 
 
 class Signature(object):
-    """ECDSA signature.
-  """
+    """ECDSA signature."""
 
     def __init__(self, r, s):
         self.r = r
@@ -77,9 +76,9 @@ class Signature(object):
 
     def recover_public_keys(self, hash, generator):
         """Returns two public keys for which the signature is valid
-    hash is signed hash
-    generator is the used generator of the signature
-    """
+        hash is signed hash
+        generator is the used generator of the signature
+        """
         curve = generator.curve()
         n = generator.order()
         r = self.r
@@ -108,20 +107,18 @@ class Signature(object):
 
 
 class Public_key(object):
-    """Public key for ECDSA.
-  """
+    """Public key for ECDSA."""
 
     def __init__(self, generator, point, verify=True):
+        """Low level ECDSA public key object.
+
+        :param generator: the Point that generates the group (the base point)
+        :param point: the Point that defines the public key
+        :param bool verify: if True check if point is valid point on curve
+
+        :raises InvalidPointError: if the point parameters are invalid or
+            point does not lie on the curve
         """
-    Low level ECDSA public key object.
-
-    :param generator: the Point that generates the group (the base point)
-    :param point: the Point that defines the public key
-    :param bool verify: if True check if point is valid point on curve
-
-    :raises InvalidPointError: if the point parameters are invalid or
-        point does not lie on the curve
-    """
 
         self.curve = generator.curve()
         self.generator = generator
@@ -154,8 +151,8 @@ class Public_key(object):
 
     def verifies(self, hash, signature):
         """Verify that signature is a valid signature of hash.
-    Return True if the signature is valid.
-    """
+        Return True if the signature is valid.
+        """
 
         # From X9.62 J.3.1.
 
@@ -179,13 +176,12 @@ class Public_key(object):
 
 
 class Private_key(object):
-    """Private key for ECDSA.
-  """
+    """Private key for ECDSA."""
 
     def __init__(self, public_key, secret_multiplier):
         """public_key is of class Public_key;
-    secret_multiplier is a large integer.
-    """
+        secret_multiplier is a large integer.
+        """
 
         self.public_key = public_key
         self.secret_multiplier = secret_multiplier
@@ -201,18 +197,18 @@ class Private_key(object):
 
     def sign(self, hash, random_k):
         """Return a signature for the provided hash, using the provided
-    random nonce.  It is absolutely vital that random_k be an unpredictable
-    number in the range [1, self.public_key.point.order()-1].  If
-    an attacker can guess random_k, he can compute our private key from a
-    single signature.  Also, if an attacker knows a few high-order
-    bits (or a few low-order bits) of random_k, he can compute our private
-    key from many signatures.  The generation of nonces with adequate
-    cryptographic strength is very difficult and far beyond the scope
-    of this comment.
+        random nonce.  It is absolutely vital that random_k be an unpredictable
+        number in the range [1, self.public_key.point.order()-1].  If
+        an attacker can guess random_k, he can compute our private key from a
+        single signature.  Also, if an attacker knows a few high-order
+        bits (or a few low-order bits) of random_k, he can compute our private
+        key from many signatures.  The generation of nonces with adequate
+        cryptographic strength is very difficult and far beyond the scope
+        of this comment.
 
-    May raise RuntimeError, in which case retrying with a new
-    random value k is in order.
-    """
+        May raise RuntimeError, in which case retrying with a new
+        random value k is in order.
+        """
 
         G = self.public_key.generator
         n = G.order()

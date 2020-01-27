@@ -63,7 +63,7 @@ class ECDH(object):
         :type private_key: SigningKey
         :param public_key:  `their` public key for ECDH
         :type public_key: VerifyingKey
-       """
+        """
         self.curve = curve
         self.private_key = None
         self.public_key = None

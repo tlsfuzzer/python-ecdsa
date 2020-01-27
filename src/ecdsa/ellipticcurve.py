@@ -61,13 +61,13 @@ class CurveFp(object):
 
         def __init__(self, p, a, b, h=None):
             """
-        The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
+            The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
 
-        h is an integer that is the cofactor of the elliptic curve domain
-        parameters; it is the number of points satisfying the elliptic curve
-        equation divided by the order of the base point. It is used for selection
-        of efficient algorithm for public point verification.
-        """
+            h is an integer that is the cofactor of the elliptic curve domain
+            parameters; it is the number of points satisfying the elliptic curve
+            equation divided by the order of the base point. It is used for selection
+            of efficient algorithm for public point verification.
+            """
             self.__p = mpz(p)
             self.__a = mpz(a)
             self.__b = mpz(b)
@@ -79,13 +79,13 @@ class CurveFp(object):
 
         def __init__(self, p, a, b, h=None):
             """
-        The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
+            The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
 
-        h is an integer that is the cofactor of the elliptic curve domain
-        parameters; it is the number of points satisfying the elliptic curve
-        equation divided by the order of the base point. It is used for selection
-        of efficient algorithm for public point verification.
-        """
+            h is an integer that is the cofactor of the elliptic curve domain
+            parameters; it is the number of points satisfying the elliptic curve
+            equation divided by the order of the base point. It is used for selection
+            of efficient algorithm for public point verification.
+            """
             self.__p = p
             self.__a = a
             self.__b = b
@@ -131,32 +131,32 @@ class CurveFp(object):
 
 class PointJacobi(object):
     """
-  Point on an elliptic curve. Uses Jacobi coordinates.
+    Point on an elliptic curve. Uses Jacobi coordinates.
 
-  In Jacobian coordinates, there are three parameters, X, Y and Z.
-  They correspond to affine parameters 'x' and 'y' like so:
+    In Jacobian coordinates, there are three parameters, X, Y and Z.
+    They correspond to affine parameters 'x' and 'y' like so:
 
-  x = X / Z²
-  y = Y / Z³
-  """
+    x = X / Z²
+    y = Y / Z³
+    """
 
     def __init__(self, curve, x, y, z, order=None, generator=False):
         """
-      Initialise a point that uses Jacobi representation internally.
+        Initialise a point that uses Jacobi representation internally.
 
-      :param CurveFp curve: curve on which the point resides
-      :param int x: the X parameter of Jacobi representation (equal to x when
-        converting from affine coordinates
-      :param int y: the Y parameter of Jacobi representation (equal to y when
-        converting from affine coordinates
-      :param int z: the Z parameter of Jacobi representation (equal to 1 when
-        converting from affine coordinates
-      :param int order: the point order, must be non zero when using
-        generator=True
-      :param bool generator: the point provided is a curve generator, as
-        such, it will be commonly used with scalar multiplication. This will
-        cause to precompute multiplication table for it
-      """
+        :param CurveFp curve: curve on which the point resides
+        :param int x: the X parameter of Jacobi representation (equal to x when
+          converting from affine coordinates
+        :param int y: the Y parameter of Jacobi representation (equal to y when
+          converting from affine coordinates
+        :param int z: the Z parameter of Jacobi representation (equal to 1 when
+          converting from affine coordinates
+        :param int order: the point order, must be non zero when using
+          generator=True
+        :param bool generator: the point provided is a curve generator, as
+          such, it will be commonly used with scalar multiplication. This will
+          cause to precompute multiplication table for it
+        """
         self.__curve = curve
         # since it's generally better (faster) to use scaled points vs unscaled
         # ones, use writer-biased RWLock for locking:
@@ -220,8 +220,8 @@ class PointJacobi(object):
     def order(self):
         """Return the order of the point.
 
-      None if it is undefined.
-      """
+        None if it is undefined.
+        """
         return self.__order
 
     def curve(self):
@@ -230,13 +230,13 @@ class PointJacobi(object):
 
     def x(self):
         """
-      Return affine x coordinate.
+        Return affine x coordinate.
 
-      This method should be used only when the 'y' coordinate is not needed.
-      It's computationally more efficient to use `to_affine()` and then
-      call x() and y() on the returned instance. Or call `scale()`
-      and then x() and y() on the returned instance.
-      """
+        This method should be used only when the 'y' coordinate is not needed.
+        It's computationally more efficient to use `to_affine()` and then
+        call x() and y() on the returned instance. Or call `scale()`
+        and then x() and y() on the returned instance.
+        """
         try:
             self._scale_lock.reader_acquire()
             if self.__z == 1:
@@ -251,13 +251,13 @@ class PointJacobi(object):
 
     def y(self):
         """
-      Return affine y coordinate.
+        Return affine y coordinate.
 
-      This method should be used only when the 'x' coordinate is not needed.
-      It's computationally more efficient to use `to_affine()` and then
-      call x() and y() on the returned instance. Or call `scale()`
-      and then x() and y() on the returned instance.
-      """
+        This method should be used only when the 'x' coordinate is not needed.
+        It's computationally more efficient to use `to_affine()` and then
+        call x() and y() on the returned instance. Or call `scale()`
+        and then x() and y() on the returned instance.
+        """
         try:
             self._scale_lock.reader_acquire()
             if self.__z == 1:
@@ -272,10 +272,10 @@ class PointJacobi(object):
 
     def scale(self):
         """
-      Return point scaled so that z == 1.
+        Return point scaled so that z == 1.
 
-      Modifies point in place, returns self.
-      """
+        Modifies point in place, returns self.
+        """
         try:
             self._scale_lock.reader_acquire()
             if self.__z == 1:
@@ -312,10 +312,10 @@ class PointJacobi(object):
     def from_affine(point, generator=False):
         """Create from an affine point.
 
-      :param bool generator: set to True to make the point to precalculate
-        multiplication table - useful for public point when verifying many
-        signatures (around 100 or so) or for generator points of a curve.
-      """
+        :param bool generator: set to True to make the point to precalculate
+          multiplication table - useful for public point when verifying many
+          signatures (around 100 or so) or for generator points of a curve.
+        """
         return PointJacobi(
             point.curve(), point.x(), point.y(), 1, point.order(), generator
         )
