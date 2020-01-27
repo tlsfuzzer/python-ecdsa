@@ -16,8 +16,14 @@ import hashlib
 
 from .keys import VerifyingKey, SigningKey
 from .der import unpem
-from .util import sigencode_string, sigencode_der, sigencode_strings, \
-    sigdecode_string, sigdecode_der, sigdecode_strings
+from .util import (
+    sigencode_string,
+    sigencode_der,
+    sigencode_strings,
+    sigdecode_string,
+    sigdecode_der,
+    sigdecode_strings,
+)
 
 
 class TestVerifyingKeyFromString(unittest.TestCase):
@@ -28,9 +34,11 @@ class TestVerifyingKeyFromString(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.key_bytes = (b'\x04L\xa2\x95\xdb\xc7Z\xd7\x1f\x93\nz\xcf\x97\xcf'
-                       b'\xd7\xc2\xd9o\xfe8}X!\xae\xd4\xfah\xfa^\rpI\xba\xd1'
-                       b'Y\xfb\x92xa\xebo+\x9cG\xfav\xca')
+        cls.key_bytes = (
+            b"\x04L\xa2\x95\xdb\xc7Z\xd7\x1f\x93\nz\xcf\x97\xcf"
+            b"\xd7\xc2\xd9o\xfe8}X!\xae\xd4\xfah\xfa^\rpI\xba\xd1"
+            b"Y\xfb\x92xa\xebo+\x9cG\xfav\xca"
+        )
         cls.vk = VerifyingKey.from_string(cls.key_bytes)
 
     def test_bytes(self):
@@ -38,10 +46,12 @@ class TestVerifyingKeyFromString(unittest.TestCase):
         self.assertIsInstance(self.vk, VerifyingKey)
         self.assertEqual(
             self.vk.pubkey.point.x(),
-            105419898848891948935835657980914000059957975659675736097)
+            105419898848891948935835657980914000059957975659675736097,
+        )
         self.assertEqual(
             self.vk.pubkey.point.y(),
-            4286866841217412202667522375431381222214611213481632495306)
+            4286866841217412202667522375431381222214611213481632495306,
+        )
 
     def test_bytes_memoryview(self):
         vk = VerifyingKey.from_string(buffer(self.key_bytes))
@@ -59,46 +69,46 @@ class TestVerifyingKeyFromString(unittest.TestCase):
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_array_array_of_bytes(self):
-        arr = array.array('B', self.key_bytes)
+        arr = array.array("B", self.key_bytes)
         vk = VerifyingKey.from_string(arr)
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_array_array_of_bytes_memoryview(self):
-        arr = array.array('B', self.key_bytes)
+        arr = array.array("B", self.key_bytes)
         vk = VerifyingKey.from_string(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_array_array_of_ints(self):
-        arr = array.array('I', self.key_bytes)
+        arr = array.array("I", self.key_bytes)
         vk = VerifyingKey.from_string(arr)
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_array_array_of_ints_memoryview(self):
-        arr = array.array('I', self.key_bytes)
+        arr = array.array("I", self.key_bytes)
         vk = VerifyingKey.from_string(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_bytes_uncompressed(self):
-        vk = VerifyingKey.from_string(b'\x04' + self.key_bytes)
+        vk = VerifyingKey.from_string(b"\x04" + self.key_bytes)
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_bytearray_uncompressed(self):
-        vk = VerifyingKey.from_string(bytearray(b'\x04' + self.key_bytes))
+        vk = VerifyingKey.from_string(bytearray(b"\x04" + self.key_bytes))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_bytes_compressed(self):
-        vk = VerifyingKey.from_string(b'\x02' + self.key_bytes[:24])
+        vk = VerifyingKey.from_string(b"\x02" + self.key_bytes[:24])
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_bytearray_compressed(self):
-        vk = VerifyingKey.from_string(bytearray(b'\x02' + self.key_bytes[:24]))
+        vk = VerifyingKey.from_string(bytearray(b"\x02" + self.key_bytes[:24]))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
@@ -108,6 +118,7 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
     Verify that ecdsa.keys.VerifyingKey.from_der() can be used with
     bytes-like objects.
     """
+
     @classmethod
     def setUpClass(cls):
         prv_key_str = (
@@ -115,12 +126,14 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
             "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
             "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
             "bA==\n"
-            "-----END EC PRIVATE KEY-----\n")
+            "-----END EC PRIVATE KEY-----\n"
+        )
         key_str = (
             "-----BEGIN PUBLIC KEY-----\n"
             "MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEuIF30ITvF/XkVjlAgCg2D59ZtKTX\n"
             "Jk5i2gZR3OR6NaTFtFz1FZNCOotVe5wgmfNs\n"
-            "-----END PUBLIC KEY-----\n")
+            "-----END PUBLIC KEY-----\n"
+        )
         cls.key_pem = key_str
 
         cls.key_bytes = unpem(key_str)
@@ -167,13 +180,13 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_array_array_of_bytes(self):
-        arr = array.array('B', self.key_bytes)
+        arr = array.array("B", self.key_bytes)
         vk = VerifyingKey.from_der(arr)
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_array_array_of_bytes_memoryview(self):
-        arr = array.array('B', self.key_bytes)
+        arr = array.array("B", self.key_bytes)
         vk = VerifyingKey.from_der(buffer(arr))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
@@ -193,6 +206,7 @@ class TestSigningKey(unittest.TestCase):
     Verify that ecdsa.keys.SigningKey.from_der() can be used with
     bytes-like objects.
     """
+
     @classmethod
     def setUpClass(cls):
         prv_key_str = (
@@ -200,26 +214,31 @@ class TestSigningKey(unittest.TestCase):
             "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
             "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
             "bA==\n"
-            "-----END EC PRIVATE KEY-----\n")
-        cls.sk1 = SigningKey.from_pem(prv_key_str) 
-        
+            "-----END EC PRIVATE KEY-----\n"
+        )
+        cls.sk1 = SigningKey.from_pem(prv_key_str)
+
         prv_key_str = (
             "-----BEGIN EC PRIVATE KEY-----\n"
             "MHcCAQEEIKlL2EAm5NPPZuXwxRf4nXMk0A80y6UUbiQ17be/qFhRoAoGCCqGSM49\n"
             "AwEHoUQDQgAE4H3iRbG4TSrsSRb/gusPQB/4YcN8Poqzgjau4kfxBPyZimeRfuY/\n"
             "9g/wMmPuhGl4BUve51DsnKJFRr8psk0ieA==\n"
-            "-----END EC PRIVATE KEY-----\n")
-        cls.sk2 = SigningKey.from_pem(prv_key_str) 
-        
-    def test_equality_on_signing_keys(self):        
-        sk = SigningKey.from_secret_exponent(self.sk1.privkey.secret_multiplier, self.sk1.curve)
+            "-----END EC PRIVATE KEY-----\n"
+        )
+        cls.sk2 = SigningKey.from_pem(prv_key_str)
+
+    def test_equality_on_signing_keys(self):
+        sk = SigningKey.from_secret_exponent(
+            self.sk1.privkey.secret_multiplier, self.sk1.curve
+        )
         self.assertEqual(self.sk1, sk)
-        
+
     def test_inequality_on_signing_keys(self):
         self.assertNotEqual(self.sk1, self.sk2)
-        
+
     def test_inequality_on_signing_keys_not_implemented(self):
         self.assertNotEqual(self.sk1, None)
+
 
 # test VerifyingKey.verify()
 prv_key_str = (
@@ -227,16 +246,19 @@ prv_key_str = (
     "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
     "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
     "bA==\n"
-    "-----END EC PRIVATE KEY-----\n")
+    "-----END EC PRIVATE KEY-----\n"
+)
 key_bytes = unpem(prv_key_str)
 assert isinstance(key_bytes, bytes)
 sk = SigningKey.from_der(key_bytes)
 vk = sk.verifying_key
 
-data = (b"some string for signing"
-        b"contents don't really matter"
-        b"but do include also some crazy values: "
-        b"\x00\x01\t\r\n\x00\x00\x00\xff\xf0")
+data = (
+    b"some string for signing"
+    b"contents don't really matter"
+    b"but do include also some crazy values: "
+    b"\x00\x01\t\r\n\x00\x00\x00\xff\xf0"
+)
 assert len(data) % 4 == 0
 sha1 = hashlib.sha1()
 sha1.update(data)
@@ -255,11 +277,11 @@ for modifier, fun in [
     ("bytes memoryview", lambda x: buffer(x)),
     ("bytearray", lambda x: bytearray(x)),
     ("bytearray memoryview", lambda x: buffer(bytearray(x))),
-    ("array.array of bytes", lambda x: array.array('B', x)),
-    ("array.array of bytes memoryview", lambda x: buffer(array.array('B', x))),
-    ("array.array of ints", lambda x: array.array('I', x)),
-    ("array.array of ints memoryview", lambda x: buffer(array.array('I', x)))
-    ]:
+    ("array.array of bytes", lambda x: array.array("B", x)),
+    ("array.array of bytes memoryview", lambda x: buffer(array.array("B", x))),
+    ("array.array of ints", lambda x: array.array("I", x)),
+    ("array.array of ints memoryview", lambda x: buffer(array.array("I", x))),
+]:
     if "ints" in modifier:
         conv = lambda x: x
     else:
@@ -267,47 +289,60 @@ for modifier, fun in [
     for sig_format, signature, decoder, mod_apply in [
         ("raw", sig_raw, sigdecode_string, lambda x: conv(x)),
         ("der", sig_der, sigdecode_der, lambda x: conv(x)),
-        ("strings", sig_strings, sigdecode_strings, lambda x:
-            tuple(conv(i) for i in x))
-        ]:
+        (
+            "strings",
+            sig_strings,
+            sigdecode_strings,
+            lambda x: tuple(conv(i) for i in x),
+        ),
+    ]:
         for method_name, vrf_mthd, vrf_data in [
             ("verify", vk.verify, data),
-            ("verify_digest", vk.verify_digest, data_hash)
-            ]:
-            verifiers.append(pytest.param(
-                signature, decoder, mod_apply, fun, vrf_mthd, vrf_data,
-                id="{2}-{0}-{1}".format(modifier, sig_format, method_name)))
+            ("verify_digest", vk.verify_digest, data_hash),
+        ]:
+            verifiers.append(
+                pytest.param(
+                    signature,
+                    decoder,
+                    mod_apply,
+                    fun,
+                    vrf_mthd,
+                    vrf_data,
+                    id="{2}-{0}-{1}".format(modifier, sig_format, method_name),
+                )
+            )
+
 
 @pytest.mark.parametrize(
-    "signature,decoder,mod_apply,fun,vrf_mthd,vrf_data",
-    verifiers)
+    "signature,decoder,mod_apply,fun,vrf_mthd,vrf_data", verifiers
+)
 def test_VerifyingKey_verify(
-        signature, decoder, mod_apply, fun, vrf_mthd, vrf_data):
+    signature, decoder, mod_apply, fun, vrf_mthd, vrf_data
+):
     sig = mod_apply(signature)
 
     assert vrf_mthd(sig, fun(vrf_data), sigdecode=decoder)
 
 
 # test SigningKey.from_string()
-prv_key_bytes = (b'^\xc8B\x0b\xd6\xef\x92R\xa9B\xe9\x89\x04<\xa2'
-                 b'\x9fV\x1f\xa5%w\x0e\xb1\xc5')
+prv_key_bytes = (
+    b"^\xc8B\x0b\xd6\xef\x92R\xa9B\xe9\x89\x04<\xa2"
+    b"\x9fV\x1f\xa5%w\x0e\xb1\xc5"
+)
 assert len(prv_key_bytes) == 24
 converters = []
 for modifier, convert in [
-        ("bytes", lambda x: x),
-        ("bytes memoryview", buffer),
-        ("bytearray", bytearray),
-        ("bytearray memoryview", lambda x: buffer(bytearray(x))),
-        ("array.array of bytes", lambda x: array.array('B', x)),
-        ("array.array of bytes memoryview",
-         lambda x: buffer(array.array('B', x))),
-        ("array.array of ints", lambda x: array.array('I', x)),
-        ("array.array of ints memoryview",
-         lambda x: buffer(array.array('I', x)))
-        ]:
-    converters.append(pytest.param(
-        convert,
-        id=modifier))
+    ("bytes", lambda x: x),
+    ("bytes memoryview", buffer),
+    ("bytearray", bytearray),
+    ("bytearray memoryview", lambda x: buffer(bytearray(x))),
+    ("array.array of bytes", lambda x: array.array("B", x)),
+    ("array.array of bytes memoryview", lambda x: buffer(array.array("B", x))),
+    ("array.array of ints", lambda x: array.array("I", x)),
+    ("array.array of ints memoryview", lambda x: buffer(array.array("I", x))),
+]:
+    converters.append(pytest.param(convert, id=modifier))
+
 
 @pytest.mark.parametrize("convert", converters)
 def test_SigningKey_from_string(convert):
@@ -323,7 +358,8 @@ prv_key_str = (
     "MF8CAQEEGF7IQgvW75JSqULpiQQ8op9WH6Uldw6xxaAKBggqhkjOPQMBAaE0AzIA\n"
     "BLiBd9CE7xf15FY5QIAoNg+fWbSk1yZOYtoGUdzkejWkxbRc9RWTQjqLVXucIJnz\n"
     "bA==\n"
-    "-----END EC PRIVATE KEY-----\n")
+    "-----END EC PRIVATE KEY-----\n"
+)
 key_bytes = unpem(prv_key_str)
 assert isinstance(key_bytes, bytes)
 
@@ -338,13 +374,14 @@ def test_SigningKey_from_der(convert):
 
 
 # test SigningKey.sign_deterministic()
-extra_entropy=b'\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11'
+extra_entropy = b"\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11"
+
 
 @pytest.mark.parametrize("convert", converters)
 def test_SigningKey_sign_deterministic(convert):
     sig = sk.sign_deterministic(
-        convert(data),
-        extra_entropy=convert(extra_entropy))
+        convert(data), extra_entropy=convert(extra_entropy)
+    )
 
     vk.verify(sig, data)
 
@@ -353,8 +390,8 @@ def test_SigningKey_sign_deterministic(convert):
 @pytest.mark.parametrize("convert", converters)
 def test_SigningKey_sign_digest_deterministic(convert):
     sig = sk.sign_digest_deterministic(
-        convert(data_hash),
-        extra_entropy=convert(extra_entropy))
+        convert(data_hash), extra_entropy=convert(extra_entropy)
+    )
 
     vk.verify(sig, data)
 

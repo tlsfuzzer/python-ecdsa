@@ -10,7 +10,9 @@ from ._rwlock import RWLock
 
 
 class Writer(threading.Thread):
-    def __init__(self, buffer_, rw_lock, init_sleep_time, sleep_time, to_write):
+    def __init__(
+        self, buffer_, rw_lock, init_sleep_time, sleep_time, to_write
+    ):
         """
         @param buffer_: common buffer_ shared by the readers and writers
         @type buffer_: list
@@ -87,8 +89,8 @@ class RWLockTestCase(unittest.TestCase):
         self.__start_and_join_threads(threads)
 
         ## The third reader should enter after the second one but it should
-        ## exit before the second one exits 
-        ## (i.e. the readers should be in the critical section 
+        ## exit before the second one exits
+        ## (i.e. the readers should be in the critical section
         ## at the same time)
 
         self.assertEqual([], threads[0].buffer_read)
