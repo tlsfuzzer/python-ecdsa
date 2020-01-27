@@ -785,9 +785,8 @@ class SigningKey(object):
         n = curve.order
         if not 1 <= secexp < n:
             raise MalformedPointError(
-                "Invalid value for secexp, expected integer between 1 and {0}".format(
-                    n
-                )
+                "Invalid value for secexp, "
+                "expected integer between 1 and {0}".format(n)
             )
         pubkey_point = curve.generator * secexp
         if hasattr(pubkey_point, "scale"):
@@ -829,9 +828,8 @@ class SigningKey(object):
         string = normalise_bytes(string)
         if len(string) != curve.baselen:
             raise MalformedPointError(
-                "Invalid length of private key, received {0}, expected {1}".format(
-                    len(string), curve.baselen
-                )
+                "Invalid length of private key, "
+                "received {0}, expected {1}".format(len(string), curve.baselen)
             )
         secexp = string_to_number(string)
         return cls.from_secret_exponent(secexp, curve, hashfunc)
@@ -956,8 +954,10 @@ class SigningKey(object):
         #                             % tag)
         # pubkey_str = der.remove_bitstring(pubkey_bitstring, 0)
         # if empty != "":
-        #     raise der.UnexpectedDER("trailing junk after DER privkey "
-        #                             "pubkeystr: %s" % binascii.hexlify(empty))
+        #     raise der.UnexpectedDER(
+        #         "trailing junk after DER privkey "
+        #         "pubkeystr: %s" % binascii.hexlify(empty)
+        #     )
 
         # our from_string method likes fixed-length privkey strings
         if len(privkey_str) < curve.baselen:

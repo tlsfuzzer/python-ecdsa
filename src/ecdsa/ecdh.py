@@ -29,7 +29,9 @@ class NoCurveError(Exception):
 
 
 class InvalidCurveError(Exception):
-    """ECDH. Raised in case the public and private keys use different curves."""
+    """
+    ECDH. Raised in case the public and private keys use different curves.
+    """
 
     pass
 
@@ -174,7 +176,8 @@ class ECDH(object):
         Note, the only DER format supported is the RFC5915
         Look at keys.py:SigningKey.from_der()
 
-        :param private_key_der: string with the DER encoding of private ECDSA key
+        :param private_key_der: string with the DER encoding of private ECDSA
+          key
         :type private_key_der: string
 
         :raises InvalidCurveError: private_key curve not the same as self.curve
