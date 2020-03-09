@@ -867,8 +867,8 @@ class SigningKey(object):
             key failed
         :raises UnexpectedDER: if the encoding of the PEM file is incorrect
 
-        :return: Initialised VerifyingKey object
-        :rtype: VerifyingKey
+        :return: Initialised SigningKey object
+        :rtype: SigningKey
         """
         # the privkey pem may have multiple sections, commonly it also has
         # "EC PARAMETERS", we need just "EC PRIVATE KEY".
@@ -920,8 +920,8 @@ class SigningKey(object):
             key failed
         :raises UnexpectedDER: if the encoding of the DER file is incorrect
 
-        :return: Initialised VerifyingKey object
-        :rtype: VerifyingKey
+        :return: Initialised SigningKey object
+        :rtype: SigningKey
         """
         string = normalise_bytes(string)
         s, empty = der.remove_sequence(string)
