@@ -619,8 +619,12 @@ class PointJacobi(object):
         X1, Y1 = self.__x, self.__y
         other = other.scale()
         X2, Y2 = other.__x, other.__y
-        both = (self + other).scale()
-        X4, Y4 = both.__x, both.__y
+        both = self + other
+        if both is INFINITY:
+            X4, Y4 = 0, 0
+        else:
+            both.scale()
+            X4, Y4 = both.__x, both.__y
         _double = self._double
         _add = self._add
         while i > 1:

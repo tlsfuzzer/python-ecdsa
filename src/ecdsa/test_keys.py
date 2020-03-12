@@ -24,6 +24,7 @@ from .util import (
     sigdecode_der,
     sigdecode_strings,
 )
+from .curves import NIST256p
 
 
 class TestVerifyingKeyFromString(unittest.TestCase):
@@ -408,3 +409,10 @@ def test_SigningKey_sign_digest(convert):
     sig = sk.sign_digest(convert(data_hash))
 
     vk.verify(sig, data)
+
+
+def test_SigningKey_with_unlikely_value():
+    sk = SigningKey.from_secret_exponent(NIST256p.order - 1, curve=NIST256p)
+    vk = sk.verifying_key
+    sig = sk.sign(b"hello")
+    assert vk.verify(sig, b"hello")
