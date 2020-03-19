@@ -53,7 +53,7 @@ def generate_k(order, secexp, hash_func, data, retry_gen=0, extra_entropy=b""):
 
     qlen = bit_length(order)
     holen = hash_func().digest_size
-    rolen = (qlen + 7) / 8
+    rolen = (qlen + 7) // 8
     bx = (
         hmac_compat(number_to_string(secexp, order)),
         hmac_compat(bits2octets(data, order)),
