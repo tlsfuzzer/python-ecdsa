@@ -220,6 +220,15 @@ class TestSigningKey(unittest.TestCase):
         cls.sk1 = SigningKey.from_pem(prv_key_str)
 
         prv_key_str = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MG8CAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQEEVTBTAgEBBBheyEIL1u+SUqlC6YkE\n"
+            "PKKfVh+lJXcOscWhNAMyAAS4gXfQhO8X9eRWOUCAKDYPn1m0pNcmTmLaBlHc5Ho1\n"
+            "pMW0XPUVk0I6i1V7nCCZ82w=\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+        cls.sk1_pkcs8 = SigningKey.from_pem(prv_key_str)
+
+        prv_key_str = (
             "-----BEGIN EC PRIVATE KEY-----\n"
             "MHcCAQEEIKlL2EAm5NPPZuXwxRf4nXMk0A80y6UUbiQ17be/qFhRoAoGCCqGSM49\n"
             "AwEHoUQDQgAE4H3iRbG4TSrsSRb/gusPQB/4YcN8Poqzgjau4kfxBPyZimeRfuY/\n"
@@ -233,6 +242,7 @@ class TestSigningKey(unittest.TestCase):
             self.sk1.privkey.secret_multiplier, self.sk1.curve
         )
         self.assertEqual(self.sk1, sk)
+        self.assertEqual(self.sk1_pkcs8, sk)
 
     def test_inequality_on_signing_keys(self):
         self.assertNotEqual(self.sk1, self.sk2)
