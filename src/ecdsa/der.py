@@ -125,6 +125,10 @@ def encode_number(n):
     return b("").join([int2byte(d) for d in b128_digits])
 
 
+def is_sequence(string):
+    return string and string[:1] == b"\x30"
+
+
 def remove_constructed(string):
     s0 = str_idx_as_int(string, 0)
     if (s0 & 0xE0) != 0xA0:
