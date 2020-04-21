@@ -970,7 +970,7 @@ class SigningKey(object):
 
             if algorithm_oid not in (oid_ecPublicKey, oid_ecDH, oid_ecMQV):
                 raise der.UnexpectedDER(
-                    "unexpected algorithm identifier '%s'" % algorithm_oid
+                    "unexpected algorithm identifier '%s'" % (algorithm_oid,)
                 )
             if empty != b"":
                 raise der.UnexpectedDER(
@@ -1049,7 +1049,7 @@ class SigningKey(object):
         s = number_to_string(secexp, self.privkey.order)
         return s
 
-    def to_pem(self, point_encoding="uncompressed"):
+    def to_pem(self, point_encoding="uncompressed", format="sslay"):
         """
         Convert the private key to the :term:`PEM` format.
 
@@ -1058,9 +1058,11 @@ class SigningKey(object):
         Only the named curve format is supported.
         The public key will be included in generated string.
 
-        The PEM header will specify ``BEGIN EC PRIVATE KEY``
+        The PEM header will specify ``BEGIN EC PRIVATE KEY`` or
+        ``BEGIN PRIVATE KEY``, depending on the desired format.
 
         :param str point_encoding: format to use for encoding public point
+        :param str format: either `sslay` or `pkcs8`
 
         :return: PEM encoded private key
         :rtype: bytes
@@ -1069,9 +1071,11 @@ class SigningKey(object):
             re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
         # TODO: "BEGIN ECPARAMETERS"
-        return der.topem(self.to_der(point_encoding), "EC PRIVATE KEY")
+        assert format in ("sslay", "pkcs8")
+        header = "EC PRIVATE KEY" if format == "sslay" else "PRIVATE KEY"
+        return der.topem(self.to_der(point_encoding, format), header)
 
-    def to_der(self, point_encoding="uncompressed"):
+    def to_der(self, point_encoding="uncompressed", format="sslay"):
         """
         Convert the private key to the :term:`DER` format.
 
@@ -1081,6 +1085,7 @@ class SigningKey(object):
         The public key will be included in the generated string.
 
         :param str point_encoding: format to use for encoding public point
+        :param str format: either `sslay` or `pkcs8`
 
         :return: DER encoded private key
         :rtype: bytes
@@ -1089,15 +1094,29 @@ class SigningKey(object):
         #      cont[1],bitstring])
         if point_encoding == "raw":
             raise ValueError("raw encoding not allowed in DER")
+        assert format in ("sslay", "pkcs8")
         encoded_vk = self.get_verifying_key().to_string(point_encoding)
         # the 0 in encode_bitstring specifies the number of unused bits
         # in the `encoded_vk` string
-        return der.encode_sequence(
+        ec_private_key = der.encode_sequence(
             der.encode_integer(1),
             der.encode_octet_string(self.to_string()),
             der.encode_constructed(0, self.curve.encoded_oid),
             der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
         )
+
+        if format == "sslay":
+            return ec_private_key
+        else:
+            return der.encode_sequence(
+                # version = 1 means the public key is not present in the
+                # top-level structure.
+                der.encode_integer(1),
+                der.encode_sequence(
+                    der.encode_oid(*oid_ecPublicKey), self.curve.encoded_oid
+                ),
+                der.encode_octet_string(ec_private_key),
+            )
 
     def get_verifying_key(self):
         """
