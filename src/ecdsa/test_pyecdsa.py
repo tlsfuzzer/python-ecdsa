@@ -515,6 +515,75 @@ class ECDSA(unittest.TestCase):
         sk = SigningKey.from_der(to_decode)
         self.assertEqual(sk.privkey.secret_multiplier, 255)
 
+    def test_sk_from_p8_der_with_wrong_version(self):
+        ver_der = der.encode_integer(2)
+        algorithm_der = der.encode_sequence(
+            der.encode_oid(1, 2, 840, 10045, 2, 1),
+            der.encode_oid(1, 2, 840, 10045, 3, 1, 1),
+        )
+        privkey_der = der.encode_octet_string(
+            der.encode_sequence(
+                der.encode_integer(1), der.encode_octet_string(b"\x00\xff")
+            )
+        )
+        to_decode = der.encode_sequence(ver_der, algorithm_der, privkey_der)
+
+        with self.assertRaises(der.UnexpectedDER):
+            SigningKey.from_der(to_decode)
+
+    def test_sk_from_p8_der_with_wrong_algorithm(self):
+        ver_der = der.encode_integer(1)
+        algorithm_der = der.encode_sequence(
+            der.encode_oid(1, 2, 3), der.encode_oid(1, 2, 840, 10045, 3, 1, 1)
+        )
+        privkey_der = der.encode_octet_string(
+            der.encode_sequence(
+                der.encode_integer(1), der.encode_octet_string(b"\x00\xff")
+            )
+        )
+        to_decode = der.encode_sequence(ver_der, algorithm_der, privkey_der)
+
+        with self.assertRaises(der.UnexpectedDER):
+            SigningKey.from_der(to_decode)
+
+    def test_sk_from_p8_der_with_trailing_junk_after_algorithm(self):
+        ver_der = der.encode_integer(1)
+        algorithm_der = der.encode_sequence(
+            der.encode_oid(1, 2, 840, 10045, 2, 1),
+            der.encode_oid(1, 2, 840, 10045, 3, 1, 1),
+            der.encode_octet_string(b"junk"),
+        )
+        privkey_der = der.encode_octet_string(
+            der.encode_sequence(
+                der.encode_integer(1), der.encode_octet_string(b"\x00\xff")
+            )
+        )
+        to_decode = der.encode_sequence(ver_der, algorithm_der, privkey_der)
+
+        with self.assertRaises(der.UnexpectedDER):
+            SigningKey.from_der(to_decode)
+
+    def test_sk_from_p8_der_with_trailing_junk_after_key(self):
+        ver_der = der.encode_integer(1)
+        algorithm_der = der.encode_sequence(
+            der.encode_oid(1, 2, 840, 10045, 2, 1),
+            der.encode_oid(1, 2, 840, 10045, 3, 1, 1),
+        )
+        privkey_der = der.encode_octet_string(
+            der.encode_sequence(
+                der.encode_integer(1), der.encode_octet_string(b"\x00\xff")
+            ) + der.encode_integer(999)
+        )
+        to_decode = der.encode_sequence(
+            ver_der,
+            algorithm_der,
+            privkey_der,
+            der.encode_octet_string(b"junk"),
+        )
+
+        with self.assertRaises(der.UnexpectedDER):
+            SigningKey.from_der(to_decode)
+
     def test_sign_with_too_long_hash(self):
         sk = SigningKey.from_secret_exponent(12)
 
@@ -945,10 +1014,19 @@ class OpenSSL(unittest.TestCase):
         with open("t/privkey.pem") as e:
             fp = e.read()
         sk = SigningKey.from_pem(fp)  # 1
-        sig = sk.sign(data, hashfunc=partial(hashlib.new, hash_name),)
+        sig = sk.sign(data, hashfunc=partial(hashlib.new, hash_name))
         self.assertTrue(
             vk.verify(sig, data, hashfunc=partial(hashlib.new, hash_name))
         )
+
+        run_openssl(
+            "pkcs8 -topk8 -nocrypt "
+            "-in t/privkey.pem -outform pem -out t/privkey-p8.pem"
+        )
+        with open("t/privkey-p8.pem", "rb") as e:
+            privkey_p8_pem = e.read()
+        sk_from_p8 = SigningKey.from_pem(privkey_p8_pem)
+        self.assertEqual(sk, sk_from_p8)
 
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
@@ -1109,6 +1187,17 @@ class OpenSSL(unittest.TestCase):
         )
         run_openssl(
             "dgst %s -verify t/pubkey.pem -signature t/data.sig2 t/data.txt"
+            % mdarg
+        )
+
+        with open("t/privkey-p8.pem", "wb") as e:
+            e.write(sk.to_pem(format="pkcs8"))
+        run_openssl(
+            "dgst %s -sign t/privkey-p8.pem -out t/data.sig3 t/data.txt"
+            % mdarg
+        )
+        run_openssl(
+            "dgst %s -verify t/pubkey.pem -signature t/data.sig3 t/data.txt"
             % mdarg
         )
 
