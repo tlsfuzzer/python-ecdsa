@@ -572,7 +572,8 @@ class ECDSA(unittest.TestCase):
         privkey_der = der.encode_octet_string(
             der.encode_sequence(
                 der.encode_integer(1), der.encode_octet_string(b"\x00\xff")
-            ) + der.encode_integer(999)
+            )
+            + der.encode_integer(999)
         )
         to_decode = der.encode_sequence(
             ver_der,
