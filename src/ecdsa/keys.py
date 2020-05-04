@@ -848,7 +848,7 @@ class SigningKey(object):
         Initialise from key stored in :term:`PEM` format.
 
         The PEM formats supported are the un-encrypted RFC5915
-        (the sslay format) supported by OpenSSL, and the more common
+        (the ssleay format) supported by OpenSSL, and the more common
         un-encrypted RFC5958 (the PKCS #8 format).
 
         The legacy format files have the header with the string
@@ -891,7 +891,7 @@ class SigningKey(object):
         Initialise from key stored in :term:`DER` format.
 
         The DER formats supported are the un-encrypted RFC5915
-        (the sslay format) supported by OpenSSL, and the more common
+        (the ssleay format) supported by OpenSSL, and the more common
         un-encrypted RFC5958 (the PKCS #8 format).
 
         Both formats contain an ASN.1 object following the syntax specified
@@ -909,12 +909,12 @@ class SigningKey(object):
 
         The only format supported for the `parameters` field is the named
         curve method. Explicit encoding of curve parameters is not supported.
-        In the legacy sslay format, this implementation requires the optional
+        In the legacy ssleay format, this implementation requires the optional
         `parameters` field to get the curve name. In PKCS #8 format, the curve
         is part of the PrivateKeyAlgorithmIdentifier.
 
-        The PKCS #8 format includes this object as the `privateKey` field
-        within a larger structure:
+        The PKCS #8 format includes an ECPrivateKey object as the `privateKey`
+        field within a larger structure:
 
             OneAsymmetricKey ::= SEQUENCE {
                 version                   Version,
@@ -953,7 +953,7 @@ class SigningKey(object):
         version, s = der.remove_integer(s)
 
         # At this point, PKCS #8 has a sequence containing the algorithm
-        # identifier and the curve identifier. The sslay format instead has
+        # identifier and the curve identifier. The ssleay format instead has
         # an octet string containing the key data, so this is how we can
         # distinguish the two formats.
         if der.is_sequence(s):
@@ -983,7 +983,7 @@ class SigningKey(object):
             s, _ = der.remove_octet_string(s)
 
             # Unpack the ECPrivateKey to get to the key data octet string,
-            # and rejoin the sslay parsing path.
+            # and rejoin the ssleay parsing path.
             s, empty = der.remove_sequence(s)
             if empty != b(""):
                 raise der.UnexpectedDER(
@@ -1049,7 +1049,7 @@ class SigningKey(object):
         s = number_to_string(secexp, self.privkey.order)
         return s
 
-    def to_pem(self, point_encoding="uncompressed", format="sslay"):
+    def to_pem(self, point_encoding="uncompressed", format="ssleay"):
         """
         Convert the private key to the :term:`PEM` format.
 
@@ -1062,7 +1062,7 @@ class SigningKey(object):
         ``BEGIN PRIVATE KEY``, depending on the desired format.
 
         :param str point_encoding: format to use for encoding public point
-        :param str format: either `sslay` or `pkcs8`
+        :param str format: either ``ssleay`` (default) or ``pkcs8``
 
         :return: PEM encoded private key
         :rtype: bytes
@@ -1071,11 +1071,11 @@ class SigningKey(object):
             re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
         # TODO: "BEGIN ECPARAMETERS"
-        assert format in ("sslay", "pkcs8")
-        header = "EC PRIVATE KEY" if format == "sslay" else "PRIVATE KEY"
+        assert format in ("ssleay", "pkcs8")
+        header = "EC PRIVATE KEY" if format == "ssleay" else "PRIVATE KEY"
         return der.topem(self.to_der(point_encoding, format), header)
 
-    def to_der(self, point_encoding="uncompressed", format="sslay"):
+    def to_der(self, point_encoding="uncompressed", format="ssleay"):
         """
         Convert the private key to the :term:`DER` format.
 
@@ -1085,7 +1085,7 @@ class SigningKey(object):
         The public key will be included in the generated string.
 
         :param str point_encoding: format to use for encoding public point
-        :param str format: either `sslay` or `pkcs8`
+        :param str format: either ``ssleay`` (default) or ``pkcs8``
 
         :return: DER encoded private key
         :rtype: bytes
@@ -1094,7 +1094,7 @@ class SigningKey(object):
         #      cont[1],bitstring])
         if point_encoding == "raw":
             raise ValueError("raw encoding not allowed in DER")
-        assert format in ("sslay", "pkcs8")
+        assert format in ("ssleay", "pkcs8")
         encoded_vk = self.get_verifying_key().to_string(point_encoding)
         # the 0 in encode_bitstring specifies the number of unused bits
         # in the `encoded_vk` string
@@ -1105,7 +1105,7 @@ class SigningKey(object):
             der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
         )
 
-        if format == "sslay":
+        if format == "ssleay":
             return ec_private_key
         else:
             return der.encode_sequence(
