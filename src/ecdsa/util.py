@@ -17,6 +17,22 @@ from ._compat import normalise_bytes
 oid_ecPublicKey = (1, 2, 840, 10045, 2, 1)
 encoded_oid_ecPublicKey = der.encode_oid(*oid_ecPublicKey)
 
+# RFC5480:
+# The ECDH algorithm uses the following object identifier:
+#      id-ecDH OBJECT IDENTIFIER ::= {
+#        iso(1) identified-organization(3) certicom(132) schemes(1)
+#        ecdh(12) }
+
+oid_ecDH = (1, 3, 132, 1, 12)
+
+# RFC5480:
+# The ECMQV algorithm uses the following object identifier:
+#      id-ecMQV OBJECT IDENTIFIER ::= {
+#        iso(1) identified-organization(3) certicom(132) schemes(1)
+#        ecmqv(13) }
+
+oid_ecMQV = (1, 3, 132, 1, 13)
+
 if sys.version_info >= (3,):
 
     def entropy_to_bits(ent_256):

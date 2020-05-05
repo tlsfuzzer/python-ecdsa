@@ -78,7 +78,13 @@ from .numbertheory import square_root_mod_prime, SquareRootError
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string
-from .util import oid_ecPublicKey, encoded_oid_ecPublicKey, MalformedSignature
+from .util import (
+    oid_ecPublicKey,
+    encoded_oid_ecPublicKey,
+    oid_ecDH,
+    oid_ecMQV,
+    MalformedSignature,
+)
 from ._compat import normalise_bytes
 
 
@@ -841,16 +847,13 @@ class SigningKey(object):
         """
         Initialise from key stored in :term:`PEM` format.
 
-        Note, the only PEM format supported is the un-encrypted RFC5915
-        (the sslay format) supported by OpenSSL, the more common PKCS#8 format
-        is NOT supported (see:
-        https://github.com/warner/python-ecdsa/issues/113 )
-
-        ``openssl ec -in pkcs8.pem -out sslay.pem`` can be used to
-        convert PKCS#8 file to this legacy format.
+        The PEM formats supported are the un-encrypted RFC5915
+        (the ssleay format) supported by OpenSSL, and the more common
+        un-encrypted RFC5958 (the PKCS #8 format).
 
         The legacy format files have the header with the string
         ``BEGIN EC PRIVATE KEY``.
+        PKCS#8 files have the header ``BEGIN PRIVATE KEY``.
         Encrypted files (ones that include the string
         ``Proc-Type: 4,ENCRYPTED``
         right after the PEM header) are not supported.
@@ -870,30 +873,29 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
-        # the privkey pem may have multiple sections, commonly it also has
-        # "EC PARAMETERS", we need just "EC PRIVATE KEY".
         if not PY2 and isinstance(string, str):
             string = string.encode()
-        privkey_pem = string[
-            string.index(b("-----BEGIN EC PRIVATE KEY-----")) :
-        ]
-        return cls.from_der(der.unpem(privkey_pem), hashfunc)
+
+        # The privkey pem may have multiple sections, commonly it also has
+        # "EC PARAMETERS", we need just "EC PRIVATE KEY". PKCS#8 should not
+        # have the "EC PARAMETERS" section; it's just "PRIVATE KEY".
+        private_key_index = string.find(b"-----BEGIN EC PRIVATE KEY-----")
+        if private_key_index == -1:
+            private_key_index = string.index(b"-----BEGIN PRIVATE KEY-----")
+
+        return cls.from_der(der.unpem(string[private_key_index:]), hashfunc)
 
     @classmethod
     def from_der(cls, string, hashfunc=sha1):
         """
         Initialise from key stored in :term:`DER` format.
 
-        Note, the only DER format supported is the RFC5915
-        (the sslay format) supported by OpenSSL, the more common PKCS#8 format
-        is NOT supported (see:
-        https://github.com/warner/python-ecdsa/issues/113 )
+        The DER formats supported are the un-encrypted RFC5915
+        (the ssleay format) supported by OpenSSL, and the more common
+        un-encrypted RFC5958 (the PKCS #8 format).
 
-        ``openssl ec -in pkcs8.pem -outform der -out sslay.der`` can be
-        used to convert PKCS#8 file to this legacy format.
-
-        The encoding of the ASN.1 object in those files follows following
-        syntax specified in RFC5915::
+        Both formats contain an ASN.1 object following the syntax specified
+        in RFC5915::
 
             ECPrivateKey ::= SEQUENCE {
               version        INTEGER { ecPrivkeyVer1(1) }} (ecPrivkeyVer1),
@@ -902,14 +904,30 @@ class SigningKey(object):
               publicKey  [1] BIT STRING OPTIONAL
             }
 
-        The only format supported for the `parameters` field is the named
-        curve method. Explicit encoding of curve parameters is not supported.
-
-        While `parameters` field is defined as optional, this implementation
-        requires its presence for correct parsing of the keys.
-
         `publicKey` field is ignored completely (errors, if any, in it will
         be undetected).
+
+        The only format supported for the `parameters` field is the named
+        curve method. Explicit encoding of curve parameters is not supported.
+        In the legacy ssleay format, this implementation requires the optional
+        `parameters` field to get the curve name. In PKCS #8 format, the curve
+        is part of the PrivateKeyAlgorithmIdentifier.
+
+        The PKCS #8 format includes an ECPrivateKey object as the `privateKey`
+        field within a larger structure:
+
+            OneAsymmetricKey ::= SEQUENCE {
+                version                   Version,
+                privateKeyAlgorithm       PrivateKeyAlgorithmIdentifier,
+                privateKey                PrivateKey,
+                attributes            [0] Attributes OPTIONAL,
+                ...,
+                [[2: publicKey        [1] PublicKey OPTIONAL ]],
+                ...
+            }
+
+        The `attributes` and `publicKey` fields are completely ignored; errors
+        in them will not be detected.
 
         :param string: binary string with DER-encoded private ECDSA key
         :type string: bytes like object
@@ -923,30 +941,80 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
-        string = normalise_bytes(string)
-        s, empty = der.remove_sequence(string)
+        s = normalise_bytes(string)
+        curve = None
+
+        s, empty = der.remove_sequence(s)
         if empty != b(""):
             raise der.UnexpectedDER(
                 "trailing junk after DER privkey: %s" % binascii.hexlify(empty)
             )
-        one, s = der.remove_integer(s)
-        if one != 1:
+
+        version, s = der.remove_integer(s)
+
+        # At this point, PKCS #8 has a sequence containing the algorithm
+        # identifier and the curve identifier. The ssleay format instead has
+        # an octet string containing the key data, so this is how we can
+        # distinguish the two formats.
+        if der.is_sequence(s):
+            if version not in (0, 1):
+                raise der.UnexpectedDER(
+                    "expected version '0' or '1' at start of privkey, got %d"
+                    % version
+                )
+
+            sequence, s = der.remove_sequence(s)
+            algorithm_oid, algorithm_identifier = der.remove_object(sequence)
+            curve_oid, empty = der.remove_object(algorithm_identifier)
+            curve = find_curve(curve_oid)
+
+            if algorithm_oid not in (oid_ecPublicKey, oid_ecDH, oid_ecMQV):
+                raise der.UnexpectedDER(
+                    "unexpected algorithm identifier '%s'" % (algorithm_oid,)
+                )
+            if empty != b"":
+                raise der.UnexpectedDER(
+                    "unexpected data after algorithm identifier: %s"
+                    % binascii.hexlify(empty)
+                )
+
+            # Up next is an octet string containing an ECPrivateKey. Ignore
+            # the optional "attributes" and "publicKey" fields that come after.
+            s, _ = der.remove_octet_string(s)
+
+            # Unpack the ECPrivateKey to get to the key data octet string,
+            # and rejoin the ssleay parsing path.
+            s, empty = der.remove_sequence(s)
+            if empty != b(""):
+                raise der.UnexpectedDER(
+                    "trailing junk after DER privkey: %s"
+                    % binascii.hexlify(empty)
+                )
+
+            version, s = der.remove_integer(s)
+
+        # The version of the ECPrivateKey must be 1.
+        if version != 1:
             raise der.UnexpectedDER(
-                "expected '1' at start of DER privkey, got %d" % one
+                "expected version '1' at start of DER privkey, got %d"
+                % version
             )
+
         privkey_str, s = der.remove_octet_string(s)
-        tag, curve_oid_str, s = der.remove_constructed(s)
-        if tag != 0:
-            raise der.UnexpectedDER(
-                "expected tag 0 in DER privkey, got %d" % tag
-            )
-        curve_oid, empty = der.remove_object(curve_oid_str)
-        if empty != b(""):
-            raise der.UnexpectedDER(
-                "trailing junk after DER privkey "
-                "curve_oid: %s" % binascii.hexlify(empty)
-            )
-        curve = find_curve(curve_oid)
+
+        if not curve:
+            tag, curve_oid_str, s = der.remove_constructed(s)
+            if tag != 0:
+                raise der.UnexpectedDER(
+                    "expected tag 0 in DER privkey, got %d" % tag
+                )
+            curve_oid, empty = der.remove_object(curve_oid_str)
+            if empty != b(""):
+                raise der.UnexpectedDER(
+                    "trailing junk after DER privkey "
+                    "curve_oid: %s" % binascii.hexlify(empty)
+                )
+            curve = find_curve(curve_oid)
 
         # we don't actually care about the following fields
         #
@@ -981,7 +1049,7 @@ class SigningKey(object):
         s = number_to_string(secexp, self.privkey.order)
         return s
 
-    def to_pem(self, point_encoding="uncompressed"):
+    def to_pem(self, point_encoding="uncompressed", format="ssleay"):
         """
         Convert the private key to the :term:`PEM` format.
 
@@ -990,9 +1058,11 @@ class SigningKey(object):
         Only the named curve format is supported.
         The public key will be included in generated string.
 
-        The PEM header will specify ``BEGIN EC PRIVATE KEY``
+        The PEM header will specify ``BEGIN EC PRIVATE KEY`` or
+        ``BEGIN PRIVATE KEY``, depending on the desired format.
 
         :param str point_encoding: format to use for encoding public point
+        :param str format: either ``ssleay`` (default) or ``pkcs8``
 
         :return: PEM encoded private key
         :rtype: bytes
@@ -1001,9 +1071,11 @@ class SigningKey(object):
             re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
         # TODO: "BEGIN ECPARAMETERS"
-        return der.topem(self.to_der(point_encoding), "EC PRIVATE KEY")
+        assert format in ("ssleay", "pkcs8")
+        header = "EC PRIVATE KEY" if format == "ssleay" else "PRIVATE KEY"
+        return der.topem(self.to_der(point_encoding, format), header)
 
-    def to_der(self, point_encoding="uncompressed"):
+    def to_der(self, point_encoding="uncompressed", format="ssleay"):
         """
         Convert the private key to the :term:`DER` format.
 
@@ -1013,6 +1085,7 @@ class SigningKey(object):
         The public key will be included in the generated string.
 
         :param str point_encoding: format to use for encoding public point
+        :param str format: either ``ssleay`` (default) or ``pkcs8``
 
         :return: DER encoded private key
         :rtype: bytes
@@ -1021,15 +1094,29 @@ class SigningKey(object):
         #      cont[1],bitstring])
         if point_encoding == "raw":
             raise ValueError("raw encoding not allowed in DER")
+        assert format in ("ssleay", "pkcs8")
         encoded_vk = self.get_verifying_key().to_string(point_encoding)
         # the 0 in encode_bitstring specifies the number of unused bits
         # in the `encoded_vk` string
-        return der.encode_sequence(
+        ec_private_key = der.encode_sequence(
             der.encode_integer(1),
             der.encode_octet_string(self.to_string()),
             der.encode_constructed(0, self.curve.encoded_oid),
             der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
         )
+
+        if format == "ssleay":
+            return ec_private_key
+        else:
+            return der.encode_sequence(
+                # version = 1 means the public key is not present in the
+                # top-level structure.
+                der.encode_integer(1),
+                der.encode_sequence(
+                    der.encode_oid(*oid_ecPublicKey), self.curve.encoded_oid
+                ),
+                der.encode_octet_string(ec_private_key),
+            )
 
     def get_verifying_key(self):
         """
