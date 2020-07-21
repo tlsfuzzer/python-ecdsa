@@ -185,6 +185,15 @@ class PointJacobi(object):
                 doubler = doubler.double().scale()
                 self.__precompute.append((doubler.x(), doubler.y()))
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['_scale_lock']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._scale_lock = RWLock()
+
     def __eq__(self, other):
         """Compare two points with each-other."""
         try:
