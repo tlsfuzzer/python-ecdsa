@@ -729,7 +729,8 @@ class Point(object):
         p = self.__curve.p()
 
         l = (
-            (other.__y - self.__y) * numbertheory.inverse_mod(other.__x - self.__x, p)
+            (other.__y - self.__y)
+            * numbertheory.inverse_mod(other.__x - self.__x, p)
         ) % p
 
         x3 = (l * l - self.__x - other.__x) % p
@@ -795,7 +796,8 @@ class Point(object):
         a = self.__curve.a()
 
         l = (
-            (3 * self.__x * self.__x + a) * numbertheory.inverse_mod(2 * self.__y, p)
+            (3 * self.__x * self.__x + a)
+            * numbertheory.inverse_mod(2 * self.__y, p)
         ) % p
 
         x3 = (l * l - 2 * self.__x) % p
