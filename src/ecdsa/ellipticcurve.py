@@ -92,14 +92,16 @@ class CurveFp(object):
             self.__h = h
 
     def __eq__(self, other):
-        if isinstance(other, CurveFp):
-            """Return True if the curves are identical, False otherwise."""
-            return (
-                self.__p == other.__p
-                and self.__a == other.__a
-                and self.__b == other.__b
-            )
-        return NotImplemented
+        """Return True if the curves are identical, False otherwise."""
+        return (
+            isinstance(other, CurveFp)
+            and self.__p == other.__p
+            and self.__a == other.__a
+            and self.__b == other.__b
+        )
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash((self.__p, self.__a, self.__b))
@@ -186,8 +188,14 @@ class PointJacobi(object):
                 self.__precompute.append((doubler.x(), doubler.y()))
 
     def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['_scale_lock']
+        state = None
+        try:
+            self._scale_lock.reader_acquire()
+            state = self.__dict__.copy()
+        finally:
+            self._scale_lock.reader_release()
+        if state:
+            del state["_scale_lock"]
         return state
 
     def __setstate__(self, state):
@@ -721,8 +729,7 @@ class Point(object):
         p = self.__curve.p()
 
         l = (
-            (other.__y - self.__y)
-            * numbertheory.inverse_mod(other.__x - self.__x, p)
+            (other.__y - self.__y) * numbertheory.inverse_mod(other.__x - self.__x, p)
         ) % p
 
         x3 = (l * l - self.__x - other.__x) % p
@@ -788,8 +795,7 @@ class Point(object):
         a = self.__curve.a()
 
         l = (
-            (3 * self.__x * self.__x + a)
-            * numbertheory.inverse_mod(2 * self.__y, p)
+            (3 * self.__x * self.__x + a) * numbertheory.inverse_mod(2 * self.__y, p)
         ) % p
 
         x3 = (l * l - 2 * self.__x) % p

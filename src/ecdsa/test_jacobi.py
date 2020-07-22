@@ -1,3 +1,5 @@
+import pickle
+
 try:
     import unittest2 as unittest
 except ImportError:
@@ -6,7 +8,7 @@ except ImportError:
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings, example
 
-from .ellipticcurve import Point, PointJacobi, INFINITY
+from .ellipticcurve import CurveFp, Point, PointJacobi, INFINITY
 from .ecdsa import generator_256, curve_256, generator_224
 from .numbertheory import inverse_mod
 
@@ -303,16 +305,10 @@ class TestJacobi(unittest.TestCase):
         new_zz1 = new_z[1] * new_z[1] % p
 
         a = PointJacobi(
-            curve_256,
-            a.x() * new_zz0 % p,
-            a.y() * new_zz0 * new_z[0] % p,
-            new_z[0],
+            curve_256, a.x() * new_zz0 % p, a.y() * new_zz0 * new_z[0] % p, new_z[0],
         )
         b = PointJacobi(
-            curve_256,
-            b.x() * new_zz1 % p,
-            b.y() * new_zz1 * new_z[1] % p,
-            new_z[1],
+            curve_256, b.x() * new_zz1 % p, b.y() * new_zz1 * new_z[1] % p, new_z[1],
         )
 
         c = a + b
@@ -347,12 +343,8 @@ class TestJacobi(unittest.TestCase):
         b = PointJacobi.from_affine(j_g * 255, True)
 
         self.assertEqual(j_g * 256, j_g + b)
-        self.assertEqual(
-            j_g * (0xFF00 + 255 * 0xF0F0), j_g * 0xFF00 + b * 0xF0F0
-        )
-        self.assertEqual(
-            j_g * (0xFF00 + 255 * 0xF0F0), j_g.mul_add(0xFF00, b, 0xF0F0)
-        )
+        self.assertEqual(j_g * (0xFF00 + 255 * 0xF0F0), j_g * 0xFF00 + b * 0xF0F0)
+        self.assertEqual(j_g * (0xFF00 + 255 * 0xF0F0), j_g.mul_add(0xFF00, b, 0xF0F0))
 
     def test_mul_add_to_mul(self):
         j_g = PointJacobi.from_affine(generator_256)
@@ -378,9 +370,14 @@ class TestJacobi(unittest.TestCase):
         b = PointJacobi.from_affine(j_g * 255)
 
         self.assertEqual(j_g * 256, j_g + b)
-        self.assertEqual(
-            j_g * (0xFF00 + 255 * 0xF0F0), j_g * 0xFF00 + b * 0xF0F0
-        )
-        self.assertEqual(
-            j_g * (0xFF00 + 255 * 0xF0F0), j_g.mul_add(0xFF00, b, 0xF0F0)
-        )
+        self.assertEqual(j_g * (0xFF00 + 255 * 0xF0F0), j_g * 0xFF00 + b * 0xF0F0)
+        self.assertEqual(j_g * (0xFF00 + 255 * 0xF0F0), j_g.mul_add(0xFF00, b, 0xF0F0))
+
+    def test_equality(self):
+        pj1 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        pj2 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        self.assertEqual(pj1, pj2)
+
+    def test_pickle(self):
+        pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)

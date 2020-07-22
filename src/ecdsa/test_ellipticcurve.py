@@ -121,28 +121,18 @@ class TestPoint(unittest.TestCase):
         # in X9.62:
         d = 651056770906015076056810763456358567190100156695615665659
         Q = d * self.p192
-        self.assertEqual(
-            Q.x(), 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5
-        )
+        self.assertEqual(Q.x(), 0x62B12D60690CDCF330BABAB6E69763B471F994DD702D16A5)
 
         k = 6140507067065001063065065565667405560006161556565665656654
         R = k * self.p192
-        self.assertEqual(
-            R.x(), 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD
-        )
-        self.assertEqual(
-            R.y(), 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835
-        )
+        self.assertEqual(R.x(), 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD)
+        self.assertEqual(R.y(), 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835)
 
         u1 = 2563697409189434185194736134579731015366492496392189760599
         u2 = 6266643813348617967186477710235785849136406323338782220568
         temp = u1 * self.p192 + u2 * Q
-        self.assertEqual(
-            temp.x(), 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD
-        )
-        self.assertEqual(
-            temp.y(), 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835
-        )
+        self.assertEqual(temp.x(), 0x885052380FF147B734C330C43D39B2C4A89F29B0F749FEAD)
+        self.assertEqual(temp.y(), 0x9CF9FA1CBEFEFB917747A3BB29C072B9289C2547884FD835)
 
     def test_double_infinity(self):
         p1 = INFINITY
@@ -195,6 +185,6 @@ class TestPoint(unittest.TestCase):
         p = Point(c, 100, 100, 100)
         self.assertNotEqual(self.g_23, p)
 
-    def test_inaquality_points_diff_types(self):
+    def test_inequality_points_diff_types(self):
         c = CurveFp(100, -3, 100)
         self.assertNotEqual(self.g_23, c)
