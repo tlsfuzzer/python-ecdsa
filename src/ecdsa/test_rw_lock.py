@@ -96,9 +96,9 @@ class RWLockTestCase(unittest.TestCase):
         self.assertEqual([], threads[0].buffer_read)
         self.assertEqual([1], threads[2].buffer_read)
         self.assertEqual([1], threads[3].buffer_read)
-        self.assert_(threads[1].exit_time <= threads[2].entry_time)
-        self.assert_(threads[2].entry_time <= threads[3].entry_time)
-        self.assert_(threads[3].exit_time < threads[2].exit_time)
+        self.assertTrue(threads[1].exit_time <= threads[2].entry_time)
+        self.assertTrue(threads[2].entry_time <= threads[3].entry_time)
+        self.assertTrue(threads[3].exit_time < threads[2].exit_time)
 
     def test_writers_exclusive_access(self):
         (buffer_, rw_lock, threads) = self.__init_variables()
@@ -112,8 +112,8 @@ class RWLockTestCase(unittest.TestCase):
         ## The second writer should wait for the first one to exit
 
         self.assertEqual([1, 2], threads[2].buffer_read)
-        self.assert_(threads[0].exit_time <= threads[1].entry_time)
-        self.assert_(threads[1].exit_time <= threads[2].exit_time)
+        self.assertTrue(threads[0].exit_time <= threads[1].entry_time)
+        self.assertTrue(threads[1].exit_time <= threads[2].exit_time)
 
     def test_writer_priority(self):
         (buffer_, rw_lock, threads) = self.__init_variables()
@@ -131,10 +131,10 @@ class RWLockTestCase(unittest.TestCase):
         self.assertEqual([1], threads[1].buffer_read)
         self.assertEqual([1, 2], threads[3].buffer_read)
         self.assertEqual([1, 2], threads[4].buffer_read)
-        self.assert_(threads[0].exit_time < threads[1].entry_time)
-        self.assert_(threads[1].exit_time <= threads[2].entry_time)
-        self.assert_(threads[2].exit_time <= threads[3].entry_time)
-        self.assert_(threads[2].exit_time <= threads[4].entry_time)
+        self.assertTrue(threads[0].exit_time < threads[1].entry_time)
+        self.assertTrue(threads[1].exit_time <= threads[2].entry_time)
+        self.assertTrue(threads[2].exit_time <= threads[3].entry_time)
+        self.assertTrue(threads[2].exit_time <= threads[4].entry_time)
 
     def test_many_writers_priority(self):
         (buffer_, rw_lock, threads) = self.__init_variables()
@@ -154,13 +154,13 @@ class RWLockTestCase(unittest.TestCase):
         self.assertEqual([1], threads[1].buffer_read)
         self.assertEqual([1, 2, 3], threads[3].buffer_read)
         self.assertEqual([1, 2, 3], threads[4].buffer_read)
-        self.assert_(threads[0].exit_time < threads[1].entry_time)
-        self.assert_(threads[1].exit_time <= threads[2].entry_time)
-        self.assert_(threads[1].exit_time <= threads[5].entry_time)
-        self.assert_(threads[2].exit_time <= threads[3].entry_time)
-        self.assert_(threads[2].exit_time <= threads[4].entry_time)
-        self.assert_(threads[5].exit_time <= threads[3].entry_time)
-        self.assert_(threads[5].exit_time <= threads[4].entry_time)
+        self.assertTrue(threads[0].exit_time < threads[1].entry_time)
+        self.assertTrue(threads[1].exit_time <= threads[2].entry_time)
+        self.assertTrue(threads[1].exit_time <= threads[5].entry_time)
+        self.assertTrue(threads[2].exit_time <= threads[3].entry_time)
+        self.assertTrue(threads[2].exit_time <= threads[4].entry_time)
+        self.assertTrue(threads[5].exit_time <= threads[3].entry_time)
+        self.assertTrue(threads[5].exit_time <= threads[4].entry_time)
 
     @staticmethod
     def __init_variables():
