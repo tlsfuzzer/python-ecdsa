@@ -101,6 +101,9 @@ class CurveFp(object):
             )
         return NotImplemented
 
+    def __ne__(self, other):
+        return not (self == other)
+
     def __hash__(self):
         return hash((self.__p, self.__a, self.__b))
 
@@ -184,6 +187,19 @@ class PointJacobi(object):
                 i *= 2
                 doubler = doubler.double().scale()
                 self.__precompute.append((doubler.x(), doubler.y()))
+
+    def __getstate__(self):
+        try:
+            self._scale_lock.reader_acquire()
+            state = self.__dict__.copy()
+        finally:
+            self._scale_lock.reader_release()
+        del state["_scale_lock"]
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._scale_lock = RWLock()
 
     def __eq__(self, other):
         """Compare two points with each-other."""

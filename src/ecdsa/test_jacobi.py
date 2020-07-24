@@ -1,3 +1,5 @@
+import pickle
+
 try:
     import unittest2 as unittest
 except ImportError:
@@ -6,7 +8,7 @@ except ImportError:
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings, example
 
-from .ellipticcurve import Point, PointJacobi, INFINITY
+from .ellipticcurve import CurveFp, Point, PointJacobi, INFINITY
 from .ecdsa import generator_256, curve_256, generator_224
 from .numbertheory import inverse_mod
 
@@ -384,3 +386,12 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(
             j_g * (0xFF00 + 255 * 0xF0F0), j_g.mul_add(0xFF00, b, 0xF0F0)
         )
+
+    def test_equality(self):
+        pj1 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        pj2 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        self.assertEqual(pj1, pj2)
+
+    def test_pickle(self):
+        pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)

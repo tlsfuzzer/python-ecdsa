@@ -195,6 +195,6 @@ class TestPoint(unittest.TestCase):
         p = Point(c, 100, 100, 100)
         self.assertNotEqual(self.g_23, p)
 
-    def test_inaquality_points_diff_types(self):
+    def test_inequality_points_diff_types(self):
         c = CurveFp(100, -3, 100)
         self.assertNotEqual(self.g_23, c)
