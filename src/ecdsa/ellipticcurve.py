@@ -92,16 +92,17 @@ class CurveFp(object):
             self.__h = h
 
     def __eq__(self, other):
-        """Return True if the curves are identical, False otherwise."""
-        return (
-            isinstance(other, CurveFp)
-            and self.__p == other.__p
-            and self.__a == other.__a
-            and self.__b == other.__b
-        )
+        if isinstance(other, CurveFp):
+            """Return True if the curves are identical, False otherwise."""
+            return (
+                self.__p == other.__p
+                and self.__a == other.__a
+                and self.__b == other.__b
+            )
+        return NotImplemented
 
     def __ne__(self, other):
-        return not self.__eq__(other)
+        return not (self == other)
 
     def __hash__(self):
         return hash((self.__p, self.__a, self.__b))
@@ -188,14 +189,12 @@ class PointJacobi(object):
                 self.__precompute.append((doubler.x(), doubler.y()))
 
     def __getstate__(self):
-        state = None
         try:
             self._scale_lock.reader_acquire()
             state = self.__dict__.copy()
         finally:
             self._scale_lock.reader_release()
-        if state:
-            del state["_scale_lock"]
+        del state["_scale_lock"]
         return state
 
     def __setstate__(self, state):
