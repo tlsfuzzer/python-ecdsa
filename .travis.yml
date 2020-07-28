@@ -41,27 +41,27 @@ matrix:
         env: TOX_ENV=py36
       - python: 3.7
         env: TOX_ENV=py37
-        dist: xenial
+        dist: bionic
         sudo: true
       - python: 3.8
         env: TOX_ENV=codechecks
-        dist: xenial
+        dist: bionic
         sudo: true
       - python: 3.8
         env: TOX_ENV=py38
-        dist: xenial
+        dist: bionic
         sudo: true
       - python: 3.8
         env: TOX_ENV=gmpypy38
-        dist: xenial
+        dist: bionic
         sudo: true
       - python: 3.8
         env: TOX_ENV=gmpy2py38
-        dist: xenial
+        dist: bionic
         sudo: true
       - python: nightly
         env: TOX_ENV=py
-        dist: xenial
+        dist: bionic
         sudo: true
       - python: pypy
         env: TOX_ENV=pypy
