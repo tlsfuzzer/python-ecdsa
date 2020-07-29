@@ -1210,7 +1210,7 @@ class TooSmallCurve(unittest.TestCase):
         sk = SigningKey.generate(curve=NIST192p)
         vk = sk.get_verifying_key()
         data = b("data")
-        with self.assertRaises(ecdsa.keys.BadDigestError):
+        with self.assertRaises(BadDigestError):
             sk.sign(
                 data,
                 hashfunc=partial(hashlib.new, "SHA256"),
