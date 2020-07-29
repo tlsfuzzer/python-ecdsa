@@ -1204,6 +1204,11 @@ class OpenSSL(unittest.TestCase):
 
 
 class TooSmallCurve(unittest.TestCase):
+    OPENSSL_SUPPORTED_CURVES = set(
+        c.split(":")[0].strip()
+        for c in run_openssl("ecparam -list_curves").split("\n")
+    )
+
     @pytest.mark.skipif("prime192v1" not in OPENSSL_SUPPORTED_CURVES,
                         reason="system openssl does not support prime192v1")
     def test_sign_too_small_curve_dont_allow_truncate_raises(self):
