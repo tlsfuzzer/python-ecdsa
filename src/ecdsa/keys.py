@@ -602,8 +602,12 @@ class VerifyingKey(object):
         )
 
     def verify(
-        self, signature, data, hashfunc=None, sigdecode=sigdecode_string,
-        allow_truncate=True
+        self,
+        signature,
+        data,
+        hashfunc=None,
+        sigdecode=sigdecode_string,
+        allow_truncate=True,
     ):
         """
         Verify a signature made over provided data.

@@ -1209,8 +1209,10 @@ class TooSmallCurve(unittest.TestCase):
         for c in run_openssl("ecparam -list_curves").split("\n")
     )
 
-    @pytest.mark.skipif("prime192v1" not in OPENSSL_SUPPORTED_CURVES,
-                        reason="system openssl does not support prime192v1")
+    @pytest.mark.skipif(
+        "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support prime192v1",
+    )
     def test_sign_too_small_curve_dont_allow_truncate_raises(self):
         sk = SigningKey.generate(curve=NIST192p)
         vk = sk.get_verifying_key()
@@ -1223,8 +1225,10 @@ class TooSmallCurve(unittest.TestCase):
                 allow_truncate=False,
             )
 
-    @pytest.mark.skipif("prime192v1" not in OPENSSL_SUPPORTED_CURVES,
-                        reason="system openssl does not support prime192v1")
+    @pytest.mark.skipif(
+        "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support prime192v1",
+    )
     def test_verify_too_small_curve_dont_allow_truncate_raises(self):
         sk = SigningKey.generate(curve=NIST192p)
         vk = sk.get_verifying_key()
@@ -1243,7 +1247,6 @@ class TooSmallCurve(unittest.TestCase):
                 sigdecode=sigdecode_der,
                 allow_truncate=False,
             )
-
 
 
 class DER(unittest.TestCase):
