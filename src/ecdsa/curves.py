@@ -25,6 +25,7 @@ __all__ = [
     "BRAINPOOLP320r1",
     "BRAINPOOLP384r1",
     "BRAINPOOLP512r1",
+    "Curve25519Weier"
 ]
 
 
@@ -166,6 +167,10 @@ BRAINPOOLP512r1 = Curve(
     "brainpoolP512r1",
 )
 
+Curve25519Weier = Curve("Curve25519Weier",
+                        ecdsa.curve_25519_weier,
+                        ecdsa.generator_25519_weier,
+                        (1, 3, 101, 110))
 
 curves = [
     NIST192p,
@@ -181,6 +186,7 @@ curves = [
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
+    Curve25519Weier,
 ]
 
 
