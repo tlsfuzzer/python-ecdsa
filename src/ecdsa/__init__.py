@@ -19,7 +19,7 @@ from .curves import (
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
-    Curve25519Weier,
+    Wei25519,
 )
 from .ecdh import (
     ECDH,
@@ -73,6 +73,6 @@ _hush_pyflakes = [
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
-    Curve25519Weier,
+    Wei25519,
 ]
 del _hush_pyflakes
