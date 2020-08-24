@@ -602,7 +602,12 @@ class VerifyingKey(object):
         )
 
     def verify(
-        self, signature, data, hashfunc=None, sigdecode=sigdecode_string
+        self,
+        signature,
+        data,
+        hashfunc=None,
+        sigdecode=sigdecode_string,
+        allow_truncate=True,
     ):
         """
         Verify a signature made over provided data.
@@ -629,6 +634,11 @@ class VerifyingKey(object):
             second one. See :func:`ecdsa.util.sigdecode_string` and
             :func:`ecdsa.util.sigdecode_der` for examples.
         :type sigdecode: callable
+        :param bool allow_truncate: if True, the provided digest can have
+            bigger bit-size than the order of the curve, the extra bits (at
+            the end of the digest) will be truncated. Use it when verifying
+            SHA-384 output using NIST256p or in similar situations. Defaults to
+            True.
 
         :raises BadSignatureError: if the signature is invalid or malformed
 
@@ -641,7 +651,7 @@ class VerifyingKey(object):
 
         hashfunc = hashfunc or self.default_hashfunc
         digest = hashfunc(data).digest()
-        return self.verify_digest(signature, digest, sigdecode, True)
+        return self.verify_digest(signature, digest, sigdecode, allow_truncate)
 
     def verify_digest(
         self,
@@ -1262,6 +1272,7 @@ class SigningKey(object):
         hashfunc=None,
         sigencode=sigencode_string,
         k=None,
+        allow_truncate=True,
     ):
         """
         Create signature over data using the probabilistic ECDSA algorithm.
@@ -1298,6 +1309,11 @@ class SigningKey(object):
         :param int k: a pre-selected nonce for calculating the signature.
             In typical use cases, it should be set to None (the default) to
             allow its generation from an entropy source.
+        :param bool allow_truncate: if True, the provided digest can have
+            bigger bit-size than the order of the curve, the extra bits (at
+            the end of the digest) will be truncated. Use it when signing
+            SHA-384 output using NIST256p or in similar situations. True by
+            default.
 
         :raises RSZeroError: in the unlikely event when "r" parameter or
             "s" parameter is equal 0 as that would leak the key. Calee should
@@ -1309,7 +1325,7 @@ class SigningKey(object):
         hashfunc = hashfunc or self.default_hashfunc
         data = normalise_bytes(data)
         h = hashfunc(data).digest()
-        return self.sign_digest(h, entropy, sigencode, k, allow_truncate=True)
+        return self.sign_digest(h, entropy, sigencode, k, allow_truncate)
 
     def sign_digest(
         self,

@@ -1203,6 +1203,52 @@ class OpenSSL(unittest.TestCase):
         )
 
 
+class TooSmallCurve(unittest.TestCase):
+    OPENSSL_SUPPORTED_CURVES = set(
+        c.split(":")[0].strip()
+        for c in run_openssl("ecparam -list_curves").split("\n")
+    )
+
+    @pytest.mark.skipif(
+        "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support prime192v1",
+    )
+    def test_sign_too_small_curve_dont_allow_truncate_raises(self):
+        sk = SigningKey.generate(curve=NIST192p)
+        vk = sk.get_verifying_key()
+        data = b("data")
+        with self.assertRaises(BadDigestError):
+            sk.sign(
+                data,
+                hashfunc=partial(hashlib.new, "SHA256"),
+                sigencode=sigencode_der,
+                allow_truncate=False,
+            )
+
+    @pytest.mark.skipif(
+        "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support prime192v1",
+    )
+    def test_verify_too_small_curve_dont_allow_truncate_raises(self):
+        sk = SigningKey.generate(curve=NIST192p)
+        vk = sk.get_verifying_key()
+        data = b("data")
+        sig_der = sk.sign(
+            data,
+            hashfunc=partial(hashlib.new, "SHA256"),
+            sigencode=sigencode_der,
+            allow_truncate=True,
+        )
+        with self.assertRaises(BadDigestError):
+            vk.verify(
+                sig_der,
+                data,
+                hashfunc=partial(hashlib.new, "SHA256"),
+                sigdecode=sigdecode_der,
+                allow_truncate=False,
+            )
+
+
 class DER(unittest.TestCase):
     def test_integer(self):
         self.assertEqual(der.encode_integer(0), b("\x02\x01\x00"))
