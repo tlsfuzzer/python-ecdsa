@@ -2,6 +2,7 @@
 Common functions for providing cross-python version compatibility.
 """
 import sys
+import re
 from six import integer_types
 
 
@@ -23,6 +24,18 @@ if sys.version_info < (3, 0):
     def hmac_compat(ret):
         return ret
 
+    if sys.version_info < (2, 7) or sys.version_info < (2, 7, 4):
+
+        def remove_whitespace(text):
+            """Removes all whitespace from passed in string"""
+            return re.sub(r"\s+", "", text)
+
+    else:
+
+        def remove_whitespace(text):
+            """Removes all whitespace from passed in string"""
+            return re.sub(r"\s+", "", text, flags=re.UNICODE)
+
 
 else:
     if sys.version_info < (3, 4):
@@ -41,3 +54,7 @@ else:
     def normalise_bytes(buffer_object):
         """Cast the input into array of bytes."""
         return memoryview(buffer_object).cast("B")
+
+    def remove_whitespace(text):
+        """Removes all whitespace from passed in string"""
+        return re.sub(r"\s+", "", text, flags=re.UNICODE)
