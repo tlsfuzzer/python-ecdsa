@@ -281,8 +281,9 @@ def sigencode_der(r, s, order):
 
 
 # canonical versions of sigencode methods
-# these enforce low S values, by negating the value (modulo the order) if above order/2
-# see CECKey::Sign() https://github.com/bitcoin/bitcoin/blob/master/src/key.cpp#L214
+# these enforce low S values, by negating the value (modulo the order) if
+# above order/2 see CECKey::Sign()
+# https://github.com/bitcoin/bitcoin/blob/master/src/key.cpp#L214
 def sigencode_strings_canonize(r, s, order):
     if s > order / 2:
         s = order - s
@@ -379,16 +380,14 @@ def sigdecode_strings(rs_strings, order):
     if not len(r_str) == l:
         raise MalformedSignature(
             "Invalid length of first string ('r' parameter), "
-            "expected {0} bytes long, provided string is {1} bytes long".format(
-                l, len(r_str)
-            )
+            "expected {0} bytes long, provided string is {1} "
+            "bytes long".format(l, len(r_str))
         )
     if not len(s_str) == l:
         raise MalformedSignature(
             "Invalid length of second string ('s' parameter), "
-            "expected {0} bytes long, provided string is {1} bytes long".format(
-                l, len(s_str)
-            )
+            "expected {0} bytes long, provided string is {1} "
+            "bytes long".format(l, len(s_str))
         )
     r = string_to_number_fixedlen(r_str, order)
     s = string_to_number_fixedlen(s_str, order)

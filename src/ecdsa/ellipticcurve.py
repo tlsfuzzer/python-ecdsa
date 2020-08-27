@@ -64,9 +64,9 @@ class CurveFp(object):
             The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
 
             h is an integer that is the cofactor of the elliptic curve domain
-            parameters; it is the number of points satisfying the elliptic curve
-            equation divided by the order of the base point. It is used for selection
-            of efficient algorithm for public point verification.
+            parameters; it is the number of points satisfying the elliptic
+            curve equation divided by the order of the base point. It is used
+            for selection of efficient algorithm for public point verification.
             """
             self.__p = mpz(p)
             self.__a = mpz(a)
@@ -82,9 +82,9 @@ class CurveFp(object):
             The curve of points satisfying y^2 = x^3 + a*x + b (mod p).
 
             h is an integer that is the cofactor of the elliptic curve domain
-            parameters; it is the number of points satisfying the elliptic curve
-            equation divided by the order of the base point. It is used for selection
-            of efficient algorithm for public point verification.
+            parameters; it is the number of points satisfying the elliptic
+            curve equation divided by the order of the base point. It is used
+            for selection of efficient algorithm for public point verification.
             """
             self.__p = p
             self.__a = a
@@ -228,7 +228,8 @@ class PointJacobi(object):
         zz2 = z2 * z2 % p
 
         # compare the fractions by bringing them to the same denominator
-        # depend on short-circuit to save 4 multiplications in case of inequality
+        # depend on short-circuit to save 4 multiplications in case of
+        # inequality
         return (x1 * zz2 - x2 * zz1) % p == 0 and (
             y1 * zz2 * z2 - y2 * zz1 * z1
         ) % p == 0
@@ -309,8 +310,8 @@ class PointJacobi(object):
             zz_inv = z_inv * z_inv % p
             self.__x = self.__x * zz_inv % p
             self.__y = self.__y * zz_inv * z_inv % p
-            # we are setting the z last so that the check above will return true
-            # only after all values were already updated
+            # we are setting the z last so that the check above will return
+            # true only after all values were already updated
             self.__z = 1
         finally:
             self._scale_lock.writer_release()
@@ -599,7 +600,7 @@ class PointJacobi(object):
 
     @staticmethod
     def _leftmost_bit(x):
-        """Return integer with the same magnitude as x but hamming weight of 1"""
+        """Return integer with the same magnitude as x but only one bit set"""
         assert x > 0
         result = 1
         while result <= x:
@@ -688,9 +689,9 @@ class Point(object):
         # self.curve is allowed to be None only for INFINITY:
         if self.__curve:
             assert self.__curve.contains_point(x, y)
-        # for curves with cofactor 1, all points that are on the curve are scalar
-        # multiples of the base point, so performing multiplication is not
-        # necessary to verify that. See Section 3.2.2.1 of SEC 1 v2
+        # for curves with cofactor 1, all points that are on the curve are
+        # scalar multiples of the base point, so performing multiplication is
+        # not necessary to verify that. See Section 3.2.2.1 of SEC 1 v2
         if curve and curve.cofactor() != 1 and order:
             assert self * order == INFINITY
 
