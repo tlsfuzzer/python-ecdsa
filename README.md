@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
 [![condition coverage](https://img.shields.io/badge/condition%20coverage-81%25-yellow)](https://travis-ci.org/warner/python-ecdsa/jobs/626479178#L776)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
+![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat)
 
 
 This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve

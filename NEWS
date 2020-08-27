@@ -1,3 +1,33 @@
+* Release 0.16.0 (27 Aug 2020)
+
+New features:
+Support for reading and writing private keys in PKCS#8 format.
+
+New API:
+`to_pem` and `to_der` now accept new parameter, `format`, to specify
+the format of the encoded files, either the dafault, legacy "ssleay", or
+the new `pkcs8` to use PKCS#8. Note that only unencrypted PKCS#8 files are
+supported.
+Add `allow_truncate` to `verify` in `VerifyingKey`, it defaults to True,
+when specified as False, use of large hashes smaller than curves will be
+disallowed (as it was in 0.14.1 and earlier).
+
+Bug fix:
+Correctly calculate signatures for private keys equal to n-1.
+Make `PointJacobi` and thus `SigningKey` and `VerifyingKey` pickleable.
+
+Doc fixes:
+`to_pem` functions return `bytes` not `str`, document them as such.
+`from_pem` and `from_pem` in `SigningKey` returns `SigningKey`, document them
+as such.
+
+Maintenance:
+Ensure that version checks will work with Python 4.
+Format the source with black.
+Fix uses of `assert_` in test suite.
+Use newer Ubuntu in Travis to test against OpenSSL 1.1.1 (and thus
+test the interoperability of ECDH code in Travis).
+
 * Release 0.15 (02 Jan 2020)
 
 Bug fixes:
