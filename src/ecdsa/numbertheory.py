@@ -68,21 +68,15 @@ def modular_exp(base, exponent, modulus):  # pragma: no cover
         return pow(base, exponent, modulus)
 
 def fast_modular_exponentiation(base, exponent, modulas):
-    
+
     """Log(N) computation required to find the final Exponent"""
     binary = bin(exponent)[-1:1:-1] 
     l = {}
-    ans = base
     for i in xrange(len(binary)):
-
-        l[i] = ans
-        ans = (ans**2)%modulas
-
-    ans =1
-    for i in xrange(len(binary)):
+        l[i] = base
+        base = (base**2)%modulas
         if binary[i]=='1':
-            ans *= l[i]%modulas
-
+            ans *= l[i]%modulas       
     return ans%modulas
 
 def polynomial_reduce_mod(poly, polymod, p):
