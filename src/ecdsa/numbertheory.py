@@ -62,7 +62,10 @@ def modular_exp(base, exponent, modulus):  # pragma: no cover
         raise NegativeExponentError(
             "Negative exponents (%d) not allowed" % exponent
         )
-    return fast_modular_exponentiation(base, exponent, modulus)
+    if (type(exponent)==int):
+        return fast_modular_exponentiation(base, exponent, modulus)
+    else:
+        return pow(base, exponent, modulus)
 
 def fast_modular_exponentiation(base, exponent, modulas):
     
@@ -70,13 +73,13 @@ def fast_modular_exponentiation(base, exponent, modulas):
     binary = bin(exponent)[-1:1:-1] 
     l = {}
     ans = base
-    for i in range(len(binary)):
+    for i in xrange(len(binary)):
 
         l[i] = ans
         ans = (ans**2)%modulas
 
     ans =1
-    for i in range(len(binary)):
+    for i in xrange(len(binary)):
         if binary[i]=='1':
             ans *= l[i]%modulas
 
