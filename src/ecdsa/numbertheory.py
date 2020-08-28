@@ -62,8 +62,25 @@ def modular_exp(base, exponent, modulus):  # pragma: no cover
         raise NegativeExponentError(
             "Negative exponents (%d) not allowed" % exponent
         )
-    return pow(base, exponent, modulus)
+    return fast_modular_exponentiation(base, exponent, modulus)
 
+def fast_modular_exponentiation(base, exponent, modulas):
+    
+    """Log(N) computation required to find the final Exponent"""
+    binary = bin(exponent)[-1:1:-1] 
+    l = {}
+    ans = base
+    for i in range(len(binary)):
+
+        l[i] = ans
+        ans = (ans**2)%modulas
+
+    ans =1
+    for i in range(len(binary)):
+        if binary[i]=='1':
+            ans *= l[i]%modulas
+
+    return ans%modulas
 
 def polynomial_reduce_mod(poly, polymod, p):
     """Reduce poly by polymod, integer arithmetic modulo p.
