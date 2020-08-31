@@ -72,12 +72,13 @@ def fast_modular_exponentiation(base, exponent, modulas):
     """Log(N) computation required to find the final Exponent"""
     binary = bin(exponent)[-1:1:-1] 
     l = {}
-    for i in xrange(len(binary)):
+    ans = 1
+    for i in range(len(binary)):
         l[i] = base
         base = (base**2)%modulas
         if binary[i]=='1':
-            ans *= l[i]%modulas       
-    return ans%modulas
+            ans *= l[i]%modulas
+        return ans%modulas
 
 def polynomial_reduce_mod(poly, polymod, p):
     """Reduce poly by polymod, integer arithmetic modulo p.
