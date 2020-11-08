@@ -174,12 +174,22 @@ class PointJacobi(object):
             self.__y = y
             self.__z = z
             self.__order = order
+        self.__generator = generator
         self.__precompute = []
-        if generator:
+
+        # unless ENABLE_LAZY_PRECOMPUTE is enabled, precompute multiplication
+        # tables _now_ (at ctor/import time)
+        import ecdsa
+        if not ecdsa.ENABLE_LAZY_PRECOMPUTE:
+            self._maybe_precompute()
+
+    def _maybe_precompute(self):
+        if self.__generator and not self.__precompute:
+            order = self.__order
             assert order
             i = 1
             order *= 2
-            doubler = PointJacobi(curve, x, y, z, order)
+            doubler = PointJacobi(self.__curve, self.__x, self.__y, self.__z, order)
             order *= 2
             self.__precompute.append((doubler.x(), doubler.y()))
 
@@ -574,6 +584,7 @@ class PointJacobi(object):
         if self.__order:
             # order*2 as a protection for Minerva
             other = other % (self.__order * 2)
+        self._maybe_precompute()
         if self.__precompute:
             return self._mul_precompute(other)
 
@@ -621,6 +632,8 @@ class PointJacobi(object):
             other = PointJacobi.from_affine(other)
         # when the points have precomputed answers, then multiplying them alone
         # is faster (as it uses NAF)
+        self._maybe_precompute()
+        other._maybe_precompute()
         if self.__precompute and other.__precompute:
             return self * self_mul + other * other_mul
 

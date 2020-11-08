@@ -1,3 +1,10 @@
+import os
+
+# when enabled, multiplication tables are precomputed only when actually needed:
+# that is, the specific curve is actually first used in user code. otherwise, multiplication
+# tables for _all_ curves supported are precomputed at library _import_ time effectively
+ENABLE_LAZY_PRECOMPUTE = os.environ.get('PYTHON_ECDSA_ENABLE_LAZY_PRECOMPUTE', None) is not None
+
 from .keys import (
     SigningKey,
     VerifyingKey,
@@ -44,7 +51,6 @@ __all__ = [
     "numbertheory",
     "test_pyecdsa",
     "util",
-    "six",
 ]
 
 _hush_pyflakes = [
@@ -74,3 +80,4 @@ _hush_pyflakes = [
     BRAINPOOLP512r1,
 ]
 del _hush_pyflakes
+
