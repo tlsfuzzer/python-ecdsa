@@ -34,7 +34,6 @@
 # Written in 2005 by Peter Pearson and placed in the public domain.
 
 from __future__ import division
-import os
 
 try:
     from gmpy2 import mpz
@@ -181,7 +180,7 @@ class PointJacobi(object):
     def _maybe_precompute(self):
         if self.__generator:
             # since we lack promotion of read-locks to write-locks, we do a
-            # "acquire-read-lock check, acquire-write-lock plus recheck" cycle ..
+            # "acquire-read-lock check, acquire-write-lock plus recheck" cycle
             try:
                 self._scale_lock.reader_acquire()
                 if self.__precompute:
@@ -197,7 +196,9 @@ class PointJacobi(object):
                 assert order
                 i = 1
                 order *= 2
-                doubler = PointJacobi(self.__curve, self.__x, self.__y, self.__z, order)
+                doubler = PointJacobi(
+                    self.__curve, self.__x, self.__y, self.__z, order
+                )
                 order *= 2
                 self.__precompute.append((doubler.x(), doubler.y()))
 
