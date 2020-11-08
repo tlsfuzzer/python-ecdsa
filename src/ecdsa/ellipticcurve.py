@@ -34,6 +34,7 @@
 # Written in 2005 by Peter Pearson and placed in the public domain.
 
 from __future__ import division
+import os
 
 try:
     from gmpy2 import mpz
@@ -177,10 +178,11 @@ class PointJacobi(object):
         self.__generator = generator
         self.__precompute = []
 
-        # unless ENABLE_LAZY_PRECOMPUTE is enabled, precompute multiplication
-        # tables _now_ (at ctor/import time)
-        import ecdsa
-        if not ecdsa.ENABLE_LAZY_PRECOMPUTE:
+        # when enabled, multiplication tables are precomputed only when actually needed:
+        # that is, the specific curve is actually first used in user code. otherwise, multiplication
+        # tables for _all_ curves supported are precomputed at library _import_ time effectively
+        ENABLE_LAZY_PRECOMPUTE = os.environ.get('PYTHON_ECDSA_ENABLE_LAZY_PRECOMPUTE', None) is not None
+        if not ENABLE_LAZY_PRECOMPUTE:
             self._maybe_precompute()
 
     def _maybe_precompute(self):
