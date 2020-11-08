@@ -179,11 +179,22 @@ class PointJacobi(object):
         self.__precompute = []
 
     def _maybe_precompute(self):
-        if self.__generator and not self.__precompute:
-            order = self.__order
-            assert order
+        if self.__generator:
+            # since we lack promotion of read-locks to write-locks, we do a
+            # "acquire-read-lock check, acquire-write-lock plus recheck" cycle ..
+            try:
+                self._scale_lock.reader_acquire()
+                if self.__precompute:
+                    return
+            finally:
+                self._scale_lock.reader_release()
+
             try:
                 self._scale_lock.writer_acquire()
+                if self.__precompute:
+                    return
+                order = self.__order
+                assert order
                 i = 1
                 order *= 2
                 doubler = PointJacobi(self.__curve, self.__x, self.__y, self.__z, order)
