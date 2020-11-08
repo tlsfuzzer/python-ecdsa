@@ -49,3 +49,5 @@ t/
 # Backup files
 *.swp
 *~
+.idea
+.cache

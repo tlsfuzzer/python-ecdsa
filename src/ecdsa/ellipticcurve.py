@@ -178,28 +178,25 @@ class PointJacobi(object):
         self.__generator = generator
         self.__precompute = []
 
-        # when enabled, multiplication tables are precomputed only when actually
-        # needed: that is, the specific curve is actually first used in user code.
-        # otherwise, multiplication tables for _all_ curves supported are precomputed
-        # at library _import_ time effectively
-        ENABLE_LAZY_PRECOMPUTE = os.environ.get('PYTHON_ECDSA_ENABLE_LAZY_PRECOMPUTE', None) is not None
-        if not ENABLE_LAZY_PRECOMPUTE:
-            self._maybe_precompute()
-
     def _maybe_precompute(self):
         if self.__generator and not self.__precompute:
             order = self.__order
             assert order
-            i = 1
-            order *= 2
-            doubler = PointJacobi(self.__curve, self.__x, self.__y, self.__z, order)
-            order *= 2
-            self.__precompute.append((doubler.x(), doubler.y()))
-
-            while i < order:
-                i *= 2
-                doubler = doubler.double().scale()
+            try:
+                self._scale_lock.writer_acquire()
+                i = 1
+                order *= 2
+                doubler = PointJacobi(self.__curve, self.__x, self.__y, self.__z, order)
+                order *= 2
                 self.__precompute.append((doubler.x(), doubler.y()))
+
+                while i < order:
+                    i *= 2
+                    doubler = doubler.double().scale()
+                    self.__precompute.append((doubler.x(), doubler.y()))
+
+            finally:
+                self._scale_lock.writer_release()
 
     def __getstate__(self):
         try:
@@ -218,7 +215,6 @@ class PointJacobi(object):
         """Compare two points with each-other."""
         try:
             self._scale_lock.reader_acquire()
-            self._maybe_precompute()
             if other is INFINITY:
                 return not self.__y or not self.__z
             x1, y1, z1 = self.__x, self.__y, self.__z
@@ -229,7 +225,6 @@ class PointJacobi(object):
         elif isinstance(other, PointJacobi):
             try:
                 other._scale_lock.reader_acquire()
-                other._maybe_precompute()
                 x2, y2, z2 = other.__x, other.__y, other.__z
             finally:
                 other._scale_lock.reader_release()
@@ -590,8 +585,7 @@ class PointJacobi(object):
             # order*2 as a protection for Minerva
             other = other % (self.__order * 2)
         self._maybe_precompute()
-        other._maybe_precompute()
-        if self.__precompute and other.__precompute:
+        if self.__precompute:
             return self._mul_precompute(other)
 
         self = self.scale()
