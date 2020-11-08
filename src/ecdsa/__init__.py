@@ -44,6 +44,7 @@ __all__ = [
     "numbertheory",
     "test_pyecdsa",
     "util",
+    "six",
 ]
 
 _hush_pyflakes = [
@@ -73,4 +74,3 @@ _hush_pyflakes = [
     BRAINPOOLP512r1,
 ]
 del _hush_pyflakes
-
