@@ -174,19 +174,41 @@ class PointJacobi(object):
             self.__y = y
             self.__z = z
             self.__order = order
+        self.__generator = generator
         self.__precompute = []
-        if generator:
-            assert order
-            i = 1
-            order *= 2
-            doubler = PointJacobi(curve, x, y, z, order)
-            order *= 2
-            self.__precompute.append((doubler.x(), doubler.y()))
 
-            while i < order:
-                i *= 2
-                doubler = doubler.double().scale()
+    def _maybe_precompute(self):
+        if self.__generator:
+            # since we lack promotion of read-locks to write-locks, we do a
+            # "acquire-read-lock check, acquire-write-lock plus recheck" cycle
+            try:
+                self._scale_lock.reader_acquire()
+                if self.__precompute:
+                    return
+            finally:
+                self._scale_lock.reader_release()
+
+            try:
+                self._scale_lock.writer_acquire()
+                if self.__precompute:
+                    return
+                order = self.__order
+                assert order
+                i = 1
+                order *= 2
+                doubler = PointJacobi(
+                    self.__curve, self.__x, self.__y, self.__z, order
+                )
+                order *= 2
                 self.__precompute.append((doubler.x(), doubler.y()))
+
+                while i < order:
+                    i *= 2
+                    doubler = doubler.double().scale()
+                    self.__precompute.append((doubler.x(), doubler.y()))
+
+            finally:
+                self._scale_lock.writer_release()
 
     def __getstate__(self):
         try:
@@ -574,6 +596,7 @@ class PointJacobi(object):
         if self.__order:
             # order*2 as a protection for Minerva
             other = other % (self.__order * 2)
+        self._maybe_precompute()
         if self.__precompute:
             return self._mul_precompute(other)
 
@@ -621,6 +644,8 @@ class PointJacobi(object):
             other = PointJacobi.from_affine(other)
         # when the points have precomputed answers, then multiplying them alone
         # is faster (as it uses NAF)
+        self._maybe_precompute()
+        other._maybe_precompute()
         if self.__precompute and other.__precompute:
             return self * self_mul + other * other_mul
 
