@@ -632,10 +632,10 @@ class PointJacobi(object):
 
     def mul_add(self, self_mul, other, other_mul):
         """
-      Do two multiplications at the same time, add results.
+        Do two multiplications at the same time, add results.
 
-      calculates self*self_mul + other*other_mul
-      """
+        calculates self*self_mul + other*other_mul
+        """
         if other is INFINITY or other_mul == 0:
             return self * self_mul
         if self_mul == 0:
