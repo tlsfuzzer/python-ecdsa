@@ -244,6 +244,32 @@ class TestSigningKey(unittest.TestCase):
         self.assertEqual(self.sk1, sk)
         self.assertEqual(self.sk1_pkcs8, sk)
 
+    def test_verify_with_precompute(self):
+        sig = self.sk1.sign(b"message")
+
+        vk = self.sk1.verifying_key
+
+        vk.precompute()
+
+        self.assertTrue(vk.verify(sig, b"message"))
+
+    def test_compare_verifying_key_with_precompute(self):
+        vk1 = self.sk1.verifying_key
+        vk1.precompute()
+
+        vk2 = self.sk1_pkcs8.verifying_key
+
+        self.assertEqual(vk1, vk2)
+
+    def test_verify_with_lazy_precompute(self):
+        sig = self.sk2.sign(b"other message")
+
+        vk = self.sk2.verifying_key
+
+        vk.precompute(lazy=True)
+
+        self.assertTrue(vk.verify(sig, b"other message"))
+
     def test_inequality_on_signing_keys(self):
         self.assertNotEqual(self.sk1, self.sk2)
 
