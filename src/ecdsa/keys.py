@@ -201,10 +201,33 @@ class VerifyingKey(object):
         self.pubkey.order = curve.order
         return self
 
-    def precompute(self):
+    def precompute(self, lazy=False):
+        """
+        Precompute multiplication tables for faster signature verification.
+
+        Calling this method will cause the library to precompute the
+        scalar multiplication tables, used in signature verification.
+        While it's an expensive operation (comparable to performing
+        as many signatures as the bit size of the curve, i.e. 256 for NIST256p)
+        it speeds up verification 2 times. You should call this method
+        if you expect to verify hundreds of signatures (or more) using the same
+        VerifyingKey object.
+
+        Note: You should call this method only once, this method generates a
+        new precomputation table every time it's called.
+
+        :param bool lazy: whether to calculate the precomputation table now
+           (if set to False) or if it should be delayed to the time of first
+           use (when set to True)
+        """
         self.pubkey.point = ellipticcurve.PointJacobi.from_affine(
             self.pubkey.point, True
         )
+        # as precomputation in now delayed to the time of first use of the
+        # point and we were asked specifically to precompute now, make
+        # sure the precomputation is performed now to preserve the behaviour
+        if not lazy:
+            self.pubkey.point * 2
 
     @staticmethod
     def _from_raw_encoding(string, curve):

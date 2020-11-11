@@ -44,19 +44,23 @@ matrix:
         dist: bionic
         sudo: true
       - python: 3.8
-        env: TOX_ENV=codechecks
-        dist: bionic
-        sudo: true
-      - python: 3.8
         env: TOX_ENV=py38
         dist: bionic
         sudo: true
-      - python: 3.8
-        env: TOX_ENV=gmpypy38
+      - python: 3.9
+        env: TOX_ENV=codechecks
         dist: bionic
         sudo: true
-      - python: 3.8
-        env: TOX_ENV=gmpy2py38
+      - python: 3.9
+        env: TOX_ENV=py39
+        dist: bionic
+        sudo: true
+      - python: 3.9
+        env: TOX_ENV=gmpypy39
+        dist: bionic
+        sudo: true
+      - python: 3.9
+        env: TOX_ENV=gmpy2py39
         dist: bionic
         sudo: true
       - python: nightly
