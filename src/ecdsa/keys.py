@@ -77,7 +77,7 @@ from .curves import NIST192p, find_curve
 from .numbertheory import square_root_mod_prime, SquareRootError
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
-from .util import sigencode_string, sigdecode_string
+from .util import sigencode_string, sigdecode_string, bit_length
 from .util import (
     oid_ecPublicKey,
     encoded_oid_ecPublicKey,
@@ -694,14 +694,28 @@ class VerifyingKey(object):
         # signature doesn't have to be a bytes-like-object so don't normalise
         # it, the decoders will do that
         digest = normalise_bytes(digest)
-        if allow_truncate:
-            digest = digest[: self.curve.baselen]
-        if len(digest) > self.curve.baselen:
+        if not allow_truncate and len(digest) > self.curve.baselen:
             raise BadDigestError(
                 "this curve (%s) is too short "
                 "for your digest (%d)" % (self.curve.name, 8 * len(digest))
             )
         number = string_to_number(digest)
+        if allow_truncate:
+            max_length = bit_length(self.curve.order)
+            # we don't use bit_length(number) as that truncates leading zeros
+            length = len(digest) * 8
+
+            # See NIST FIPS 186-4:
+            #
+            # When the length of the output of the hash function is greater
+            # than N (i.e., the bit length of q), then the leftmost N bits of
+            # the hash function output block shall be used in any calculation
+            # using the hash function output during the generation or
+            # verification of a digital signature.
+            #
+            # as such, we need to shift-out the low-order bits:
+            number >>= max(0, length - max_length)
+
         try:
             r, s = sigdecode(signature, self.pubkey.order)
         except (der.UnexpectedDER, MalformedSignature) as e:
