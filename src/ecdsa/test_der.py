@@ -7,9 +7,10 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+import sys
 from six import b
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, settings
 import pytest
 from ._compat import str_idx_as_int
 from .curves import NIST256p, NIST224p
@@ -462,6 +463,14 @@ def st_oid(draw, max_value=2**512, max_size=50):
     return (first, second) + tuple(rest)
 
 
+HYP_SETTINGS = {}
+
+
+if "--fast" in sys.argv:
+    HYP_SETTINGS["max_examples"] = 2
+
+
+@settings(**HYP_SETTINGS)
 @given(st_oid())
 def test_oids(ids):
     encoded_oid = encode_oid(*ids)

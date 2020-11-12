@@ -9,11 +9,12 @@ import sys
 import shutil
 import subprocess
 import pytest
+import sys
 from binascii import hexlify, unhexlify
 import hashlib
 from functools import partial
 
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as st
 
 from six import b, print_, binary_type
@@ -73,6 +74,13 @@ from . import ecdsa
 
 class SubprocessError(Exception):
     pass
+
+
+HYP_SETTINGS = {}
+
+
+if "--fast" in sys.argv:
+    HYP_SETTINGS["max_examples"] = 20
 
 
 def run_openssl(cmd):
@@ -1811,6 +1819,7 @@ class Util(unittest.TestCase):
         else:
             self.assertEqual(n, 18)
 
+    @settings(**HYP_SETTINGS)
     @given(st.integers(min_value=0, max_value=10**200))
     def test_randrange(self, i):
         # util.randrange does not provide long-term stability: we might
