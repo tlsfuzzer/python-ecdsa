@@ -2,6 +2,7 @@ import operator
 from six import print_
 from functools import reduce
 import operator
+import sys
 
 try:
     import unittest2 as unittest
@@ -202,9 +203,15 @@ if HC_PRESENT:  # pragma: no branch
     # the factorization() sometimes takes a long time to finish
     HYP_SETTINGS["deadline"] = 5000
 
+if "--fast" in sys.argv:
+    HYP_SETTINGS["max_examples"] = 20
+
 
 HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
-HYP_SLOW_SETTINGS["max_examples"] = 10
+if "--fast" in sys.argv:
+    HYP_SLOW_SETTINGS["max_examples"] = 2
+else:
+    HYP_SLOW_SETTINGS["max_examples"] = 20
 
 
 class TestNumbertheory(unittest.TestCase):
@@ -239,6 +246,7 @@ class TestNumbertheory(unittest.TestCase):
         n = gcd(numbers)
         assert n == 1
 
+    @settings(**HYP_SLOW_SETTINGS)
     @given(
         st.lists(
             st.integers(min_value=1, max_value=2 ** 8192),
@@ -257,6 +265,7 @@ class TestNumbertheory(unittest.TestCase):
         assert lcm([3, 5 * 3, 7 * 3]) == 3 * 5 * 7
         assert lcm(3) == 3
 
+    @settings(**HYP_SLOW_SETTINGS)
     @given(
         st.lists(
             st.integers(min_value=1, max_value=2 ** 8192),
@@ -275,7 +284,7 @@ class TestNumbertheory(unittest.TestCase):
         "meet requirements (like `is_prime()`), the test "
         "case times-out on it",
     )
-    @settings(**HYP_SETTINGS)
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st_num_square_prime())
     def test_square_root_mod_prime(self, vals):
         square, prime = vals
@@ -313,6 +322,7 @@ class TestNumbertheory(unittest.TestCase):
                     c *= jacobi(a, i[0]) ** i[1]
                 assert c == jacobi(a, mod)
 
+    @settings(**HYP_SETTINGS)
     @given(st_two_nums_rel_prime())
     def test_inverse_mod(self, nums):
         num, mod = nums

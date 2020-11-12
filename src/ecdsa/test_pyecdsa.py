@@ -9,12 +9,13 @@ import time
 import shutil
 import subprocess
 import pytest
+import sys
 from binascii import hexlify, unhexlify
 from hashlib import sha1, sha256, sha384, sha512
 import hashlib
 from functools import partial
 
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as st
 
 from six import b, print_, binary_type
@@ -55,6 +56,13 @@ from . import ecdsa
 
 class SubprocessError(Exception):
     pass
+
+
+HYP_SETTINGS = {}
+
+
+if "--fast" in sys.argv:
+    HYP_SETTINGS["max_examples"] = 20
 
 
 def run_openssl(cmd):
@@ -1335,6 +1343,7 @@ class Util(unittest.TestCase):
             b("6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc"),
         )
 
+    @settings(**HYP_SETTINGS)
     @given(st.integers(min_value=0, max_value=10 ** 200))
     def test_randrange(self, i):
         # util.randrange does not provide long-term stability: we might
