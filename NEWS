@@ -1,3 +1,26 @@
+* Release 0.16.1 (12 Nov 2020)
+
+New API:
+`VerifyingKey.precompute()` supports `lazy` argument to delay precomputation
+to the first time the key is used to verify a signature.
+
+Doc fixes:
+Documentation for the `VerifyingKey.precompute()` method.
+
+Bug fix:
+Make created signatures correct when the hash used is bigger than the curve
+order bit size and the curve order is not a multiple of 8 (this affects
+only users of custom curves or hashes with output larger than 512 bits).
+
+Performance:
+Speed up library load time by calculating the generator point multiplication
+tables the first time the points are used, not when they are initialised.
+
+Maintenance:
+Include Python 3.9 in CI testing.
+Test coverage for the `VerifyingKey.precompute()` method.
+Small speed-ups for the test suite.
+
 * Release 0.16.0 (27 Aug 2020)
 
 New features:
