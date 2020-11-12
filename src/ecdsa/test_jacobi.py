@@ -311,7 +311,7 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
-    @settings(max_examples=14)
+    @settings(max_examples=10)
     @given(
         st.integers(
             min_value=1, max_value=int(generator_brainpoolp160r1.order())
