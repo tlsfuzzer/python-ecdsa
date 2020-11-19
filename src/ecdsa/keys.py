@@ -1184,7 +1184,7 @@ class SigningKey(object):
         extra_entropy=b"",
     ):
         """
-        Create signature over data using the deterministic RFC6679 algorithm.
+        Create signature over data using the deterministic RFC6979 algorithm.
 
         The data will be hashed using the `hashfunc` function before signing.
 
@@ -1235,7 +1235,7 @@ class SigningKey(object):
         allow_truncate=False,
     ):
         """
-        Create signature for digest using the deterministic RFC6679 algorithm.
+        Create signature for digest using the deterministic RFC6979 algorithm.
 
         `digest` should be the output of cryptographically secure hash function
         like SHA256 or SHA-3-256.
