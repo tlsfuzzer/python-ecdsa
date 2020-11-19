@@ -300,18 +300,15 @@ def test_ecdh_with_openssl(vcurve):
 
     if vcurve.openssl_name not in OPENSSL_SUPPORTED_CURVES:
         pytest.skip("system openssl does not support " + vcurve.openssl_name)
-        return
 
     try:
         hlp = run_openssl("pkeyutl -help")
-        if hlp.find("-derive") == 0:
+        if hlp.find("-derive") == 0:  # pragma: no cover
             pytest.skip("system openssl does not support `pkeyutl -derive`")
-            return
-    except RunOpenSslError:
+    except RunOpenSslError:  # pragma: no cover
         pytest.skip("system openssl does not support `pkeyutl -derive`")
-        return
 
-    if os.path.isdir("t"):
+    if os.path.isdir("t"):  # pragma: no branch
         shutil.rmtree("t")
     os.mkdir("t")
     run_openssl(
@@ -353,7 +350,7 @@ def test_ecdh_with_openssl(vcurve):
         run_openssl(
             "pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2"
         )
-    except RunOpenSslError:
+    except RunOpenSslError:  # pragma: no cover
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
 
@@ -362,7 +359,7 @@ def test_ecdh_with_openssl(vcurve):
     with open("t/secret1", "rb") as e:
         ssl_secret2 = e.read()
 
-    if len(ssl_secret1) != vk1.curve.baselen:
+    if len(ssl_secret1) != vk1.curve.baselen:  # pragma: no cover
         pytest.skip("system openssl does not support `pkeyutl -derive`")
         return
 

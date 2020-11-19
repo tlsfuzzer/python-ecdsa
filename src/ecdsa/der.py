@@ -386,7 +386,7 @@ def remove_bitstring(string, expect_unused=_sentry):
 
 
 def unpem(pem):
-    if isinstance(pem, text_type):
+    if isinstance(pem, text_type):  # pragma: no branch
         pem = pem.encode()
 
     d = b("").join(
