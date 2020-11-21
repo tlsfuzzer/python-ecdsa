@@ -33,7 +33,7 @@ oid_ecDH = (1, 3, 132, 1, 12)
 
 oid_ecMQV = (1, 3, 132, 1, 13)
 
-if sys.version_info >= (3,):
+if sys.version_info >= (3,):  # pragma: no branch
 
     def entropy_to_bits(ent_256):
         """Convert a bytestring to string of 0's and 1's"""
@@ -47,7 +47,7 @@ else:
         return "".join(bin(ord(x))[2:].zfill(8) for x in ent_256)
 
 
-if sys.version_info < (2, 7):
+if sys.version_info < (2, 7):  # pragma: no branch
     # Can't add a method to a built-in type so we are stuck with this
     def bit_length(x):
         return len(bin(x)) - 2
@@ -99,7 +99,7 @@ class PRNG:
     def __call__(self, numbytes):
         a = [next(self.generator) for i in range(numbytes)]
 
-        if PY2:
+        if PY2:  # pragma: no branch
             return "".join(a)
         else:
             return bytes(a)

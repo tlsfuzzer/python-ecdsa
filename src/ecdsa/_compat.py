@@ -14,7 +14,7 @@ def str_idx_as_int(string, index):
     return ord(val)
 
 
-if sys.version_info < (3, 0):
+if sys.version_info < (3, 0):  # pragma: no branch
 
     def normalise_bytes(buffer_object):
         """Cast the input into array of bytes."""
@@ -24,7 +24,11 @@ if sys.version_info < (3, 0):
     def hmac_compat(ret):
         return ret
 
-    if sys.version_info < (2, 7) or sys.version_info < (2, 7, 4):
+    if sys.version_info < (2, 7) or sys.version_info < (  # pragma: no branch
+        2,
+        7,
+        4,
+    ):
 
         def remove_whitespace(text):
             """Removes all whitespace from passed in string"""
@@ -38,11 +42,11 @@ if sys.version_info < (3, 0):
 
 
 else:
-    if sys.version_info < (3, 4):
+    if sys.version_info < (3, 4):  # pragma: no branch
         # on python 3.3 hmac.hmac.update() accepts only bytes, on newer
         # versions it does accept memoryview() also
         def hmac_compat(data):
-            if not isinstance(data, bytes):
+            if not isinstance(data, bytes):  # pragma: no branch
                 return bytes(data)
             return data
 
