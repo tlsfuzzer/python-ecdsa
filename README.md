@@ -72,32 +72,35 @@ pip install ecdsa[gmpy]
 
 The following table shows how long this library takes to generate keypairs
 (`keygen`), to sign data (`sign`), to verify those signatures (`verify`),
-and to derive a shared secret (`ecdh`).
+to derive a shared secret (`ecdh`), and
+to verify the signatures with no key specific precomputation (`no PC verify`).
 All those values are in seconds.
 For convenience, the inverses of those values are also provided:
 how many keys per second can be generated (`keygen/s`), how many signatures
 can be made per second (`sign/s`), how many signatures can be verified
-per second (`verify/s`), and how many shared secrets can be derived per second
-(`ecdh/s`). The size in bytes of a raw signature (generally the smallest
+per second (`verify/s`), how many shared secrets can be derived per second
+(`ecdh/s`), and how many signatures with no key specific
+precomputation can be verified per second (`no PC verify/s`). The size of raw
+signature (generally the smallest
 way a signature can be encoded) is also provided in the `siglen` column.
 Use `tox -e speed` to generate this table on your own computer.
 On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
 ```
-                  siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-        NIST192p:     48   0.00035s   2893.02   0.00038s   2620.53   0.00069s   1458.92
-        NIST224p:     56   0.00043s   2307.11   0.00048s   2092.00   0.00088s   1131.33
-        NIST256p:     64   0.00056s   1793.70   0.00061s   1639.87   0.00113s    883.79
-        NIST384p:     96   0.00116s    864.33   0.00124s    806.29   0.00233s    429.87
-        NIST521p:    132   0.00221s    452.16   0.00234s    427.31   0.00460s    217.19
-       SECP256k1:     64   0.00056s   1772.65   0.00061s   1628.73   0.00110s    912.13
- BRAINPOOLP160r1:     40   0.00026s   3801.86   0.00029s   3401.11   0.00052s   1930.47
- BRAINPOOLP192r1:     48   0.00034s   2925.73   0.00038s   2634.34   0.00070s   1438.06
- BRAINPOOLP224r1:     56   0.00044s   2287.98   0.00048s   2083.87   0.00088s   1137.52
- BRAINPOOLP256r1:     64   0.00056s   1774.11   0.00061s   1628.25   0.00112s    890.71
- BRAINPOOLP320r1:     80   0.00081s   1238.18   0.00087s   1146.71   0.00151s    661.95
- BRAINPOOLP384r1:     96   0.00117s    855.47   0.00124s    804.56   0.00241s    414.83
- BRAINPOOLP512r1:    128   0.00223s    447.99   0.00234s    427.49   0.00437s    229.09
+                  siglen    keygen   keygen/s      sign     sign/s    verify   verify/s  no PC verify  no PC verify/s
+        NIST192p:     48   0.00033s   2991.13   0.00036s   2740.86   0.00067s   1502.11       0.00136s         737.54
+        NIST224p:     56   0.00042s   2360.67   0.00046s   2190.16   0.00083s   1201.83       0.00170s         587.79
+        NIST256p:     64   0.00053s   1872.02   0.00057s   1743.08   0.00103s    968.53       0.00219s         457.36
+        NIST384p:     96   0.00110s    907.45   0.00116s    861.63   0.00218s    459.38       0.00445s         224.92
+        NIST521p:    132   0.00214s    467.72   0.00223s    448.70   0.00430s    232.76       0.00888s         112.66
+       SECP256k1:     64   0.00054s   1841.11   0.00058s   1722.33   0.00111s    903.07       0.00216s         464.01
+ BRAINPOOLP160r1:     40   0.00026s   3780.81   0.00029s   3422.67   0.00054s   1863.09       0.00109s         914.93
+ BRAINPOOLP192r1:     48   0.00034s   2942.79   0.00037s   2710.56   0.00070s   1435.59       0.00138s         724.79
+ BRAINPOOLP224r1:     56   0.00044s   2278.35   0.00047s   2145.32   0.00090s   1115.34       0.00182s         549.72
+ BRAINPOOLP256r1:     64   0.00055s   1832.95   0.00059s   1704.50   0.00110s    911.02       0.00234s         427.22
+ BRAINPOOLP320r1:     80   0.00077s   1305.78   0.00082s   1222.47   0.00156s    640.27       0.00321s         311.56
+ BRAINPOOLP384r1:     96   0.00112s    893.07   0.00118s    849.32   0.00228s    438.75       0.00478s         209.35
+ BRAINPOOLP512r1:    128   0.00213s    470.08   0.00221s    451.98   0.00419s    238.70       0.00940s         106.44
 
                        ecdh     ecdh/s
         NIST192p:   0.00110s    910.70
@@ -118,20 +121,20 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 To test performance with `gmpy2` loaded, use `tox -e speedgmpy2`.
 On the same machine I'm getting the following performance with `gmpy2`:
 ```
-                  siglen    keygen   keygen/s      sign     sign/s    verify   verify/s
-        NIST192p:     48   0.00017s   5945.50   0.00018s   5544.66   0.00033s   3002.54
-        NIST224p:     56   0.00021s   4742.14   0.00022s   4463.52   0.00044s   2248.59
-        NIST256p:     64   0.00024s   4155.73   0.00025s   3994.28   0.00047s   2105.34
-        NIST384p:     96   0.00041s   2415.06   0.00043s   2316.41   0.00085s   1177.18
-        NIST521p:    132   0.00072s   1391.14   0.00074s   1359.63   0.00140s    716.31
-       SECP256k1:     64   0.00024s   4216.50   0.00025s   3994.52   0.00047s   2120.57
- BRAINPOOLP160r1:     40   0.00014s   7038.99   0.00015s   6501.55   0.00029s   3397.79
- BRAINPOOLP192r1:     48   0.00017s   5983.18   0.00018s   5626.08   0.00035s   2843.62
- BRAINPOOLP224r1:     56   0.00021s   4727.54   0.00022s   4464.86   0.00043s   2326.84
- BRAINPOOLP256r1:     64   0.00024s   4221.00   0.00025s   4010.26   0.00049s   2046.40
- BRAINPOOLP320r1:     80   0.00032s   3142.14   0.00033s   3009.15   0.00061s   1652.88
- BRAINPOOLP384r1:     96   0.00041s   2415.98   0.00043s   2340.35   0.00083s   1198.77
- BRAINPOOLP512r1:    128   0.00064s   1567.27   0.00066s   1526.33   0.00127s    788.51
+                  siglen    keygen   keygen/s      sign     sign/s    verify   verify/s  no PC verify  no PC verify/s
+        NIST192p:     48   0.00017s   5878.39   0.00018s   5670.66   0.00034s   2971.38       0.00067s        1484.97
+        NIST224p:     56   0.00021s   4705.08   0.00022s   4587.19   0.00040s   2499.96       0.00088s        1140.97
+        NIST256p:     64   0.00024s   4252.73   0.00024s   4108.48   0.00049s   2038.80       0.00096s        1043.03
+        NIST384p:     96   0.00041s   2455.84   0.00042s   2406.31   0.00079s   1260.03       0.00172s         580.61
+        NIST521p:    132   0.00070s   1419.16   0.00072s   1392.50   0.00139s    719.35       0.00307s         325.96
+       SECP256k1:     64   0.00024s   4228.87   0.00024s   4086.32   0.00047s   2124.86       0.00096s        1037.53
+ BRAINPOOLP160r1:     40   0.00014s   6932.12   0.00015s   6678.36   0.00030s   3387.90       0.00056s        1784.02
+ BRAINPOOLP192r1:     48   0.00017s   5886.05   0.00017s   5720.63   0.00034s   2941.22       0.00067s        1490.87
+ BRAINPOOLP224r1:     56   0.00021s   4748.89   0.00022s   4638.15   0.00041s   2460.86       0.00089s        1128.91
+ BRAINPOOLP256r1:     64   0.00024s   4248.00   0.00024s   4135.19   0.00045s   2209.69       0.00099s        1006.45
+ BRAINPOOLP320r1:     80   0.00032s   3096.85   0.00033s   3012.43   0.00065s   1547.07       0.00137s         728.60
+ BRAINPOOLP384r1:     96   0.00041s   2436.12   0.00042s   2396.23   0.00083s   1211.13       0.00176s         568.39
+ BRAINPOOLP512r1:    128   0.00063s   1580.09   0.00064s   1562.78   0.00129s    778.09       0.00279s         358.12
 
                        ecdh     ecdh/s
         NIST192p:   0.00051s   1960.26
