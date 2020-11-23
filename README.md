@@ -1,4 +1,4 @@
-# Pure-Python ECDSA
+# Pure-Python ECDSA and ECDH
 
 [![build status](https://travis-ci.org/warner/python-ecdsa.png)](http://travis-ci.org/warner/python-ecdsa)
 [![Coverage Status](https://coveralls.io/repos/warner/python-ecdsa/badge.svg)](https://coveralls.io/r/warner/python-ecdsa)
@@ -7,16 +7,19 @@
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat)
 
 
-This is an easy-to-use implementation of ECDSA cryptography (Elliptic Curve
-Digital Signature Algorithm), implemented purely in Python, released under
+This is an easy-to-use implementation of ECC (Elliptic Curve Cryptography)
+with support for ECDSA (Elliptic Curve Digital Signature Algorithm) and ECDH
+(Elliptic Curve Diffie-Hellman), implemented purely in Python, released under
 the MIT license. With this library, you can quickly create keypairs (signing
-key and verifying key), sign messages, and verify the signatures. The keys
-and signatures are very short, making them easy to handle and incorporate
-into other protocols.
+key and verifying key), sign messages, and verify the signatures. You can
+also agree on a shared secret key based on exchanged public keys.
+The keys and signatures are very short, making them easy to handle and
+incorporate into other protocols.
 
 ## Features
 
-This library provides key generation, signing, and verifying, for five
+This library provides key generation, signing, verifying, and shared secret
+derivation for five
 popular NIST "Suite B" GF(p) (_prime field_) curves, with key lengths of 192,
 224, 256, 384, and 521 bits. The "short names" for these curves, as known by
 the OpenSSL tool (`openssl ecparam -list_curves`), are: `prime192v1`,
@@ -68,12 +71,14 @@ pip install ecdsa[gmpy]
 ## Speed
 
 The following table shows how long this library takes to generate keypairs
-(`keygen`), to sign data (`sign`), and to verify those signatures (`verify`).
+(`keygen`), to sign data (`sign`), to verify those signatures (`verify`),
+and to derive a shared secret (`ecdh`).
 All those values are in seconds.
 For convenience, the inverses of those values are also provided:
 how many keys per second can be generated (`keygen/s`), how many signatures
-can be made per second (`sign/s`) and how many signatures can be verified
-per second (`verify/s`). The size of raw signature (generally the smallest
+can be made per second (`sign/s`), how many signatures can be verified
+per second (`verify/s`), and how many shared secrets can be derived per second
+(`ecdh/s`). The size in bytes of a raw signature (generally the smallest
 way a signature can be encoded) is also provided in the `siglen` column.
 Use `tox -e speed` to generate this table on your own computer.
 On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
@@ -186,9 +191,9 @@ following lengths (in bytes):
 In 2006, Peter Pearson announced his pure-python implementation of ECDSA in a
 [message to sci.crypt][1], available from his [download site][2]. In 2010,
 Brian Warner wrote a wrapper around this code, to make it a bit easier and
-safer to use. Hubert Kario then included an implementation of elliptic curve
-cryptography that uses Jacobian coordinates internally, improving performance
-about 20-fold. You are looking at the README for this wrapper.
+safer to use. In 2020, Hubert Kario included an implementation of elliptic
+curve cryptography that uses Jacobian coordinates internally, improving
+performance about 20-fold. You are looking at the README for this wrapper.
 
 [1]: http://www.derkeiler.com/Newsgroups/sci.crypt/2006-01/msg00651.html
 [2]: http://webpages.charter.net/curryfans/peter/downloads.html
@@ -580,7 +585,7 @@ vk = VerifyingKey.from_string(bytearray.fromhex(comp_str), curve=NIST256p)
 print(vk.to_string("uncompressed").hex())
 ```
 
-ECDH key exchange with remote party
+ECDH key exchange with remote party:
 
 ```python
 from ecdsa import ECDH, NIST256p
