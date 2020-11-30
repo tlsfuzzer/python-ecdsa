@@ -19,7 +19,8 @@ prnt_form = (
     "{name:>16}{sep:1} {siglen:>6} {keygen:>9{form}}{unit:1} "
     "{keygen_inv:>9{form_inv}} {sign:>9{form}}{unit:1} "
     "{sign_inv:>9{form_inv}} {verify:>9{form}}{unit:1} "
-    "{verify_inv:>9{form_inv}}"
+    "{verify_inv:>9{form_inv}} {verify_single:>13{form}}{unit:1} "
+    "{verify_single_inv:>14{form_inv}}"
 )
 
 print(
@@ -31,6 +32,8 @@ print(
         sign_inv="sign/s",
         verify="verify",
         verify_inv="verify/s",
+        verify_single="no PC verify",
+        verify_single_inv="no PC verify/s",
         name="",
         sep="",
         unit="",
@@ -54,6 +57,7 @@ for curve in [i.name for i in curves]:
     keygen = do([S1], S2)
     sign = do([S1, S2, S3], S4)
     verf = do([S1, S2, S3, S4, S5, S6], S7)
+    verf_single = do([S1, S2, S3, S4, S5], S7)
     import ecdsa
 
     c = getattr(ecdsa, curve)
@@ -70,6 +74,8 @@ for curve in [i.name for i in curves]:
             sign_inv=1.0 / sign,
             verify=verf,
             verify_inv=1.0 / verf,
+            verify_single=verf_single,
+            verify_single_inv=1.0 / verf_single,
             form=".5f",
             form_inv=".2f",
         )

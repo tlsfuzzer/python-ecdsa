@@ -39,7 +39,7 @@ try:
     from gmpy2 import mpz
 
     GMPY = True
-except ImportError:
+except ImportError:  # pragma: no branch
     try:
         from gmpy import mpz
 
@@ -57,7 +57,7 @@ from ._rwlock import RWLock
 class CurveFp(object):
     """Elliptic Curve over the field of integers modulo a prime."""
 
-    if GMPY:
+    if GMPY:  # pragma: no branch
 
         def __init__(self, p, a, b, h=None):
             """
@@ -75,7 +75,7 @@ class CurveFp(object):
             # gmpy with it
             self.__h = h
 
-    else:
+    else:  # pragma: no branch
 
         def __init__(self, p, a, b, h=None):
             """
@@ -164,12 +164,12 @@ class PointJacobi(object):
         # since it's generally better (faster) to use scaled points vs unscaled
         # ones, use writer-biased RWLock for locking:
         self._update_lock = RWLock()
-        if GMPY:
+        if GMPY:  # pragma: no branch
             self.__x = mpz(x)
             self.__y = mpz(y)
             self.__z = mpz(z)
             self.__order = order and mpz(order)
-        else:
+        else:  # pragma: no branch
             self.__x = x
             self.__y = y
             self.__z = z
@@ -359,7 +359,8 @@ class PointJacobi(object):
             point.curve(), point.x(), point.y(), 1, point.order(), generator
         )
 
-    # plese note that all the methods that use the equations from hyperelliptic
+    # please note that all the methods that use the equations from
+    # hyperelliptic
     # are formatted in a way to maximise performance.
     # Things that make code faster: multiplying instead of taking to the power
     # (`xx = x * x; xxxx = xx * xx % p` is faster than `xxxx = x**4 % p` and
@@ -389,7 +390,7 @@ class PointJacobi(object):
         """Add a point to itself, arbitrary z."""
         if Z1 == 1:
             return self._double_with_z_1(X1, Y1, p, a)
-        if not Z1:
+        if not Y1 or not Z1:
             return 0, 0, 1
         # after:
         # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
@@ -579,11 +580,11 @@ class PointJacobi(object):
             if mult % 2:
                 nd = mult % 4
                 if nd >= 2:
-                    nd = nd - 4
-                ret += [nd]
+                    nd -= 4
+                ret.append(nd)
                 mult -= nd
             else:
-                ret += [0]
+                ret.append(0)
             mult //= 2
         return ret
 
@@ -621,15 +622,6 @@ class PointJacobi(object):
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
-    @staticmethod
-    def _leftmost_bit(x):
-        """Return integer with the same magnitude as x but only one bit set"""
-        assert x > 0
-        result = 1
-        while result <= x:
-            result = 2 * result
-        return result // 2
-
     def mul_add(self, self_mul, other, other_mul):
         """
         Do two multiplications at the same time, add results.
@@ -643,7 +635,7 @@ class PointJacobi(object):
         if not isinstance(other, PointJacobi):
             other = PointJacobi.from_affine(other)
         # when the points have precomputed answers, then multiplying them alone
-        # is faster (as it uses NAF)
+        # is faster (as it uses NAF and no point doublings)
         self._maybe_precompute()
         other._maybe_precompute()
         if self.__precompute and other.__precompute:
@@ -653,32 +645,76 @@ class PointJacobi(object):
             self_mul = self_mul % self.__order
             other_mul = other_mul % self.__order
 
-        i = self._leftmost_bit(max(self_mul, other_mul)) * 2
+        # (X3, Y3, Z3) is the accumulator
         X3, Y3, Z3 = 0, 0, 1
         p, a = self.__curve.p(), self.__curve.a()
-        self = self.scale()
-        # after scaling, point is immutable, no need for locking
-        X1, Y1 = self.__x, self.__y
-        other = other.scale()
-        X2, Y2 = other.__x, other.__y
-        both = self + other
-        if both is INFINITY:
-            X4, Y4 = 0, 0
-        else:
-            both.scale()
-            X4, Y4 = both.__x, both.__y
+
+        # as we have 6 unique points to work with, we can't scale all of them,
+        # but do scale the ones that are used most often
+        # (post scale() points are immutable so no need for locking)
+        self.scale()
+        X1, Y1, Z1 = self.__x, self.__y, self.__z
+        other.scale()
+        X2, Y2, Z2 = other.__x, other.__y, other.__z
+
         _double = self._double
         _add = self._add
-        while i > 1:
-            X3, Y3, Z3 = _double(X3, Y3, Z3, p, a)
-            i = i // 2
 
-            if self_mul & i and other_mul & i:
-                X3, Y3, Z3 = _add(X3, Y3, Z3, X4, Y4, 1, p)
-            elif self_mul & i:
-                X3, Y3, Z3 = _add(X3, Y3, Z3, X1, Y1, 1, p)
-            elif other_mul & i:
-                X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
+        # with NAF we have 3 options: no add, subtract, add
+        # so with 2 points, we have 9 combinations:
+        # 0, -A, +A, -B, -A-B, +A-B, +B, -A+B, +A+B
+        # so we need 4 combined points:
+        mAmB_X, mAmB_Y, mAmB_Z = _add(X1, -Y1, Z1, X2, -Y2, Z2, p)
+        pAmB_X, pAmB_Y, pAmB_Z = _add(X1, Y1, Z1, X2, -Y2, Z2, p)
+        mApB_X, mApB_Y, mApB_Z = _add(X1, -Y1, Z1, X2, Y2, Z2, p)
+        pApB_X, pApB_Y, pApB_Z = _add(X1, Y1, Z1, X2, Y2, Z2, p)
+        # when the self and other sum to infinity, we need to add them
+        # one by one to get correct result but as that's very unlikely to
+        # happen in regular operation, we don't need to optimise this case
+        if not pApB_Y or not pApB_Z:
+            return self * self_mul + other * other_mul
+
+        # gmp object creation has cumulatively higher overhead than the
+        # speedup we get from calculating the NAF using gmp so ensure use
+        # of int()
+        self_naf = list(reversed(self._naf(int(self_mul))))
+        other_naf = list(reversed(self._naf(int(other_mul))))
+        # ensure that the lists are the same length (zip() will truncate
+        # longer one otherwise)
+        if len(self_naf) < len(other_naf):
+            self_naf = [0] * (len(other_naf) - len(self_naf)) + self_naf
+        elif len(self_naf) > len(other_naf):
+            other_naf = [0] * (len(self_naf) - len(other_naf)) + other_naf
+
+        for A, B in zip(self_naf, other_naf):
+            X3, Y3, Z3 = _double(X3, Y3, Z3, p, a)
+
+            # conditions ordered from most to least likely
+            if A == 0:
+                if B == 0:
+                    pass
+                elif B < 0:
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, X2, -Y2, Z2, p)
+                else:
+                    assert B > 0
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, Z2, p)
+            elif A < 0:
+                if B == 0:
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, X1, -Y1, Z1, p)
+                elif B < 0:
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, mAmB_X, mAmB_Y, mAmB_Z, p)
+                else:
+                    assert B > 0
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, mApB_X, mApB_Y, mApB_Z, p)
+            else:
+                assert A > 0
+                if B == 0:
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, X1, Y1, Z1, p)
+                elif B < 0:
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, pAmB_X, pAmB_Y, pAmB_Z, p)
+                else:
+                    assert B > 0
+                    X3, Y3, Z3 = _add(X3, Y3, Z3, pApB_X, pApB_Y, pApB_Z, p)
 
         if not Y3 or not Z3:
             return INFINITY

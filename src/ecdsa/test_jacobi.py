@@ -367,6 +367,11 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(j_g * 3, j_g + j_g + j_g)
 
+    def test_mul_without_order(self):
+        j_g = PointJacobi(curve_256, generator_256.x(), generator_256.y(), 1)
+
+        self.assertEqual(j_g * generator_256.order(), INFINITY)
+
     def test_mul_add_inf(self):
         j_g = PointJacobi.from_affine(generator_256)
 
@@ -405,6 +410,21 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(a, b)
 
+    def test_mul_add_differnt(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        w_a = j_g * 2
+
+        self.assertEqual(j_g.mul_add(1, w_a, 1), j_g * 3)
+
+    def test_mul_add_slightly_different(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        w_a = j_g * 2
+        w_b = j_g * 3
+
+        self.assertEqual(w_a.mul_add(1, w_b, 3), w_a * 1 + w_b * 3)
+
     def test_mul_add(self):
         j_g = PointJacobi.from_affine(generator_256)
 
@@ -428,10 +448,51 @@ class TestJacobi(unittest.TestCase):
             j_g * (0xFF00 + 255 * 0xF0F0), j_g.mul_add(0xFF00, b, 0xF0F0)
         )
 
+    def test_mul_add_with_infinity_as_result(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        order = generator_256.order()
+
+        b = PointJacobi.from_affine(generator_256 * 256)
+
+        self.assertEqual(j_g.mul_add(order % 256, b, order // 256), INFINITY)
+
+    def test_mul_add_without_order(self):
+        j_g = PointJacobi(curve_256, generator_256.x(), generator_256.y(), 1)
+
+        order = generator_256.order()
+
+        w_b = generator_256 * 34
+        w_b.scale()
+
+        b = PointJacobi(curve_256, w_b.x(), w_b.y(), 1)
+
+        self.assertEqual(j_g.mul_add(order % 34, b, order // 34), INFINITY)
+
+    def test_mul_add_with_doubled_negation_of_itself(self):
+        j_g = PointJacobi.from_affine(generator_256 * 17)
+
+        order = generator_256.order()
+
+        dbl_neg = 2 * (-j_g)
+
+        self.assertEqual(j_g.mul_add(4, dbl_neg, 2), INFINITY)
+
     def test_equality(self):
         pj1 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         pj2 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         self.assertEqual(pj1, pj2)
+
+    def test_equality_with_invalid_object(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        self.assertNotEqual(j_g, 12)
+
+    def test_equality_with_wrong_curves(self):
+        p_a = PointJacobi.from_affine(generator_256)
+        p_b = PointJacobi.from_affine(generator_224)
+
+        self.assertNotEqual(p_a, p_b)
 
     def test_pickle(self):
         pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
