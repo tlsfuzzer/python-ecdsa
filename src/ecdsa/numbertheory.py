@@ -11,6 +11,7 @@
 
 from __future__ import division
 
+import sys
 from six import integer_types, PY2
 from six.moves import reduce
 
@@ -219,7 +220,7 @@ def square_root_mod_prime(a, p):
     raise RuntimeError("No b found.")
 
 
-if GMPY2:
+if GMPY2:  # pragma: no branch
 
     def inverse_mod(a, m):
         """Inverse of a mod m."""
@@ -228,14 +229,14 @@ if GMPY2:
         return powmod(a, -1, m)
 
 
-elif GMPY:
+elif GMPY:  # pragma: no branch
 
     def inverse_mod(a, m):
         """Inverse of a mod m."""
-        # while libgmp likely does support inverses modulo, it is accessible
-        # only using the native `pow()` function, and `pow()` sanity checks
-        # the parameters before passing them on to underlying implementation
-        # on Python2
+        # while libgmp does support inverses modulo, it is accessible
+        # only using the native `pow()` function, and `pow()` in gmpy sanity
+        # checks the parameters before passing them on to underlying
+        # implementation
         if a == 0:
             return 0
         a = mpz(a)
@@ -250,7 +251,16 @@ elif GMPY:
         return lm % m
 
 
-else:
+elif sys.version_info >= (3, 8):  # pragma: no branch
+
+    def inverse_mod(a, m):
+        """Inverse of a mod m."""
+        if a == 0:
+            return 0
+        return pow(a, -1, m)
+
+
+else:  # pragma: no branch
 
     def inverse_mod(a, m):
         """Inverse of a mod m."""
