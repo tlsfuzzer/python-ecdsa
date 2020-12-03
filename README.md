@@ -42,6 +42,7 @@ If `gmpy2` or `gmpy` is installed, they will be used for faster arithmetic.
 Either of them can be installed after this library is installed,
 `python-ecdsa` will detect their presence on start-up and use them
 automatically.
+You should prefer `gmpy2` on Python3 for optimal performance.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
