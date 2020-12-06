@@ -105,7 +105,7 @@ install:
       else
         travis_retry pip install -r build-requirements.txt;
       fi
-  - if [[ $TOX_ENV =~ gmpy2 ]]; then travis_retry pip install gmpy2; fi
+  - if [[ $TOX_ENV =~ gmpy2 ]] || [[ $INSTRUMENTAL ]]; then travis_retry pip install gmpy2; fi
   - if [[ $TOX_ENV =~ gmpyp ]]; then travis_retry pip install gmpy; fi
   - if [[ $INSTRUMENTAL ]]; then travis_retry pip install instrumental; fi
   - pip list
@@ -117,8 +117,7 @@ script:
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
         git checkout $PR_FIRST^
-        # exclude the super slow test_malformed_sigs.py, until #127 is merged
-        files="$(ls src/ecdsa/test*.py | grep -v test_malformed_sigs.py)"
+        files="$(ls src/ecdsa/test*.py)"
         instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` $files
         instrumental -f .instrumental.cov -s
         instrumental -f .instrumental.cov -s | python diff-instrumental.py --save .diff-instrumental
