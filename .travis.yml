@@ -179,7 +179,7 @@ script:
       fi
   - if [[ $MUTATION ]]; then wait $COSMIC_PID ; kill $REPORT_PID ; true; fi
   - if [[ $MUTATION ]]; then cr-report --show-output session.sqlite | tail -n 40; fi
-  - if [[ $MUTATION ]]; then cr-rate --estimate --fail-over 25 --confidence 99.9 session.sqlite; fi
+  - if [[ $MUTATION ]]; then cr-rate --estimate --fail-over 29 --confidence 99.9 session.sqlite; fi
 after_success:
   - if [[ -z $INSTRUMENTAL && -z $MUTATION ]]; then coveralls; fi
 
