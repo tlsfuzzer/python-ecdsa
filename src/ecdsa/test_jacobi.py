@@ -1,5 +1,6 @@
 import pickle
 import sys
+import pytest
 
 try:
     import unittest2 as unittest
@@ -218,7 +219,8 @@ class TestJacobi(unittest.TestCase):
     @example(0)
     @example(int(generator_brainpoolp160r1.order()))
     def test_precompute(self, mul):
-        precomp = PointJacobi.from_affine(generator_brainpoolp160r1, True)
+        precomp = generator_brainpoolp160r1
+        self.assertTrue(precomp._PointJacobi__precompute)
         pj = PointJacobi.from_affine(generator_brainpoolp160r1)
 
         a = precomp * mul
@@ -440,7 +442,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(j_g * 2, j_g.mul_add(1, j_g, 1))
 
     def test_mul_add_precompute(self):
-        j_g = PointJacobi.from_affine(generator_256, True)
+        j_g = PointJacobi.from_affine(generator_brainpoolp160r1, True)
         b = PointJacobi.from_affine(j_g * 255, True)
 
         self.assertEqual(j_g * 256, j_g + b)
@@ -448,7 +450,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(j_g * (5 + 255 * 7), j_g.mul_add(5, b, 7))
 
     def test_mul_add_precompute_large(self):
-        j_g = PointJacobi.from_affine(generator_256, True)
+        j_g = PointJacobi.from_affine(generator_brainpoolp160r1, True)
         b = PointJacobi.from_affine(j_g * 255, True)
 
         self.assertEqual(j_g * 256, j_g + b)
