@@ -6,6 +6,7 @@ import unittest
 import threading
 import time
 import copy
+import pytest
 from ._rwlock import RWLock
 
 
@@ -77,6 +78,8 @@ class Reader(threading.Thread):
         self.__rw_lock.reader_release()
 
 
+# as those tests use sleep() for synchronisation, they are relatively slow
+@pytest.mark.slow
 class RWLockTestCase(unittest.TestCase):
     def test_readers_nonexclusive_access(self):
         (buffer_, rw_lock, threads) = self.__init_variables()
