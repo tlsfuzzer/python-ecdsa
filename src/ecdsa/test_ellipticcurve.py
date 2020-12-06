@@ -40,7 +40,7 @@ g_23 = Point(c_23, 13, 7, 7)
 
 
 HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
-HYP_SLOW_SETTINGS["max_examples"] = 10
+HYP_SLOW_SETTINGS["max_examples"] = 2
 
 
 @settings(**HYP_SLOW_SETTINGS)

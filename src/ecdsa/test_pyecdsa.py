@@ -80,7 +80,7 @@ HYP_SETTINGS = {}
 
 
 if "--fast" in sys.argv:
-    HYP_SETTINGS["max_examples"] = 20
+    HYP_SETTINGS["max_examples"] = 2
 
 
 def run_openssl(cmd):
@@ -146,41 +146,13 @@ class ECDSA(unittest.TestCase):
         self.assertRaises(TypeError, SigningKey)
         self.assertRaises(TypeError, VerifyingKey)
 
-    def test_lengths(self):
+    def test_lengths_default(self):
         default = NIST192p
         priv = SigningKey.generate()
         pub = priv.get_verifying_key()
         self.assertEqual(len(pub.to_string()), default.verifying_key_length)
-        sig = priv.sign(b("data"))
+        sig = priv.sign(b"data")
         self.assertEqual(len(sig), default.signature_length)
-        for curve in (
-            NIST192p,
-            NIST224p,
-            NIST256p,
-            NIST384p,
-            NIST521p,
-            BRAINPOOLP160r1,
-            BRAINPOOLP192r1,
-            BRAINPOOLP224r1,
-            BRAINPOOLP256r1,
-            BRAINPOOLP320r1,
-            BRAINPOOLP384r1,
-            BRAINPOOLP512r1,
-            BRAINPOOLP160t1,
-            BRAINPOOLP192t1,
-            BRAINPOOLP224t1,
-            BRAINPOOLP256t1,
-            BRAINPOOLP320t1,
-            BRAINPOOLP384t1,
-            BRAINPOOLP512t1,
-        ):
-            priv = SigningKey.generate(curve=curve)
-            pub1 = priv.get_verifying_key()
-            pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
-            self.assertEqual(pub1.to_string(), pub2.to_string())
-            self.assertEqual(len(pub1.to_string()), curve.verifying_key_length)
-            sig = priv.sign(b("data"))
-            self.assertEqual(len(sig), curve.signature_length)
 
     def test_serialize(self):
         seed = b("secret")
@@ -1013,6 +985,23 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     assert vk.pubkey.point == from_enc.pubkey.point
 
 
+if "--fast" in sys.argv:
+    params = [NIST192p, BRAINPOOLP160r1]
+else:
+    params = curves
+
+
+@pytest.mark.parametrize("curve", params)
+def test_lengths(curve):
+    priv = SigningKey.generate(curve=curve)
+    pub1 = priv.get_verifying_key()
+    pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
+    assert pub1.to_string() == pub2.to_string()
+    assert len(pub1.to_string()) == curve.verifying_key_length
+    sig = priv.sign(b"data")
+    assert len(sig) == curve.signature_length
+
+
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
     # sign/verify arguments changed between 0.9.8 and 1.0.0: the early
@@ -1819,6 +1808,7 @@ class DER(unittest.TestCase):
 
 
 class Util(unittest.TestCase):
+    @pytest.mark.slow
     def test_trytryagain(self):
         tta = util.randrange_from_seed__trytryagain
         for i in range(1000):
@@ -1846,7 +1836,7 @@ class Util(unittest.TestCase):
         seed = b"text"
         n = tta(seed, order)
         # known issue: https://github.com/warner/python-ecdsa/issues/221
-        if sys.version_info < (3, 0):  # pragma: no branch
+        if sys.version_info < (3, 0):
             self.assertEqual(n, 228)
         else:
             self.assertEqual(n, 18)
@@ -2184,6 +2174,7 @@ class RFC6932(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP384r1(self):
         self._do(
             curve=curve_brainpoolp384r1,
@@ -2230,6 +2221,7 @@ class RFC6932(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP512r1(self):
         self._do(
             curve=curve_brainpoolp512r1,
@@ -2334,6 +2326,7 @@ class RFC7027(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP384r1(self):
         self._do(
             curve=curve_brainpoolp384r1,
@@ -2380,6 +2373,7 @@ class RFC7027(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP512r1(self):
         self._do(
             curve=curve_brainpoolp512r1,

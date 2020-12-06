@@ -159,7 +159,7 @@ if "--fast" in sys.argv:
 
 slow_params = dict(params)
 if "--fast" in sys.argv:
-    slow_params["max_examples"] = 2
+    slow_params["max_examples"] = 1
 else:
     slow_params["max_examples"] = 10
 
@@ -318,7 +318,7 @@ def test_random_der_as_signature(params, der):
         verifying_key.verify(der, example_data, sigdecode=sigdecode_der)
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st.sampled_from(keys_and_sigs), st.binary(max_size=1024**2))
 @example(
     keys_and_sigs[0], encode_sequence(encode_integer(0), encode_integer(0))
