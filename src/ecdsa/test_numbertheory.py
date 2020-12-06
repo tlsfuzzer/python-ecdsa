@@ -253,12 +253,12 @@ if HC_PRESENT:  # pragma: no branch
     # the factorization() sometimes takes a long time to finish
     HYP_SETTINGS["deadline"] = 5000
 
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     HYP_SETTINGS["max_examples"] = 20
 
 
 HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     HYP_SLOW_SETTINGS["max_examples"] = 1
 else:
     HYP_SLOW_SETTINGS["max_examples"] = 20

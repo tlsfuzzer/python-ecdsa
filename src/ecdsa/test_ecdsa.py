@@ -634,7 +634,7 @@ def st_random_gen_key_msg_nonce(draw):
 
 
 SIG_VER_SETTINGS = dict(HYP_SETTINGS)
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     SIG_VER_SETTINGS["max_examples"] = 1
 else:
     SIG_VER_SETTINGS["max_examples"] = 10

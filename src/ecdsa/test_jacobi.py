@@ -34,7 +34,7 @@ if sys.version_info > (2, 7):  # pragma: no branch
 
 
 SLOW_SETTINGS = {}
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     SLOW_SETTINGS["max_examples"] = 2
 else:
     SLOW_SETTINGS["max_examples"] = 10

@@ -466,7 +466,7 @@ def st_oid(draw, max_value=2**512, max_size=50):
 HYP_SETTINGS = {}
 
 
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     HYP_SETTINGS["max_examples"] = 2
 
 

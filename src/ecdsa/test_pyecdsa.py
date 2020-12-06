@@ -79,7 +79,7 @@ class SubprocessError(Exception):
 HYP_SETTINGS = {}
 
 
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     HYP_SETTINGS["max_examples"] = 2
 
 
@@ -985,7 +985,7 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     assert vk.pubkey.point == from_enc.pubkey.point
 
 
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     params = [NIST192p, BRAINPOOLP160r1]
 else:
     params = curves
@@ -1836,9 +1836,9 @@ class Util(unittest.TestCase):
         seed = b"text"
         n = tta(seed, order)
         # known issue: https://github.com/warner/python-ecdsa/issues/221
-        if sys.version_info < (3, 0):
+        if sys.version_info < (3, 0):  # pragma: no branch
             self.assertEqual(n, 228)
-        else:
+        else:  # pragma: no branch
             self.assertEqual(n, 18)
 
     @settings(**HYP_SETTINGS)

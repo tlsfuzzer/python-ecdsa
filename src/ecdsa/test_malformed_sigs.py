@@ -154,11 +154,11 @@ if sys.version_info >= (2, 7):  # pragma: no branch
         HealthCheck.filter_too_much,
         HealthCheck.too_slow,
     ]
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     params["max_examples"] = 20
 
 slow_params = dict(params)
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     slow_params["max_examples"] = 1
 else:
     slow_params["max_examples"] = 10
