@@ -174,8 +174,8 @@ script:
             cr-report session.sqlite | tail -n 3;
           done &
           REPORT_PID=$!
-          # kill exec after 25 minutes
-          (sleep $((60*25)); kill $COSMIC_PID) &
+          # kill exec after 40 minutes
+          (sleep $((60*40)); kill $COSMIC_PID) &
       fi
   - if [[ $MUTATION ]]; then wait $COSMIC_PID ; kill $REPORT_PID ; true; fi
   - if [[ $MUTATION ]]; then cr-report --show-output session.sqlite | tail -n 40; fi

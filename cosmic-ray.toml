@@ -1,7 +1,7 @@
 [cosmic-ray]
 module-path = "src"
 python-version = ""
-timeout = 30.0
+timeout = 20.0
 exclude-modules = ['src/ecdsa/_version.py', 'src/ecdsa/test*']
 test-command = "pytest -x --fast -m 'not slow' src/"
 
