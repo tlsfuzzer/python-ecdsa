@@ -22,7 +22,7 @@ from .numbertheory import inverse_mod
 
 
 SLOW_SETTINGS = {}
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     SLOW_SETTINGS["max_examples"] = 2
 else:
     SLOW_SETTINGS["max_examples"] = 10
