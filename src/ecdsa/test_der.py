@@ -7,9 +7,10 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+import sys
 from six import b
 import hypothesis.strategies as st
-from hypothesis import given, example
+from hypothesis import given, example, settings
 import pytest
 from ._compat import str_idx_as_int
 from .curves import NIST256p, NIST224p
@@ -21,6 +22,9 @@ from .der import (
     remove_bitstring,
     remove_object,
     encode_oid,
+    remove_constructed,
+    remove_octet_string,
+    remove_sequence,
 )
 
 
@@ -70,6 +74,18 @@ class TestRemoveInteger(unittest.TestCase):
 
         self.assertEqual(val, 128)
         self.assertFalse(rem)
+
+    def test_wrong_tag(self):
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_integer(b"\x01\x02\x00\x80")
+
+        self.assertIn("wanted type 'integer'", str(e.exception))
+
+    def test_wrong_length(self):
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_integer(b"\x02\x03\x00\x80")
+
+        self.assertIn("Length longer", str(e.exception))
 
 
 class TestReadLength(unittest.TestCase):
@@ -368,6 +384,70 @@ class TestRemoveObject(unittest.TestCase):
             remove_object(b"\x06\x03\x88\x37")
 
 
+class TestRemoveConstructed(unittest.TestCase):
+    def test_simple(self):
+        data = b"\xa1\x02\xff\xaa"
+
+        tag, body, rest = remove_constructed(data)
+
+        self.assertEqual(tag, 0x01)
+        self.assertEqual(body, b"\xff\xaa")
+        self.assertEqual(rest, b"")
+
+    def test_with_malformed_tag(self):
+        data = b"\x01\x02\xff\xaa"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            tag, body, rest = remove_constructed(data)
+
+        self.assertIn("constructed tag", str(e.exception))
+
+
+class TestRemoveOctetString(unittest.TestCase):
+    def test_simple(self):
+        data = b"\x04\x03\xaa\xbb\xcc"
+        body, rest = remove_octet_string(data)
+        self.assertEqual(body, b"\xaa\xbb\xcc")
+        self.assertEqual(rest, b"")
+
+    def test_with_malformed_tag(self):
+        data = b"\x03\x03\xaa\xbb\xcc"
+        with self.assertRaises(UnexpectedDER) as e:
+            body, rest = remove_octet_string(data)
+
+        self.assertIn("octetstring", str(e.exception))
+
+
+class TestRemoveSequence(unittest.TestCase):
+    def test_simple(self):
+        data = b"\x30\x02\xff\xaa"
+        body, rest = remove_sequence(data)
+        self.assertEqual(body, b"\xff\xaa")
+        self.assertEqual(rest, b"")
+
+    def test_with_empty_string(self):
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_sequence(b"")
+
+        self.assertIn("Empty string", str(e.exception))
+
+    def test_with_wrong_tag(self):
+        data = b"\x20\x02\xff\xaa"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_sequence(data)
+
+        self.assertIn("wanted type 'sequence'", str(e.exception))
+
+    def test_with_wrong_length(self):
+        data = b"\x30\x03\xff\xaa"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_sequence(data)
+
+        self.assertIn("Length longer", str(e.exception))
+
+
 @st.composite
 def st_oid(draw, max_value=2 ** 512, max_size=50):
     """
@@ -389,6 +469,14 @@ def st_oid(draw, max_value=2 ** 512, max_size=50):
     return (first, second) + tuple(rest)
 
 
+HYP_SETTINGS = {}
+
+
+if "--fast" in sys.argv:  # pragma: no cover
+    HYP_SETTINGS["max_examples"] = 2
+
+
+@settings(**HYP_SETTINGS)
 @given(st_oid())
 def test_oids(ids):
     encoded_oid = encode_oid(*ids)

@@ -145,12 +145,17 @@ if sys.version_info >= (2, 7):  # pragma: no branch
         HealthCheck.filter_too_much,
         HealthCheck.too_slow,
     ]
+if "--fast" in sys.argv:  # pragma: no cover
+    params["max_examples"] = 20
 
 slow_params = dict(params)
-slow_params["max_examples"] = 10
+if "--fast" in sys.argv:  # pragma: no cover
+    slow_params["max_examples"] = 1
+else:
+    slow_params["max_examples"] = 10
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st_fuzzed_sig(keys_and_sigs))
 def test_fuzzed_der_signatures(args):
     verifying_key, sig = args
@@ -296,7 +301,7 @@ def st_der():
     )
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st.sampled_from(keys_and_sigs), st_der())
 def test_random_der_as_signature(params, der):
     """Check if random DER structures are rejected as signature"""
@@ -306,7 +311,7 @@ def test_random_der_as_signature(params, der):
         verifying_key.verify(der, example_data, sigdecode=sigdecode_der)
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st.sampled_from(keys_and_sigs), st.binary(max_size=1024 ** 2))
 @example(
     keys_and_sigs[0], encode_sequence(encode_integer(0), encode_integer(0))
@@ -341,7 +346,7 @@ byte string.
 """
 
 
-@settings(**params)
+@settings(**slow_params)
 @given(st_fuzzed_sig(keys_and_string_sigs))
 def test_fuzzed_string_signatures(params):
     verifying_key, sig = params

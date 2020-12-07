@@ -361,6 +361,7 @@ OPENSSL_SUPPORTED_CURVES = set(
 )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "vcurve", curves, ids=[curve.name for curve in curves]
 )

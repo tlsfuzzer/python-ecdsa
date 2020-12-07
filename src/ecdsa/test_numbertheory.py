@@ -2,6 +2,7 @@ import operator
 from six import print_
 from functools import reduce
 import operator
+import sys
 
 try:
     import unittest2 as unittest
@@ -67,6 +68,7 @@ def test_next_prime_with_nums_less_2(val):
     assert next_prime(val) == 2
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("prime", smallprimes)
 def test_square_root_mod_prime_for_small_primes(prime):
     squares = set()
@@ -82,6 +84,32 @@ def test_square_root_mod_prime_for_small_primes(prime):
             continue
         with pytest.raises(SquareRootError):
             square_root_mod_prime(nonsquare, prime)
+
+
+def test_square_root_mod_prime_for_2():
+    a = square_root_mod_prime(1, 2)
+    assert a == 1
+
+
+def test_square_root_mod_prime_for_small_prime():
+    root = square_root_mod_prime(98 ** 2 % 101, 101)
+    assert root * root % 101 == 9
+
+
+def test_square_root_mod_prime_for_p_congruent_5():
+    p = 13
+    assert p % 8 == 5
+
+    root = square_root_mod_prime(3, p)
+    assert root * root % p == 3
+
+
+def test_square_root_mod_prime_for_p_congruent_5_large_d():
+    p = 29
+    assert p % 8 == 5
+
+    root = square_root_mod_prime(4, p)
+    assert root * root % p == 4
 
 
 @st.composite
@@ -202,9 +230,15 @@ if HC_PRESENT:  # pragma: no branch
     # the factorization() sometimes takes a long time to finish
     HYP_SETTINGS["deadline"] = 5000
 
+if "--fast" in sys.argv:  # pragma: no cover
+    HYP_SETTINGS["max_examples"] = 20
+
 
 HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
-HYP_SLOW_SETTINGS["max_examples"] = 10
+if "--fast" in sys.argv:  # pragma: no cover
+    HYP_SLOW_SETTINGS["max_examples"] = 1
+else:
+    HYP_SLOW_SETTINGS["max_examples"] = 20
 
 
 class TestNumbertheory(unittest.TestCase):
@@ -239,6 +273,7 @@ class TestNumbertheory(unittest.TestCase):
         n = gcd(numbers)
         assert n == 1
 
+    @settings(**HYP_SLOW_SETTINGS)
     @given(
         st.lists(
             st.integers(min_value=1, max_value=2 ** 8192),
@@ -257,6 +292,7 @@ class TestNumbertheory(unittest.TestCase):
         assert lcm([3, 5 * 3, 7 * 3]) == 3 * 5 * 7
         assert lcm(3) == 3
 
+    @settings(**HYP_SLOW_SETTINGS)
     @given(
         st.lists(
             st.integers(min_value=1, max_value=2 ** 8192),
@@ -275,7 +311,7 @@ class TestNumbertheory(unittest.TestCase):
         "meet requirements (like `is_prime()`), the test "
         "case times-out on it",
     )
-    @settings(**HYP_SETTINGS)
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st_num_square_prime())
     def test_square_root_mod_prime(self, vals):
         square, prime = vals
@@ -283,7 +319,8 @@ class TestNumbertheory(unittest.TestCase):
         calc = square_root_mod_prime(square, prime)
         assert calc * calc % prime == square
 
-    @settings(**HYP_SETTINGS)
+    @pytest.mark.slow
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st.integers(min_value=1, max_value=10 ** 12))
     @example(265399 * 1526929)
     @example(373297 ** 2 * 553991)
@@ -294,7 +331,33 @@ class TestNumbertheory(unittest.TestCase):
             mult *= i[0] ** i[1]
         assert mult == num
 
-    @settings(**HYP_SETTINGS)
+    def test_factorisation_smallprimes(self):
+        exp = 101 * 103
+        assert 101 in smallprimes
+        assert 103 in smallprimes
+        factors = factorization(exp)
+        mult = 1
+        for i in factors:
+            mult *= i[0] ** i[1]
+        assert mult == exp
+
+    def test_factorisation_not_smallprimes(self):
+        exp = 1231 * 1237
+        assert 1231 not in smallprimes
+        assert 1237 not in smallprimes
+        factors = factorization(exp)
+        mult = 1
+        for i in factors:
+            mult *= i[0] ** i[1]
+        assert mult == exp
+
+    def test_jacobi_with_zero(self):
+        assert jacobi(0, 3) == 0
+
+    def test_jacobi_with_one(self):
+        assert jacobi(1, 3) == 1
+
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st.integers(min_value=3, max_value=1000).filter(lambda x: x % 2))
     def test_jacobi(self, mod):
         if is_prime(mod):
@@ -313,6 +376,7 @@ class TestNumbertheory(unittest.TestCase):
                     c *= jacobi(a, i[0]) ** i[1]
                 assert c == jacobi(a, mod)
 
+    @settings(**HYP_SLOW_SETTINGS)
     @given(st_two_nums_rel_prime())
     def test_inverse_mod(self, nums):
         num, mod = nums

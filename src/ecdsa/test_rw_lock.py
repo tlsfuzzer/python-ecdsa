@@ -6,6 +6,7 @@ import unittest
 import threading
 import time
 import copy
+import pytest
 from ._rwlock import RWLock
 
 
@@ -77,14 +78,16 @@ class Reader(threading.Thread):
         self.__rw_lock.reader_release()
 
 
+# as those tests use sleep() for synchronisation, they are relatively slow
+@pytest.mark.slow
 class RWLockTestCase(unittest.TestCase):
     def test_readers_nonexclusive_access(self):
         (buffer_, rw_lock, threads) = self.__init_variables()
 
         threads.append(Reader(buffer_, rw_lock, 0, 0))
-        threads.append(Writer(buffer_, rw_lock, 0.2, 0.4, 1))
-        threads.append(Reader(buffer_, rw_lock, 0.3, 0.3))
-        threads.append(Reader(buffer_, rw_lock, 0.5, 0))
+        threads.append(Writer(buffer_, rw_lock, 0.02, 0.04, 1))
+        threads.append(Reader(buffer_, rw_lock, 0.03, 0.03))
+        threads.append(Reader(buffer_, rw_lock, 0.05, 0))
 
         self.__start_and_join_threads(threads)
 
@@ -103,9 +106,9 @@ class RWLockTestCase(unittest.TestCase):
     def test_writers_exclusive_access(self):
         (buffer_, rw_lock, threads) = self.__init_variables()
 
-        threads.append(Writer(buffer_, rw_lock, 0, 0.4, 1))
-        threads.append(Writer(buffer_, rw_lock, 0.1, 0, 2))
-        threads.append(Reader(buffer_, rw_lock, 0.2, 0))
+        threads.append(Writer(buffer_, rw_lock, 0, 0.04, 1))
+        threads.append(Writer(buffer_, rw_lock, 0.01, 0, 2))
+        threads.append(Reader(buffer_, rw_lock, 0.02, 0))
 
         self.__start_and_join_threads(threads)
 
@@ -119,10 +122,10 @@ class RWLockTestCase(unittest.TestCase):
         (buffer_, rw_lock, threads) = self.__init_variables()
 
         threads.append(Writer(buffer_, rw_lock, 0, 0, 1))
-        threads.append(Reader(buffer_, rw_lock, 0.1, 0.4))
-        threads.append(Writer(buffer_, rw_lock, 0.2, 0, 2))
-        threads.append(Reader(buffer_, rw_lock, 0.3, 0))
-        threads.append(Reader(buffer_, rw_lock, 0.3, 0))
+        threads.append(Reader(buffer_, rw_lock, 0.01, 0.04))
+        threads.append(Writer(buffer_, rw_lock, 0.02, 0, 2))
+        threads.append(Reader(buffer_, rw_lock, 0.03, 0))
+        threads.append(Reader(buffer_, rw_lock, 0.03, 0))
 
         self.__start_and_join_threads(threads)
 
@@ -140,11 +143,11 @@ class RWLockTestCase(unittest.TestCase):
         (buffer_, rw_lock, threads) = self.__init_variables()
 
         threads.append(Writer(buffer_, rw_lock, 0, 0, 1))
-        threads.append(Reader(buffer_, rw_lock, 0.1, 0.6))
-        threads.append(Writer(buffer_, rw_lock, 0.2, 0.1, 2))
-        threads.append(Reader(buffer_, rw_lock, 0.3, 0))
-        threads.append(Reader(buffer_, rw_lock, 0.4, 0))
-        threads.append(Writer(buffer_, rw_lock, 0.5, 0.1, 3))
+        threads.append(Reader(buffer_, rw_lock, 0.01, 0.06))
+        threads.append(Writer(buffer_, rw_lock, 0.02, 0.01, 2))
+        threads.append(Reader(buffer_, rw_lock, 0.03, 0))
+        threads.append(Reader(buffer_, rw_lock, 0.04, 0))
+        threads.append(Writer(buffer_, rw_lock, 0.05, 0.01, 3))
 
         self.__start_and_join_threads(threads)
 

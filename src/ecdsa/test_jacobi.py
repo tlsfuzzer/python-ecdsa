@@ -1,4 +1,6 @@
 import pickle
+import sys
+import pytest
 
 try:
     import unittest2 as unittest
@@ -17,6 +19,13 @@ from .ecdsa import (
     curve_brainpoolp160r1,
 )
 from .numbertheory import inverse_mod
+
+
+SLOW_SETTINGS = {}
+if "--fast" in sys.argv:  # pragma: no cover
+    SLOW_SETTINGS["max_examples"] = 2
+else:
+    SLOW_SETTINGS["max_examples"] = 10
 
 
 class TestJacobi(unittest.TestCase):
@@ -186,7 +195,7 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(dbl, mlpl)
 
-    @settings(max_examples=10)
+    @settings(**SLOW_SETTINGS)
     @given(
         st.integers(
             min_value=0, max_value=int(generator_brainpoolp160r1.order())
@@ -201,7 +210,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual((pj.x(), pj.y()), (pw.x(), pw.y()))
         self.assertEqual(pj, pw)
 
-    @settings(max_examples=10)
+    @settings(**SLOW_SETTINGS)
     @given(
         st.integers(
             min_value=0, max_value=int(generator_brainpoolp160r1.order())
@@ -210,7 +219,8 @@ class TestJacobi(unittest.TestCase):
     @example(0)
     @example(int(generator_brainpoolp160r1.order()))
     def test_precompute(self, mul):
-        precomp = PointJacobi.from_affine(generator_brainpoolp160r1, True)
+        precomp = generator_brainpoolp160r1
+        self.assertTrue(precomp._PointJacobi__precompute)
         pj = PointJacobi.from_affine(generator_brainpoolp160r1)
 
         a = precomp * mul
@@ -218,7 +228,7 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(a, b)
 
-    @settings(max_examples=10)
+    @settings(**SLOW_SETTINGS)
     @given(
         st.integers(
             min_value=1, max_value=int(generator_brainpoolp160r1.order())
@@ -237,7 +247,7 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
-    @settings(max_examples=10)
+    @settings(**SLOW_SETTINGS)
     @given(
         st.integers(
             min_value=1, max_value=int(generator_brainpoolp160r1.order())
@@ -269,7 +279,8 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
-    @settings(max_examples=10)
+    @pytest.mark.slow
+    @settings(**SLOW_SETTINGS)
     @given(
         st.integers(
             min_value=1, max_value=int(generator_brainpoolp160r1.order())
@@ -311,7 +322,31 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
-    @settings(max_examples=14)
+    def test_add_same_scale_points_static(self):
+        j_g = generator_brainpoolp160r1
+        p = curve_brainpoolp160r1.p()
+        a = j_g * 11
+        a.scale()
+        z1 = 13
+        x = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z1 ** 2 % p,
+            a.y() * z1 ** 3 % p,
+            z1,
+        )
+        y = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z1 ** 2 % p,
+            a.y() * z1 ** 3 % p,
+            z1,
+        )
+
+        c = a + a
+
+        self.assertEqual(c, x + y)
+
+    @pytest.mark.slow
+    @settings(**SLOW_SETTINGS)
     @given(
         st.integers(
             min_value=1, max_value=int(generator_brainpoolp160r1.order())
@@ -362,6 +397,30 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
+    def test_add_different_scale_points_static(self):
+        j_g = generator_brainpoolp160r1
+        p = curve_brainpoolp160r1.p()
+        a = j_g * 11
+        a.scale()
+        z1 = 13
+        x = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z1 ** 2 % p,
+            a.y() * z1 ** 3 % p,
+            z1,
+        )
+        z2 = 29
+        y = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z2 ** 2 % p,
+            a.y() * z2 ** 3 % p,
+            z2,
+        )
+
+        c = a + a
+
+        self.assertEqual(c, x + y)
+
     def test_add_point_3_times(self):
         j_g = PointJacobi.from_affine(generator_256)
 
@@ -383,7 +442,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(j_g * 2, j_g.mul_add(1, j_g, 1))
 
     def test_mul_add_precompute(self):
-        j_g = PointJacobi.from_affine(generator_256, True)
+        j_g = PointJacobi.from_affine(generator_brainpoolp160r1, True)
         b = PointJacobi.from_affine(j_g * 255, True)
 
         self.assertEqual(j_g * 256, j_g + b)
@@ -391,7 +450,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(j_g * (5 + 255 * 7), j_g.mul_add(5, b, 7))
 
     def test_mul_add_precompute_large(self):
-        j_g = PointJacobi.from_affine(generator_256, True)
+        j_g = PointJacobi.from_affine(generator_brainpoolp160r1, True)
         b = PointJacobi.from_affine(j_g * 255, True)
 
         self.assertEqual(j_g * 256, j_g + b)
