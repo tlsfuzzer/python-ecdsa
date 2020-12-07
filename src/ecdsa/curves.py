@@ -10,6 +10,7 @@ __all__ = [
     "UnknownCurveError",
     "orderlen",
     "Curve",
+    "SECP112r1",
     "NIST192p",
     "NIST224p",
     "NIST256p",
@@ -47,6 +48,16 @@ class Curve:
 
     def __repr__(self):
         return self.name
+
+
+# the SEC curves
+SECP112r1 = Curve(
+    "SECP112r1",
+    ecdsa.curve_112r1,
+    ecdsa.generator_112r1,
+    (1, 3, 132, 0, 6),
+    "secp112r1",
+)
 
 
 # the NIST curves
@@ -167,6 +178,7 @@ BRAINPOOLP512r1 = Curve(
 )
 
 
+# no order in particular, but keep previously added curves first
 curves = [
     NIST192p,
     NIST224p,
@@ -181,6 +193,7 @@ curves = [
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
+    SECP112r1,
 ]
 
 

@@ -26,6 +26,7 @@ from .util import sigdecode_der, sigdecode_strings
 from .util import number_to_string, encoded_oid_ecPublicKey, MalformedSignature
 from .curves import Curve, UnknownCurveError
 from .curves import (
+    SECP112r1,
     NIST192p,
     NIST224p,
     NIST256p,
@@ -867,6 +868,13 @@ class OpenSSL(unittest.TestCase):
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
     @pytest.mark.skipif(
+        "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp112r1",
+    )
+    def test_from_openssl_secp112r1(self):
+        return self.do_test_from_openssl(SECP112r1)
+
+    @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
     )
@@ -1029,6 +1037,13 @@ class OpenSSL(unittest.TestCase):
             privkey_p8_pem = e.read()
         sk_from_p8 = SigningKey.from_pem(privkey_p8_pem)
         self.assertEqual(sk, sk_from_p8)
+
+    @pytest.mark.skipif(
+        "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp112r1",
+    )
+    def test_to_openssl_secp112r1(self):
+        self.do_test_to_openssl(SECP112r1)
 
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,

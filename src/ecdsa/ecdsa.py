@@ -294,6 +294,21 @@ def point_is_valid(generator, x, y):
     return True
 
 
+# secp112r1 curve
+_p = int(remove_whitespace("DB7C 2ABF62E3 5E668076 BEAD208B"), 16)
+# s = 00F50B02 8E4D696E 67687561 51752904 72783FB1
+_a = int(remove_whitespace("DB7C 2ABF62E3 5E668076 BEAD2088"), 16)
+_b = int(remove_whitespace("659E F8BA0439 16EEDE89 11702B22"), 16)
+_Gx = int(remove_whitespace("09487239 995A5EE7 6B55F9C2 F098"), 16)
+_Gy = int(remove_whitespace("A89C E5AF8724 C0A23E0E 0FF77500"), 16)
+_r = int(remove_whitespace("DB7C 2ABF62E3 5E7628DF AC6561C5"), 16)
+_h = 1
+curve_112r1 = ellipticcurve.CurveFp(_p, _a, _b, _h)
+generator_112r1 = ellipticcurve.PointJacobi(
+    curve_112r1, _Gx, _Gy, 1, _r, generator=True
+)
+
+
 # NIST Curve P-192:
 _p = 6277101735386680763835789423207666416083908700390324961279
 _r = 6277101735386680763835789423176059013767194773182842284081
