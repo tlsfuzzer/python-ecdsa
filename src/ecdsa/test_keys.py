@@ -24,7 +24,9 @@ from .util import (
     sigdecode_der,
     sigdecode_strings,
 )
-from .curves import NIST256p
+from .curves import NIST256p, Curve, BRAINPOOLP160r1
+from .ellipticcurve import Point
+from .ecdsa import generator_brainpoolp160r1
 
 
 class TestVerifyingKeyFromString(unittest.TestCase):
@@ -200,6 +202,17 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
     def test_inequality_on_verifying_keys_not_implemented(self):
         self.assertNotEqual(self.vk, None)
+
+    def test_inequality_on_wrong_types(self):
+        self.assertNotEqual(self.vk, self.sk)
+
+    def test_from_public_point_old(self):
+        pj = self.vk.pubkey.point
+        point = Point(pj.curve(), pj.x(), pj.y())
+
+        vk = VerifyingKey.from_public_point(point, self.vk.curve)
+
+        self.assertEqual(vk, self.vk)
 
 
 class TestSigningKey(unittest.TestCase):
@@ -452,3 +465,26 @@ def test_SigningKey_with_unlikely_value():
     vk = sk.verifying_key
     sig = sk.sign(b"hello")
     assert vk.verify(sig, b"hello")
+
+
+def test_SigningKey_with_custom_curve_old_point():
+    generator = generator_brainpoolp160r1
+    generator = Point(
+        generator.curve(),
+        generator.x(),
+        generator.y(),
+        generator.order(),
+    )
+
+    curve = Curve(
+        "BRAINPOOLP160r1",
+        generator.curve,
+        generator,
+        (1, 3, 36, 3, 3, 2, 8, 1, 1, 1),
+    )
+
+    sk = SigningKey.from_secret_exponent(12, curve)
+
+    sk2 = SigningKey.from_secret_exponent(12, BRAINPOOLP160r1)
+
+    assert sk.privkey == sk2.privkey
