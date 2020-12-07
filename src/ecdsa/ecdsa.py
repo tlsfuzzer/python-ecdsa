@@ -324,6 +324,22 @@ generator_112r2 = ellipticcurve.PointJacobi(
 )
 
 
+# secp128r1 curve
+_p = int(remove_whitespace("FFFFFFFD FFFFFFFF FFFFFFFF FFFFFFFF"), 16)
+# S = 000E0D4D 69E6768 75615175 0CC03A44 73D03679
+# a and b are mod p, so a is equal to p-3, or simply -3
+# _a = -3
+_b = int(remove_whitespace("E87579C1 1079F43D D824993C 2CEE5ED3"), 16)
+_Gx = int(remove_whitespace("161FF752 8B899B2D 0C28607C A52C5B86"), 16)
+_Gy = int(remove_whitespace("CF5AC839 5BAFEB13 C02DA292 DDED7A83"), 16)
+_r = int(remove_whitespace("FFFFFFFE 00000000 75A30D1B 9038A115"), 16)
+_h = 1
+curve_128r1 = ellipticcurve.CurveFp(_p, -3, _b, _h)
+generator_128r1 = ellipticcurve.PointJacobi(
+    curve_128r1, _Gx, _Gy, 1, _r, generator=True
+)
+
+
 # NIST Curve P-192:
 _p = 6277101735386680763835789423207666416083908700390324961279
 _r = 6277101735386680763835789423176059013767194773182842284081

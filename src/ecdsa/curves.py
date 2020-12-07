@@ -12,6 +12,7 @@ __all__ = [
     "Curve",
     "SECP112r1",
     "SECP112r2",
+    "SECP128r1",
     "NIST192p",
     "NIST224p",
     "NIST256p",
@@ -67,6 +68,15 @@ SECP112r2 = Curve(
     ecdsa.generator_112r2,
     (1, 3, 132, 0, 7),
     "secp112r2",
+)
+
+
+SECP128r1 = Curve(
+    "SECP128r1",
+    ecdsa.curve_128r1,
+    ecdsa.generator_128r1,
+    (1, 3, 132, 0, 28),
+    "secp128r1",
 )
 
 
@@ -205,6 +215,7 @@ curves = [
     BRAINPOOLP512r1,
     SECP112r1,
     SECP112r2,
+    SECP128r1,
 ]
 
 
