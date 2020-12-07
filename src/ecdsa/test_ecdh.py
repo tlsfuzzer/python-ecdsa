@@ -4,9 +4,27 @@ import subprocess
 import pytest
 from binascii import hexlify, unhexlify
 
-from .curves import NIST192p, NIST224p, NIST256p, NIST384p, NIST521p
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
+from .curves import (
+    NIST192p,
+    NIST224p,
+    NIST256p,
+    NIST384p,
+    NIST521p,
+    BRAINPOOLP160r1,
+)
 from .curves import curves
-from .ecdh import ECDH, InvalidCurveError, InvalidSharedSecretError, NoKeyError
+from .ecdh import (
+    ECDH,
+    InvalidCurveError,
+    InvalidSharedSecretError,
+    NoKeyError,
+    NoCurveError,
+)
 from .keys import SigningKey, VerifyingKey
 
 
@@ -26,6 +44,19 @@ def test_ecdh_each(vcurve):
     assert secret1 == secret2
 
 
+def test_ecdh_both_keys_present():
+    key1 = SigningKey.generate(BRAINPOOLP160r1)
+    key2 = SigningKey.generate(BRAINPOOLP160r1)
+
+    ecdh1 = ECDH(BRAINPOOLP160r1, key1, key2.verifying_key)
+    ecdh2 = ECDH(private_key=key2, public_key=key1.verifying_key)
+
+    secret1 = ecdh1.generate_sharedsecret_bytes()
+    secret2 = ecdh2.generate_sharedsecret_bytes()
+
+    assert secret1 == secret2
+
+
 def test_ecdh_no_public_key():
     ecdh1 = ECDH(curve=NIST192p)
 
@@ -36,6 +67,44 @@ def test_ecdh_no_public_key():
 
     with pytest.raises(NoKeyError):
         ecdh1.generate_sharedsecret_bytes()
+
+
+class TestECDH(unittest.TestCase):
+    def test_load_key_from_wrong_curve(self):
+        ecdh1 = ECDH()
+        ecdh1.set_curve(NIST192p)
+
+        key1 = SigningKey.generate(BRAINPOOLP160r1)
+
+        with self.assertRaises(InvalidCurveError) as e:
+            ecdh1.load_private_key(key1)
+
+        self.assertIn("Curve mismatch", str(e.exception))
+
+    def test_generate_without_curve(self):
+        ecdh1 = ECDH()
+
+        with self.assertRaises(NoCurveError) as e:
+            ecdh1.generate_private_key()
+
+        self.assertIn("Curve must be set", str(e.exception))
+
+    def test_load_bytes_without_curve_set(self):
+        ecdh1 = ECDH()
+
+        with self.assertRaises(NoCurveError) as e:
+            ecdh1.load_private_key_bytes(b"\x01" * 32)
+
+        self.assertIn("Curve must be set", str(e.exception))
+
+    def test_set_curve_from_received_public_key(self):
+        ecdh1 = ECDH()
+
+        key1 = SigningKey.generate(BRAINPOOLP160r1)
+
+        ecdh1.load_received_public_key(key1.verifying_key)
+
+        self.assertEqual(ecdh1.curve, BRAINPOOLP160r1)
 
 
 def test_ecdh_wrong_public_key_curve():
