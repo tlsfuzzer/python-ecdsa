@@ -491,3 +491,17 @@ def test_SigningKey_with_custom_curve_old_point():
     sk2 = SigningKey.from_secret_exponent(12, BRAINPOOLP160r1)
 
     assert sk.privkey == sk2.privkey
+
+
+def test_VerifyingKey_inequality_with_different_curves():
+    sk1 = SigningKey.from_secret_exponent(2, BRAINPOOLP160r1)
+    sk2 = SigningKey.from_secret_exponent(2, NIST256p)
+
+    assert sk1.verifying_key != sk2.verifying_key
+
+
+def test_VerifyingKey_inequality_with_different_secret_points():
+    sk1 = SigningKey.from_secret_exponent(2, BRAINPOOLP160r1)
+    sk2 = SigningKey.from_secret_exponent(3, BRAINPOOLP160r1)
+
+    assert sk1.verifying_key != sk2.verifying_key
