@@ -17,6 +17,8 @@ matrix:
   include:
       - python: 2.7
         env: INSTRUMENTAL=yes
+        dist: bionic
+        sudo: true
       - python: 2.6
         env: TOX_ENV=py26
       - python: 2.7
