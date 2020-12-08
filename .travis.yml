@@ -117,17 +117,16 @@ script:
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST != "false" ]]; then
         git checkout $PR_FIRST^
-        files="$(ls src/ecdsa/test*.py)"
-        instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` $files
+        instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa/test*.py
         instrumental -f .instrumental.cov -s
         instrumental -f .instrumental.cov -s | python diff-instrumental.py --save .diff-instrumental
         git checkout $BRANCH
-        instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` src/ecdsa
+        instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa/test*.py
         instrumental -f .instrumental.cov -sr
       fi
   - |
       if [[ $INSTRUMENTAL && $TRAVIS_PULL_REQUEST == "false" ]]; then
-        instrumental -t ecdsa -i 'test.*|.*_version' `which pytest` src/ecdsa
+        instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa
         instrumental -f .instrumental.cov -s
         # just log the values when merging
         instrumental -f .instrumental.cov -s | python diff-instrumental.py
