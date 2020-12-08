@@ -616,7 +616,7 @@ class ECDSA(unittest.TestCase):
 
     def test_public_key_recovery(self):
         # Create keys
-        curve = NIST256p
+        curve = BRAINPOOLP160r1
 
         sk = SigningKey.generate(curve=curve)
         vk = sk.get_verifying_key()
@@ -649,7 +649,7 @@ class ECDSA(unittest.TestCase):
 
     def test_public_key_recovery_with_custom_hash(self):
         # Create keys
-        curve = NIST256p
+        curve = BRAINPOOLP160r1
 
         sk = SigningKey.generate(curve=curve, hashfunc=sha256)
         vk = sk.get_verifying_key()
@@ -660,7 +660,7 @@ class ECDSA(unittest.TestCase):
 
         # Recover verifying keys
         recovered_vks = VerifyingKey.from_public_key_recovery(
-            signature, data, curve, hashfunc=sha256
+            signature, data, curve, hashfunc=sha256, allow_truncate=True
         )
 
         # Test if each pk is valid
@@ -827,6 +827,7 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     from_enc = VerifyingKey.from_string(encoded, curve=curve)
 
     assert vk.pubkey.point == from_enc.pubkey.point
+
 
 
 class OpenSSL(unittest.TestCase):
