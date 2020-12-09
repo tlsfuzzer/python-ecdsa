@@ -29,6 +29,7 @@ from .curves import (
     SECP112r1,
     SECP112r2,
     SECP128r1,
+    SECP160r1,
     NIST192p,
     NIST224p,
     NIST256p,
@@ -313,8 +314,15 @@ class ECDSA(unittest.TestCase):
             def order(self):
                 return 123456789
 
+        class FakeCurveFp:
+            def p(self):
+                return int(
+                    "6525534529039240705020950546962731340"
+                    "4541085228058844382513856749047873406763"
+                )
+
         badcurve = Curve(
-            "unknown", None, FakeGenerator(), (1, 2, 3, 4, 5, 6), None
+            "unknown", FakeCurveFp(), FakeGenerator(), (1, 2, 3, 4, 5, 6), None
         )
         badpub.curve = badcurve
         badder = badpub.to_der()
@@ -832,7 +840,6 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     assert vk.pubkey.point == from_enc.pubkey.point
 
 
-
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
     # sign/verify arguments changed between 0.9.8 and 1.0.0: the early
@@ -889,6 +896,13 @@ class OpenSSL(unittest.TestCase):
     )
     def test_from_openssl_secp128r1(self):
         return self.do_test_from_openssl(SECP128r1)
+
+    @pytest.mark.skipif(
+        "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp160r1",
+    )
+    def test_from_openssl_secp160r1(self):
+        return self.do_test_from_openssl(SECP160r1)
 
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
@@ -1074,6 +1088,13 @@ class OpenSSL(unittest.TestCase):
     )
     def test_to_openssl_secp128r1(self):
         self.do_test_to_openssl(SECP128r1)
+
+    @pytest.mark.skipif(
+        "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp160r1",
+    )
+    def test_to_openssl_secp160r1(self):
+        self.do_test_to_openssl(SECP160r1)
 
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,

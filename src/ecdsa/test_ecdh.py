@@ -375,7 +375,7 @@ def test_ecdh_with_openssl(vcurve):
         if hlp.find("-derive") == 0:  # pragma: no cover
             pytest.skip("system openssl does not support `pkeyutl -derive`")
     except RunOpenSslError:  # pragma: no cover
-        pytest.skip("system openssl does not support `pkeyutl -derive`")
+        pytest.skip("system openssl could not be executed")
 
     if os.path.isdir("t"):  # pragma: no branch
         shutil.rmtree("t")
@@ -412,25 +412,20 @@ def test_ecdh_with_openssl(vcurve):
 
     assert secret1 == secret2
 
-    try:
-        run_openssl(
-            "pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1"
-        )
-        run_openssl(
-            "pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2"
-        )
-    except RunOpenSslError:  # pragma: no cover
-        pytest.skip("system openssl does not support `pkeyutl -derive`")
-        return
+    run_openssl(
+        "pkeyutl -derive -inkey t/privkey1.pem -peerkey t/pubkey2.pem -out t/secret1"
+    )
+    run_openssl(
+        "pkeyutl -derive -inkey t/privkey2.pem -peerkey t/pubkey1.pem -out t/secret2"
+    )
 
     with open("t/secret1", "rb") as e:
         ssl_secret1 = e.read()
     with open("t/secret1", "rb") as e:
         ssl_secret2 = e.read()
 
-    if len(ssl_secret1) != vk1.curve.baselen:  # pragma: no cover
-        pytest.skip("system openssl does not support `pkeyutl -derive`")
-        return
+    assert len(ssl_secret1) == vk1.curve.verifying_key_length // 2
+    assert len(secret1) == vk1.curve.verifying_key_length // 2
 
     assert ssl_secret1 == ssl_secret2
     assert secret1 == ssl_secret1

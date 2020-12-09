@@ -13,6 +13,7 @@ __all__ = [
     "SECP112r1",
     "SECP112r2",
     "SECP128r1",
+    "SECP160r1",
     "NIST192p",
     "NIST224p",
     "NIST256p",
@@ -43,7 +44,7 @@ class Curve:
         self.generator = generator
         self.order = generator.order()
         self.baselen = orderlen(self.order)
-        self.verifying_key_length = 2 * self.baselen
+        self.verifying_key_length = 2 * orderlen(curve.p())
         self.signature_length = 2 * self.baselen
         self.oid = oid
         self.encoded_oid = der.encode_oid(*oid)
@@ -77,6 +78,15 @@ SECP128r1 = Curve(
     ecdsa.generator_128r1,
     (1, 3, 132, 0, 28),
     "secp128r1",
+)
+
+
+SECP160r1 = Curve(
+    "SECP160r1",
+    ecdsa.curve_160r1,
+    ecdsa.generator_160r1,
+    (1, 3, 132, 0, 8),
+    "secp160r1",
 )
 
 
@@ -216,6 +226,7 @@ curves = [
     SECP112r1,
     SECP112r2,
     SECP128r1,
+    SECP160r1,
 ]
 
 

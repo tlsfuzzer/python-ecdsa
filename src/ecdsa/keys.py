@@ -272,12 +272,12 @@ class VerifyingKey(object):
         order = curve.order
         # real assert, from_string() should not call us with different length
         assert len(string) == curve.verifying_key_length
-        xs = string[: curve.baselen]
-        ys = string[curve.baselen :]
-        if len(xs) != curve.baselen:
-            raise MalformedPointError("Unexpected length of encoded x")
-        if len(ys) != curve.baselen:
-            raise MalformedPointError("Unexpected length of encoded y")
+        xs = string[: curve.verifying_key_length // 2]
+        ys = string[curve.verifying_key_length // 2 :]
+        # real assert, verifying_key_length is calculated by multiplying an
+        # integer by two so it will always be even
+        assert len(xs) == curve.verifying_key_length // 2
+        assert len(ys) == curve.verifying_key_length // 2
         x = string_to_number(xs)
         y = string_to_number(ys)
 
@@ -371,7 +371,7 @@ class VerifyingKey(object):
                 raise MalformedPointError(
                     "Invalid X9.62 encoding of the public point"
                 )
-        elif sig_len == curve.baselen + 1:
+        elif sig_len == curve.verifying_key_length // 2 + 1:
             point = cls._from_compressed(string, curve)
         else:
             raise MalformedPointError(
@@ -573,14 +573,14 @@ class VerifyingKey(object):
 
     def _raw_encode(self):
         """Convert the public key to the :term:`raw encoding`."""
-        order = self.pubkey.order
+        order = self.curve.curve.p()
         x_str = number_to_string(self.pubkey.point.x(), order)
         y_str = number_to_string(self.pubkey.point.y(), order)
         return x_str + y_str
 
     def _compressed_encode(self):
         """Encode the public point into the compressed form."""
-        order = self.pubkey.order
+        order = self.curve.curve.p()
         x_str = number_to_string(self.pubkey.point.x(), order)
         if self.pubkey.point.y() & 1:
             return b("\x03") + x_str
