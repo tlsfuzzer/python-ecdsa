@@ -220,11 +220,14 @@ def square_root_mod_prime(a, p):
     raise RuntimeError("No b found.")
 
 
+# because all the inverse_mod code is arch/environment specific, and coveralls
+# expects it to execute equal number of times, we need to waive it by
+# adding the "no branch" pragma to all branches
 if GMPY2:  # pragma: no branch
 
     def inverse_mod(a, m):
         """Inverse of a mod m."""
-        if a == 0:
+        if a == 0:  # pragma: no branch
             return 0
         return powmod(a, -1, m)
 
@@ -237,14 +240,14 @@ elif GMPY:  # pragma: no branch
         # only using the native `pow()` function, and `pow()` in gmpy sanity
         # checks the parameters before passing them on to underlying
         # implementation
-        if a == 0:
+        if a == 0:  # pragma: no branch
             return 0
         a = mpz(a)
         m = mpz(m)
 
         lm, hm = mpz(1), mpz(0)
         low, high = a % m, m
-        while low > 1:
+        while low > 1:  # pragma: no branch
             r = high // low
             lm, low, hm, high = hm - lm * r, high - low * r, lm, low
 
@@ -255,7 +258,7 @@ elif sys.version_info >= (3, 8):  # pragma: no branch
 
     def inverse_mod(a, m):
         """Inverse of a mod m."""
-        if a == 0:
+        if a == 0:  # pragma: no branch
             return 0
         return pow(a, -1, m)
 
@@ -265,12 +268,12 @@ else:  # pragma: no branch
     def inverse_mod(a, m):
         """Inverse of a mod m."""
 
-        if a == 0:
+        if a == 0:  # pragma: no branch
             return 0
 
         lm, hm = 1, 0
         low, high = a % m, m
-        while low > 1:
+        while low > 1:  # pragma: no branch
             r = high // low
             lm, low, hm, high = hm - lm * r, high - low * r, lm, low
 
