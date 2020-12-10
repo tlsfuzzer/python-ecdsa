@@ -294,6 +294,74 @@ def point_is_valid(generator, x, y):
     return True
 
 
+# secp112r1 curve
+_p = int(remove_whitespace("DB7C 2ABF62E3 5E668076 BEAD208B"), 16)
+# s = 00F50B02 8E4D696E 67687561 51752904 72783FB1
+_a = int(remove_whitespace("DB7C 2ABF62E3 5E668076 BEAD2088"), 16)
+_b = int(remove_whitespace("659E F8BA0439 16EEDE89 11702B22"), 16)
+_Gx = int(remove_whitespace("09487239 995A5EE7 6B55F9C2 F098"), 16)
+_Gy = int(remove_whitespace("A89C E5AF8724 C0A23E0E 0FF77500"), 16)
+_r = int(remove_whitespace("DB7C 2ABF62E3 5E7628DF AC6561C5"), 16)
+_h = 1
+curve_112r1 = ellipticcurve.CurveFp(_p, _a, _b, _h)
+generator_112r1 = ellipticcurve.PointJacobi(
+    curve_112r1, _Gx, _Gy, 1, _r, generator=True
+)
+
+
+# secp112r2 curve
+_p = int(remove_whitespace("DB7C 2ABF62E3 5E668076 BEAD208B"), 16)
+# s = 022757A1 114D69E 67687561 51755316 C05E0BD4
+_a = int(remove_whitespace("6127 C24C05F3 8A0AAAF6 5C0EF02C"), 16)
+_b = int(remove_whitespace("51DE F1815DB5 ED74FCC3 4C85D709"), 16)
+_Gx = int(remove_whitespace("4BA30AB5 E892B4E1 649DD092 8643"), 16)
+_Gy = int(remove_whitespace("ADCD 46F5882E 3747DEF3 6E956E97"), 16)
+_r = int(remove_whitespace("36DF 0AAFD8B8 D7597CA1 0520D04B"), 16)
+_h = 4
+curve_112r2 = ellipticcurve.CurveFp(_p, _a, _b, _h)
+generator_112r2 = ellipticcurve.PointJacobi(
+    curve_112r2, _Gx, _Gy, 1, _r, generator=True
+)
+
+
+# secp128r1 curve
+_p = int(remove_whitespace("FFFFFFFD FFFFFFFF FFFFFFFF FFFFFFFF"), 16)
+# S = 000E0D4D 69E6768 75615175 0CC03A44 73D03679
+# a and b are mod p, so a is equal to p-3, or simply -3
+# _a = -3
+_b = int(remove_whitespace("E87579C1 1079F43D D824993C 2CEE5ED3"), 16)
+_Gx = int(remove_whitespace("161FF752 8B899B2D 0C28607C A52C5B86"), 16)
+_Gy = int(remove_whitespace("CF5AC839 5BAFEB13 C02DA292 DDED7A83"), 16)
+_r = int(remove_whitespace("FFFFFFFE 00000000 75A30D1B 9038A115"), 16)
+_h = 1
+curve_128r1 = ellipticcurve.CurveFp(_p, -3, _b, _h)
+generator_128r1 = ellipticcurve.PointJacobi(
+    curve_128r1, _Gx, _Gy, 1, _r, generator=True
+)
+
+
+# secp160r1
+_p = int(remove_whitespace("FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFF 7FFFFFFF"), 16)
+# S = 1053CDE4 2C14D696 E6768756 1517533B F3F83345
+# a and b are mod p, so a is equal to p-3, or simply -3
+# _a = -3
+_b = int(remove_whitespace("1C97BEFC 54BD7A8B 65ACF89F 81D4D4AD C565FA45"), 16)
+_Gx = int(
+    remove_whitespace("4A96B568 8EF57328 46646989 68C38BB9 13CBFC82"), 16,
+)
+_Gy = int(
+    remove_whitespace("23A62855 3168947D 59DCC912 04235137 7AC5FB32"), 16,
+)
+_r = int(
+    remove_whitespace("01 00000000 00000000 0001F4C8 F927AED3 CA752257"), 16,
+)
+_h = 1
+curve_160r1 = ellipticcurve.CurveFp(_p, -3, _b, _h)
+generator_160r1 = ellipticcurve.PointJacobi(
+    curve_160r1, _Gx, _Gy, 1, _r, generator=True
+)
+
+
 # NIST Curve P-192:
 _p = 6277101735386680763835789423207666416083908700390324961279
 _r = 6277101735386680763835789423176059013767194773182842284081

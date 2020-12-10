@@ -19,6 +19,10 @@ from .curves import (
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
+    SECP112r1,
+    SECP112r2,
+    SECP128r1,
+    SECP160r1,
 )
 from .ecdh import (
     ECDH,
@@ -72,5 +76,9 @@ _hush_pyflakes = [
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
+    SECP112r1,
+    SECP112r2,
+    SECP128r1,
+    SECP160r1,
 ]
 del _hush_pyflakes

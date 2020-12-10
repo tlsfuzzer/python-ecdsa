@@ -124,6 +124,38 @@ class MalformedPointError(AssertionError):
     pass
 
 
+def _truncate_and_convert_digest(digest, curve, allow_truncate):
+    """Truncates and converts digest to an integer."""
+    if not allow_truncate:
+        if len(digest) > curve.baselen:
+            raise BadDigestError(
+                "this curve ({0}) is too short "
+                "for the length of your digest ({1})".format(
+                    curve.name, 8 * len(digest)
+                )
+            )
+    else:
+        digest = digest[: curve.baselen]
+    number = string_to_number(digest)
+    if allow_truncate:
+        max_length = bit_length(curve.order)
+        # we don't use bit_length(number) as that truncates leading zeros
+        length = len(digest) * 8
+
+        # See NIST FIPS 186-4:
+        #
+        # When the length of the output of the hash function is greater
+        # than N (i.e., the bit length of q), then the leftmost N bits of
+        # the hash function output block shall be used in any calculation
+        # using the hash function output during the generation or
+        # verification of a digital signature.
+        #
+        # as such, we need to shift-out the low-order bits:
+        number >>= max(0, length - max_length)
+
+    return number
+
+
 class VerifyingKey(object):
     """
     Class for handling keys that can verify signatures (public keys).
@@ -240,12 +272,12 @@ class VerifyingKey(object):
         order = curve.order
         # real assert, from_string() should not call us with different length
         assert len(string) == curve.verifying_key_length
-        xs = string[: curve.baselen]
-        ys = string[curve.baselen :]
-        if len(xs) != curve.baselen:
-            raise MalformedPointError("Unexpected length of encoded x")
-        if len(ys) != curve.baselen:
-            raise MalformedPointError("Unexpected length of encoded y")
+        xs = string[: curve.verifying_key_length // 2]
+        ys = string[curve.verifying_key_length // 2 :]
+        # real assert, verifying_key_length is calculated by multiplying an
+        # integer by two so it will always be even
+        assert len(xs) == curve.verifying_key_length // 2
+        assert len(ys) == curve.verifying_key_length // 2
         x = string_to_number(xs)
         y = string_to_number(ys)
 
@@ -339,7 +371,7 @@ class VerifyingKey(object):
                 raise MalformedPointError(
                     "Invalid X9.62 encoding of the public point"
                 )
-        elif sig_len == curve.baselen + 1:
+        elif sig_len == curve.verifying_key_length // 2 + 1:
             point = cls._from_compressed(string, curve)
         else:
             raise MalformedPointError(
@@ -435,7 +467,13 @@ class VerifyingKey(object):
 
     @classmethod
     def from_public_key_recovery(
-        cls, signature, data, curve, hashfunc=sha1, sigdecode=sigdecode_string
+        cls,
+        signature,
+        data,
+        curve,
+        hashfunc=sha1,
+        sigdecode=sigdecode_string,
+        allow_truncate=True,
     ):
         """
         Return keys that can be used as verifiers of the provided signature.
@@ -458,6 +496,9 @@ class VerifyingKey(object):
             a tuple with two integers, "r" as the first one and "s" as the
             second one. See :func:`ecdsa.util.sigdecode_string` and
             :func:`ecdsa.util.sigdecode_der` for examples.
+        :param bool allow_truncate: if True, the provided hashfunc can generate
+            values larger than the bit size of the order of the curve, the
+            extra bits (at the end of the digest) will be truncated.
         :type sigdecode: callable
 
         :return: Initialised VerifyingKey objects
@@ -466,7 +507,12 @@ class VerifyingKey(object):
         data = normalise_bytes(data)
         digest = hashfunc(data).digest()
         return cls.from_public_key_recovery_with_digest(
-            signature, digest, curve, hashfunc=hashfunc, sigdecode=sigdecode
+            signature,
+            digest,
+            curve,
+            hashfunc=hashfunc,
+            sigdecode=sigdecode,
+            allow_truncate=allow_truncate,
         )
 
     @classmethod
@@ -477,6 +523,7 @@ class VerifyingKey(object):
         curve,
         hashfunc=sha1,
         sigdecode=sigdecode_string,
+        allow_truncate=False,
     ):
         """
         Return keys that can be used as verifiers of the provided signature.
@@ -500,7 +547,10 @@ class VerifyingKey(object):
             second one. See :func:`ecdsa.util.sigdecode_string` and
             :func:`ecdsa.util.sigdecode_der` for examples.
         :type sigdecode: callable
-
+        :param bool allow_truncate: if True, the provided hashfunc can generate
+            values larger than the bit size of the order of the curve (and
+            the length of provided `digest`), the extra bits (at the end of the
+            digest) will be truncated.
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
@@ -510,7 +560,9 @@ class VerifyingKey(object):
         sig = ecdsa.Signature(r, s)
 
         digest = normalise_bytes(digest)
-        digest_as_number = string_to_number(digest)
+        digest_as_number = _truncate_and_convert_digest(
+            digest, curve, allow_truncate
+        )
         pks = sig.recover_public_keys(digest_as_number, generator)
 
         # Transforms the ecdsa.Public_key object into a VerifyingKey
@@ -521,14 +573,14 @@ class VerifyingKey(object):
 
     def _raw_encode(self):
         """Convert the public key to the :term:`raw encoding`."""
-        order = self.pubkey.order
+        order = self.curve.curve.p()
         x_str = number_to_string(self.pubkey.point.x(), order)
         y_str = number_to_string(self.pubkey.point.y(), order)
         return x_str + y_str
 
     def _compressed_encode(self):
         """Encode the public point into the compressed form."""
-        order = self.pubkey.order
+        order = self.curve.curve.p()
         x_str = number_to_string(self.pubkey.point.x(), order)
         if self.pubkey.point.y() & 1:
             return b("\x03") + x_str
@@ -717,27 +769,9 @@ class VerifyingKey(object):
         # signature doesn't have to be a bytes-like-object so don't normalise
         # it, the decoders will do that
         digest = normalise_bytes(digest)
-        if not allow_truncate and len(digest) > self.curve.baselen:
-            raise BadDigestError(
-                "this curve (%s) is too short "
-                "for your digest (%d)" % (self.curve.name, 8 * len(digest))
-            )
-        number = string_to_number(digest)
-        if allow_truncate:
-            max_length = bit_length(self.curve.order)
-            # we don't use bit_length(number) as that truncates leading zeros
-            length = len(digest) * 8
-
-            # See NIST FIPS 186-4:
-            #
-            # When the length of the output of the hash function is greater
-            # than N (i.e., the bit length of q), then the leftmost N bits of
-            # the hash function output block shall be used in any calculation
-            # using the hash function output during the generation or
-            # verification of a digital signature.
-            #
-            # as such, we need to shift-out the low-order bits:
-            number >>= max(0, length - max_length)
+        number = _truncate_and_convert_digest(
+            digest, self.curve, allow_truncate,
+        )
 
         try:
             r, s = sigdecode(signature, self.pubkey.order)
@@ -1409,14 +1443,9 @@ class SigningKey(object):
         :rtype: bytes or sigencode function dependant type
         """
         digest = normalise_bytes(digest)
-        if allow_truncate:
-            digest = digest[: self.curve.baselen]
-        if len(digest) > self.curve.baselen:
-            raise BadDigestError(
-                "this curve (%s) is too short "
-                "for your digest (%d)" % (self.curve.name, 8 * len(digest))
-            )
-        number = string_to_number(digest)
+        number = _truncate_and_convert_digest(
+            digest, self.curve, allow_truncate,
+        )
         r, s = self.sign_number(number, entropy, k)
         return sigencode(r, s, self.privkey.order)
 

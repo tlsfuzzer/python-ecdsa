@@ -26,6 +26,10 @@ from .util import sigdecode_der, sigdecode_strings
 from .util import number_to_string, encoded_oid_ecPublicKey, MalformedSignature
 from .curves import Curve, UnknownCurveError
 from .curves import (
+    SECP112r1,
+    SECP112r2,
+    SECP128r1,
+    SECP160r1,
     NIST192p,
     NIST224p,
     NIST256p,
@@ -310,8 +314,15 @@ class ECDSA(unittest.TestCase):
             def order(self):
                 return 123456789
 
+        class FakeCurveFp:
+            def p(self):
+                return int(
+                    "6525534529039240705020950546962731340"
+                    "4541085228058844382513856749047873406763"
+                )
+
         badcurve = Curve(
-            "unknown", None, FakeGenerator(), (1, 2, 3, 4, 5, 6), None
+            "unknown", FakeCurveFp(), FakeGenerator(), (1, 2, 3, 4, 5, 6), None
         )
         badpub.curve = badcurve
         badder = badpub.to_der()
@@ -616,7 +627,7 @@ class ECDSA(unittest.TestCase):
 
     def test_public_key_recovery(self):
         # Create keys
-        curve = NIST256p
+        curve = BRAINPOOLP160r1
 
         sk = SigningKey.generate(curve=curve)
         vk = sk.get_verifying_key()
@@ -649,7 +660,7 @@ class ECDSA(unittest.TestCase):
 
     def test_public_key_recovery_with_custom_hash(self):
         # Create keys
-        curve = NIST256p
+        curve = BRAINPOOLP160r1
 
         sk = SigningKey.generate(curve=curve, hashfunc=sha256)
         vk = sk.get_verifying_key()
@@ -660,7 +671,7 @@ class ECDSA(unittest.TestCase):
 
         # Recover verifying keys
         recovered_vks = VerifyingKey.from_public_key_recovery(
-            signature, data, curve, hashfunc=sha256
+            signature, data, curve, hashfunc=sha256, allow_truncate=True
         )
 
         # Test if each pk is valid
@@ -866,6 +877,34 @@ class OpenSSL(unittest.TestCase):
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
     @pytest.mark.skipif(
+        "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp112r1",
+    )
+    def test_from_openssl_secp112r1(self):
+        return self.do_test_from_openssl(SECP112r1)
+
+    @pytest.mark.skipif(
+        "secp112r2" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp112r2",
+    )
+    def test_from_openssl_secp112r2(self):
+        return self.do_test_from_openssl(SECP112r2)
+
+    @pytest.mark.skipif(
+        "secp128r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp128r1",
+    )
+    def test_from_openssl_secp128r1(self):
+        return self.do_test_from_openssl(SECP128r1)
+
+    @pytest.mark.skipif(
+        "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp160r1",
+    )
+    def test_from_openssl_secp160r1(self):
+        return self.do_test_from_openssl(SECP160r1)
+
+    @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
     )
@@ -1028,6 +1067,34 @@ class OpenSSL(unittest.TestCase):
             privkey_p8_pem = e.read()
         sk_from_p8 = SigningKey.from_pem(privkey_p8_pem)
         self.assertEqual(sk, sk_from_p8)
+
+    @pytest.mark.skipif(
+        "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp112r1",
+    )
+    def test_to_openssl_secp112r1(self):
+        self.do_test_to_openssl(SECP112r1)
+
+    @pytest.mark.skipif(
+        "secp112r2" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp112r2",
+    )
+    def test_to_openssl_secp112r2(self):
+        self.do_test_to_openssl(SECP112r2)
+
+    @pytest.mark.skipif(
+        "secp128r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp128r1",
+    )
+    def test_to_openssl_secp128r1(self):
+        self.do_test_to_openssl(SECP128r1)
+
+    @pytest.mark.skipif(
+        "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support secp160r1",
+    )
+    def test_to_openssl_secp160r1(self):
+        self.do_test_to_openssl(SECP160r1)
 
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,

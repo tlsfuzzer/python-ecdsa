@@ -304,7 +304,7 @@ class ECDH(object):
         :rtype: byte string
         """
         return number_to_string(
-            self.generate_sharedsecret(), self.private_key.curve.order
+            self.generate_sharedsecret(), self.private_key.curve.curve.p()
         )
 
     def generate_sharedsecret(self):

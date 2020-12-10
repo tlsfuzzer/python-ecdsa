@@ -207,6 +207,38 @@ HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
 HYP_SLOW_SETTINGS["max_examples"] = 10
 
 
+class TestIsPrime(unittest.TestCase):
+    def test_very_small_prime(self):
+        assert is_prime(23)
+
+    def test_very_small_composite(self):
+        assert not is_prime(22)
+
+    def test_small_prime(self):
+        assert is_prime(123456791)
+
+    def test_special_composite(self):
+        assert not is_prime(10261)
+
+    def test_medium_prime_1(self):
+        # nextPrime[2^256]
+        assert is_prime(2 ** 256 + 0x129)
+
+    def test_medium_prime_2(self):
+        # nextPrime(2^256+0x129)
+        assert is_prime(2 ** 256 + 0x12D)
+
+    def test_medium_trivial_composite(self):
+        assert not is_prime(2 ** 256 + 0x130)
+
+    def test_medium_non_trivial_composite(self):
+        assert not is_prime(2 ** 256 + 0x12F)
+
+    def test_large_prime(self):
+        # nextPrime[2^2048]
+        assert is_prime(2 ** 2048 + 0x3D5)
+
+
 class TestNumbertheory(unittest.TestCase):
     def test_gcd(self):
         assert gcd(3 * 5 * 7, 3 * 5 * 11, 3 * 5 * 13) == 3 * 5
