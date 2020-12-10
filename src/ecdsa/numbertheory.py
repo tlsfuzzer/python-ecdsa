@@ -387,7 +387,7 @@ def phi(n):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
@@ -417,7 +417,7 @@ def carmichael(n):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
@@ -432,7 +432,7 @@ def carmichael_of_factorized(f_list):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
@@ -452,7 +452,7 @@ def carmichael_of_ppower(pp):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
@@ -469,7 +469,7 @@ def order_mod(x, m):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
@@ -495,7 +495,7 @@ def largest_factor_relatively_prime(a, b):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
@@ -520,7 +520,7 @@ def kinda_order_mod(x, m):  # pragma: no cover
     warnings.warn(
         "Function is unused by library code. If you use this code, "
         "please open an issue in "
-        "https://github.com/warner/python-ecdsa",
+        "https://github.com/tlsfuzzer/python-ecdsa",
         DeprecationWarning,
     )
 
