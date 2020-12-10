@@ -33,7 +33,7 @@ from .ecdh import (
 )
 from .der import UnexpectedDER
 
-# This code comes from http://github.com/warner/python-ecdsa
+# This code comes from http://github.com/tlsfuzzer/python-ecdsa
 from ._version import get_versions
 
 __version__ = get_versions()["version"]

@@ -22,7 +22,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Brian Warner",
     author_email="warner@lothar.com",
-    url="http://github.com/warner/python-ecdsa",
+    url="http://github.com/tlsfuzzer/python-ecdsa",
     packages=["ecdsa"],
     package_dir={"": "src"},
     license="MIT",
