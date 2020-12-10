@@ -42,7 +42,7 @@ class TestRemoveInteger(unittest.TestCase):
         val, rem = remove_integer(b("\x02\x02\x00\x80"))
 
         self.assertEqual(val, 0x80)
-        self.assertFalse(rem)
+        self.assertEqual(rem, b"")
 
     def test_two_zero_bytes_with_high_bit_set(self):
         with self.assertRaises(UnexpectedDER):
@@ -60,19 +60,19 @@ class TestRemoveInteger(unittest.TestCase):
         val, rem = remove_integer(b("\x02\x01\x00"))
 
         self.assertEqual(val, 0)
-        self.assertFalse(rem)
+        self.assertEqual(rem, b"")
 
     def test_encoding_of_127(self):
         val, rem = remove_integer(b("\x02\x01\x7f"))
 
         self.assertEqual(val, 127)
-        self.assertFalse(rem)
+        self.assertEqual(rem, b"")
 
     def test_encoding_of_128(self):
         val, rem = remove_integer(b("\x02\x02\x00\x80"))
 
         self.assertEqual(val, 128)
-        self.assertFalse(rem)
+        self.assertEqual(rem, b"")
 
     def test_wrong_tag(self):
         with self.assertRaises(UnexpectedDER) as e:
