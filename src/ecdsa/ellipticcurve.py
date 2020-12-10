@@ -25,13 +25,12 @@
 #   Signature checking (5.4.2):
 #     - Verify that r and s are in [1,n-1].
 #
-# Version of 2008.11.25.
-#
 # Revision history:
 #    2005.12.31 - Initial version.
 #    2008.11.25 - Change CurveFp.is_on to contains_point.
 #
 # Written in 2005 by Peter Pearson and placed in the public domain.
+# Modified extensively as part of python-ecdsa.
 
 from __future__ import division
 
@@ -92,8 +91,14 @@ class CurveFp(object):
             self.__h = h
 
     def __eq__(self, other):
+        """Return True if other is an identical curve, False otherwise.
+
+        Note: the value of the cofactor of the curve is not taken into account
+        when comparing curves, as it's derived from the base point and
+        intrinsic curve characteristic (but it's complex to compute),
+        only the prime and curve parameters are considered.
+        """
         if isinstance(other, CurveFp):
-            """Return True if the curves are identical, False otherwise."""
             return (
                 self.__p == other.__p
                 and self.__a == other.__a
@@ -102,7 +107,8 @@ class CurveFp(object):
         return NotImplemented
 
     def __ne__(self, other):
-        return not (self == other)
+        """Return False if other is an identical curve, True otherwise."""
+        return not self == other
 
     def __hash__(self):
         return hash((self.__p, self.__a, self.__b))
@@ -158,7 +164,7 @@ class PointJacobi(object):
           generator=True
         :param bool generator: the point provided is a curve generator, as
           such, it will be commonly used with scalar multiplication. This will
-          cause to precompute multiplication table for it
+          cause to precompute multiplication table generation for it
         """
         self.__curve = curve
         # since it's generally better (faster) to use scaled points vs unscaled
@@ -224,7 +230,10 @@ class PointJacobi(object):
         self._update_lock = RWLock()
 
     def __eq__(self, other):
-        """Compare two points with each-other."""
+        """Compare for equality two points with each-other.
+
+        Note: only points that lie on the same curve can be equal.
+        """
         try:
             self._update_lock.reader_acquire()
             if other is INFINITY:
@@ -255,6 +264,10 @@ class PointJacobi(object):
         return (x1 * zz2 - x2 * zz1) % p == 0 and (
             y1 * zz2 * z2 - y2 * zz1 * z1
         ) % p == 0
+
+    def __ne__(self, other):
+        """Compare for inequality two points with each-other."""
+        return not self == other
 
     def order(self):
         """Return the order of the point.
@@ -757,7 +770,10 @@ class Point(object):
             assert self * order == INFINITY
 
     def __eq__(self, other):
-        """Return True if the points are identical, False otherwise."""
+        """Return True if the points are identical, False otherwise.
+
+        Note: only points that lie on the same curve can be equal.
+        """
         if isinstance(other, Point):
             return (
                 self.__curve == other.__curve
@@ -765,6 +781,10 @@ class Point(object):
                 and self.__y == other.__y
             )
         return NotImplemented
+
+    def __ne__(self, other):
+        """Returns False if points are identical, True otherwise."""
+        return not self == other
 
     def __neg__(self):
         return Point(self.__curve, self.__x, self.__curve.p() - self.__y)

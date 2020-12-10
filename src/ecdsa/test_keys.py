@@ -198,20 +198,16 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         self.assertEqual(self.vk, self.sk.get_verifying_key())
 
     def test_inequality_on_verifying_keys(self):
-        # use `==` to workaround instrumental <-> unittest compat issue
-        self.assertFalse(self.vk == self.vk2)
+        self.assertNotEqual(self.vk, self.vk2)
 
     def test_inequality_on_verifying_keys_not_implemented(self):
-        # use `==` to workaround instrumental <-> unittest compat issue
-        self.assertFalse(self.vk == None)
+        self.assertNotEqual(self.vk, None)
 
     def test_VerifyingKey_inequality_on_same_curve(self):
-        # use `==` to workaround instrumental <-> unittest compat issue
-        self.assertFalse(self.vk == self.sk2.verifying_key)
+        self.assertNotEqual(self.vk, self.sk2.verifying_key)
 
     def test_SigningKey_inequality_on_same_curve(self):
-        # use `==` to workaround instrumental <-> unittest compat issue
-        self.assertFalse(self.sk == self.sk2)
+        self.assertNotEqual(self.sk, self.sk2)
 
 
 class TestSigningKey(unittest.TestCase):
@@ -283,12 +279,10 @@ class TestSigningKey(unittest.TestCase):
         self.assertTrue(vk.verify(sig, b"other message"))
 
     def test_inequality_on_signing_keys(self):
-        # use `==` to workaround instrumental <-> unittest compat issue
-        self.assertFalse(self.sk1 == self.sk2)
+        self.assertNotEqual(self.sk1, self.sk2)
 
     def test_inequality_on_signing_keys_not_implemented(self):
-        # use `==` to workaround instrumental <-> unittest compat issue
-        self.assertFalse(self.sk1 == None)
+        self.assertNotEqual(self.sk1, None)
 
 
 # test VerifyingKey.verify()

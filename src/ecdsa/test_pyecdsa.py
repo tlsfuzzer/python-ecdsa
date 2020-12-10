@@ -653,9 +653,9 @@ class ECDSA(unittest.TestCase):
             )
 
         # Test if original vk is the list of recovered keys
-        self.assertTrue(
-            vk.pubkey.point
-            in [recovered_vk.pubkey.point for recovered_vk in recovered_vks]
+        self.assertIn(
+            vk.pubkey.point,
+            [recovered_vk.pubkey.point for recovered_vk in recovered_vks],
         )
 
     def test_public_key_recovery_with_custom_hash(self):
@@ -684,9 +684,9 @@ class ECDSA(unittest.TestCase):
             self.assertEqual(sha256, recovered_vk.default_hashfunc)
 
         # Test if original vk is the list of recovered keys
-        self.assertTrue(
-            vk.pubkey.point
-            in [recovered_vk.pubkey.point for recovered_vk in recovered_vks]
+        self.assertIn(
+            vk.pubkey.point,
+            [recovered_vk.pubkey.point for recovered_vk in recovered_vks],
         )
 
     def test_encoding(self):
