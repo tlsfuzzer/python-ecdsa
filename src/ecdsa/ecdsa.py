@@ -145,10 +145,19 @@ class Public_key(object):
             raise InvalidPointError("Generator point order is bad.")
 
     def __eq__(self, other):
+        """Return True if the keys are identical, False otherwise.
+
+        Note: for comparison, only placement on the same curve and point
+        equality is considered, use of the same generator point is not
+        considered.
+        """
         if isinstance(other, Public_key):
-            """Return True if the points are identical, False otherwise."""
             return self.curve == other.curve and self.point == other.point
         return NotImplemented
+
+    def __ne__(self, other):
+        """Return False if the keys are identical, True otherwise."""
+        return not self == other
 
     def verifies(self, hash, signature):
         """Verify that signature is a valid signature of hash.
@@ -188,13 +197,17 @@ class Private_key(object):
         self.secret_multiplier = secret_multiplier
 
     def __eq__(self, other):
+        """Return True if the points are identical, False otherwise."""
         if isinstance(other, Private_key):
-            """Return True if the points are identical, False otherwise."""
             return (
                 self.public_key == other.public_key
                 and self.secret_multiplier == other.secret_multiplier
             )
         return NotImplemented
+
+    def __ne__(self, other):
+        """Return False if the points are identical, True otherwise."""
+        return not self == other
 
     def sign(self, hash, random_k):
         """Return a signature for the provided hash, using the provided

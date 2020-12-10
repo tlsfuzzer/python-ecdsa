@@ -191,6 +191,10 @@ class VerifyingKey(object):
             return self.curve == other.curve and self.pubkey == other.pubkey
         return NotImplemented
 
+    def __ne__(self, other):
+        """Return False if the points are identical, True otherwise."""
+        return not self == other
+
     @classmethod
     def from_public_point(
         cls, point, curve=NIST192p, hashfunc=sha1, validate_point=True
@@ -816,6 +820,10 @@ class SigningKey(object):
                 and self.privkey == other.privkey
             )
         return NotImplemented
+
+    def __ne__(self, other):
+        """Return False if the points are identical, True otherwise."""
+        return not self == other
 
     @classmethod
     def generate(cls, curve=NIST192p, entropy=None, hashfunc=sha1):
