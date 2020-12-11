@@ -1,5 +1,4 @@
 import pytest
-from six import print_
 
 try:
     import unittest2 as unittest
@@ -96,7 +95,7 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(len(set((c_23, eq1, eq2, eq3))), 1)
         self.assertEqual(len(set((c_23, ne1, ne2, ne3))), 4)
         self.assertDictEqual({c_23: None}, {eq1: None})
-        self.assertTrue(eq2 in {eq3: None})
+        self.assertIn(eq2, {eq3: None})
 
 
 class TestPoint(unittest.TestCase):

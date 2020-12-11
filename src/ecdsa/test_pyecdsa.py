@@ -5,7 +5,6 @@ try:
 except ImportError:
     import unittest
 import os
-import time
 import shutil
 import subprocess
 import pytest
@@ -140,16 +139,12 @@ class ECDSA(unittest.TestCase):
             BRAINPOOLP384r1,
             BRAINPOOLP512r1,
         ):
-            start = time.time()
             priv = SigningKey.generate(curve=curve)
             pub1 = priv.get_verifying_key()
-            keygen_time = time.time() - start
             pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
             self.assertEqual(pub1.to_string(), pub2.to_string())
             self.assertEqual(len(pub1.to_string()), curve.verifying_key_length)
-            start = time.time()
             sig = priv.sign(b("data"))
-            sign_time = time.time() - start
             self.assertEqual(len(sig), curve.signature_length)
 
     def test_serialize(self):
@@ -1282,7 +1277,6 @@ class TooSmallCurve(unittest.TestCase):
     )
     def test_sign_too_small_curve_dont_allow_truncate_raises(self):
         sk = SigningKey.generate(curve=NIST192p)
-        vk = sk.get_verifying_key()
         data = b("data")
         with self.assertRaises(BadDigestError):
             sk.sign(

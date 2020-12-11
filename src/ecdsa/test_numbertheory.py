@@ -1,7 +1,5 @@
 import operator
-from six import print_
 from functools import reduce
-import operator
 
 try:
     import unittest2 as unittest

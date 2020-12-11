@@ -641,7 +641,7 @@ class PointJacobi(object):
 
         calculates self*self_mul + other*other_mul
         """
-        if other is INFINITY or other_mul == 0:
+        if other == INFINITY or other_mul == 0:
             return self * self_mul
         if self_mul == 0:
             return other * other_mul

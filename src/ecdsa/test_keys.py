@@ -9,8 +9,6 @@ except NameError:
     buffer = memoryview
 
 import array
-import six
-import sys
 import pytest
 import hashlib
 
