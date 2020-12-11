@@ -16,7 +16,6 @@ except ImportError:  # pragma: no cover
 from functools import partial
 import pytest
 import sys
-from six import binary_type
 import hypothesis.strategies as st
 from hypothesis import note, assume, given, settings, example
 
@@ -24,7 +23,7 @@ from .keys import SigningKey
 from .keys import BadSignatureError
 from .util import sigencode_der, sigencode_string
 from .util import sigdecode_der, sigdecode_string
-from .curves import curves, NIST256p
+from .curves import curves
 from .der import (
     encode_integer,
     encode_bitstring,

@@ -334,7 +334,6 @@ def factorization(n):
         return []
 
     result = []
-    d = 2
 
     # Test the small primes:
 

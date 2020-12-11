@@ -9,7 +9,7 @@ except ImportError:
     import unittest
 from six import b
 import hypothesis.strategies as st
-from hypothesis import given, example
+from hypothesis import given
 import pytest
 from ._compat import str_idx_as_int
 from .curves import NIST256p, NIST224p

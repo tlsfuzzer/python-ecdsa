@@ -1,3 +1,6 @@
+# while we don't use six in this file, we did bundle it for a long time, so
+# keep as part of module in a virtual way (through __all__)
+import six
 from .keys import (
     SigningKey,
     VerifyingKey,
@@ -80,5 +83,6 @@ _hush_pyflakes = [
     SECP112r2,
     SECP128r1,
     SECP160r1,
+    six.b(""),
 ]
 del _hush_pyflakes

@@ -8,7 +8,7 @@ except ImportError:
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings, example
 
-from .ellipticcurve import CurveFp, Point, PointJacobi, INFINITY
+from .ellipticcurve import CurveFp, PointJacobi, INFINITY
 from .ecdsa import (
     generator_256,
     curve_256,
@@ -472,8 +472,6 @@ class TestJacobi(unittest.TestCase):
 
     def test_mul_add_with_doubled_negation_of_itself(self):
         j_g = PointJacobi.from_affine(generator_256 * 17)
-
-        order = generator_256.order()
 
         dbl_neg = 2 * (-j_g)
 

@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 import pytest
-from binascii import hexlify, unhexlify
+from binascii import unhexlify
 
 try:
     import unittest2 as unittest
