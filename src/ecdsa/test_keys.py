@@ -8,6 +8,7 @@ try:
 except NameError:
     buffer = memoryview
 
+import os
 import array
 import pytest
 import hashlib
@@ -23,7 +24,7 @@ from .util import (
     sigdecode_strings,
 )
 from .curves import NIST256p, Curve, BRAINPOOLP160r1
-from .ellipticcurve import Point
+from .ellipticcurve import Point, PointJacobi, CurveFp, INFINITY
 from .ecdsa import generator_brainpoolp160r1
 
 
@@ -294,6 +295,59 @@ class TestSigningKey(unittest.TestCase):
 
     def test_inequality_on_signing_keys_not_implemented(self):
         self.assertNotEqual(self.sk1, None)
+
+
+class TestTrivialCurve(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # To test what happens with r or s in signing happens to be zero we
+        # need to find a scalar that creates one of the points on a curve that
+        # has x coordinate equal to zero.
+        # Even for secp112r2 curve that's non trivial so use this toy
+        # curve, for which we can iterate over all points quickly
+        curve = CurveFp(163, 84, 58)
+        gen = PointJacobi(curve, 2, 87, 1, 167, generator=True)
+
+        cls.toy_curve = Curve("toy_p8", curve, gen, (1, 2, 0))
+
+        cls.sk = SigningKey.from_secret_exponent(
+            140, cls.toy_curve, hashfunc=hashlib.sha1,
+        )
+
+    def test_generator_sanity(self):
+        gen = self.toy_curve.generator
+
+        self.assertEqual(gen * gen.order(), INFINITY)
+
+    def test_public_key_sanity(self):
+        self.assertEqual(self.sk.verifying_key.to_string(), b"\x98\x1e")
+
+    def test_deterministic_sign(self):
+        sig = self.sk.sign_deterministic(b"message")
+
+        self.assertEqual(sig, b"-.")
+
+        self.assertTrue(self.sk.verifying_key.verify(sig, b"message"))
+
+    def test_deterministic_sign_random_message(self):
+        msg = os.urandom(32)
+        sig = self.sk.sign_deterministic(msg)
+        self.assertEqual(len(sig), 2)
+        self.assertTrue(self.sk.verifying_key.verify(sig, msg))
+
+    def test_deterministic_sign_that_rises_R_zero_error(self):
+        # the raised RSZeroError is caught and handled internally by
+        # sign_deterministic methods
+        msg = b"\x00\x4f"
+        sig = self.sk.sign_deterministic(msg)
+        self.assertEqual(sig, b"\x36\x9e")
+        self.assertTrue(self.sk.verifying_key.verify(sig, msg))
+
+    def test_deterministic_sign_that_rises_S_zero_error(self):
+        msg = b"\x01\x6d"
+        sig = self.sk.sign_deterministic(msg)
+        self.assertEqual(sig, b"\x49\x6c")
+        self.assertTrue(self.sk.verifying_key.verify(sig, msg))
 
 
 # test VerifyingKey.verify()

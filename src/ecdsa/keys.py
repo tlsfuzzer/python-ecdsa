@@ -1394,8 +1394,10 @@ class SigningKey(object):
             default.
 
         :raises RSZeroError: in the unlikely event when "r" parameter or
-            "s" parameter is equal 0 as that would leak the key. Calee should
-            try a better entropy source or different 'k' in such case.
+            "s" parameter of the created signature is equal 0, as that would
+            leak the key. Caller should try a better entropy source, retry with
+            different 'k', or use the
+            :func:`~SigningKey.sign_deterministic` in such case.
 
         :return: encoded signature of the hash of `data`
         :rtype: bytes or sigencode function dependant type
@@ -1444,8 +1446,10 @@ class SigningKey(object):
             SHA-384 output using NIST256p or in similar situations.
 
         :raises RSZeroError: in the unlikely event when "r" parameter or
-            "s" parameter is equal 0 as that would leak the key. Calee should
-            try a better entropy source in such case.
+            "s" parameter of the created signature is equal 0, as that would
+            leak the key. Caller should try a better entropy source, retry with
+            different 'k', or use the
+            :func:`~SigningKey.sign_digest_deterministic` in such case.
 
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependant type
@@ -1472,8 +1476,10 @@ class SigningKey(object):
             it will be selected at random using the entropy source.
 
         :raises RSZeroError: in the unlikely event when "r" parameter or
-            "s" parameter is equal 0 as that would leak the key. Calee should
-            try a different 'k' in such case.
+            "s" parameter of the created signature is equal 0, as that would
+            leak the key. Caller should try a better entropy source, retry with
+            different 'k', or use the
+            :func:`~SigningKey.sign_digest_deterministic` in such case.
 
         :return: the "r" and "s" parameters of the signature
         :rtype: tuple of ints
