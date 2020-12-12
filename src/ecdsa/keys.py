@@ -960,7 +960,7 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
-        if not PY2 and isinstance(string, str):
+        if not PY2 and isinstance(string, str):  # pragma: no branch
             string = string.encode()
 
         # The privkey pem may have multiple sections, commonly it also has

@@ -312,6 +312,29 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
 
+    def test_add_same_scale_points_static(self):
+        j_g = generator_brainpoolp160r1
+        p = curve_brainpoolp160r1.p()
+        a = j_g * 11
+        a.scale()
+        z1 = 13
+        x = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z1 ** 2 % p,
+            a.y() * z1 ** 3 % p,
+            z1,
+        )
+        y = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z1 ** 2 % p,
+            a.y() * z1 ** 3 % p,
+            z1,
+        )
+
+        c = a + a
+
+        self.assertEqual(c, x + y)
+
     @settings(max_examples=14)
     @given(
         st.integers(
@@ -362,6 +385,30 @@ class TestJacobi(unittest.TestCase):
         c = a + b
 
         self.assertEqual(c, j_g * (a_mul + b_mul))
+
+    def test_add_different_scale_points_static(self):
+        j_g = generator_brainpoolp160r1
+        p = curve_brainpoolp160r1.p()
+        a = j_g * 11
+        a.scale()
+        z1 = 13
+        x = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z1 ** 2 % p,
+            a.y() * z1 ** 3 % p,
+            z1,
+        )
+        z2 = 29
+        y = PointJacobi(
+            curve_brainpoolp160r1,
+            a.x() * z2 ** 2 % p,
+            a.y() * z2 ** 3 % p,
+            z2,
+        )
+
+        c = a + a
+
+        self.assertEqual(c, x + y)
 
     def test_add_point_3_times(self):
         j_g = PointJacobi.from_affine(generator_256)

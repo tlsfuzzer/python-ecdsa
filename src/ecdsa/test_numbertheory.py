@@ -82,6 +82,32 @@ def test_square_root_mod_prime_for_small_primes(prime):
             square_root_mod_prime(nonsquare, prime)
 
 
+def test_square_root_mod_prime_for_2():
+    a = square_root_mod_prime(1, 2)
+    assert a == 1
+
+
+def test_square_root_mod_prime_for_small_prime():
+    root = square_root_mod_prime(98 ** 2 % 101, 101)
+    assert root * root % 101 == 9
+
+
+def test_square_root_mod_prime_for_p_congruent_5():
+    p = 13
+    assert p % 8 == 5
+
+    root = square_root_mod_prime(3, p)
+    assert root * root % p == 3
+
+
+def test_square_root_mod_prime_for_p_congruent_5_large_d():
+    p = 29
+    assert p % 8 == 5
+
+    root = square_root_mod_prime(4, p)
+    assert root * root % p == 4
+
+
 @st.composite
 def st_two_nums_rel_prime(draw):
     # 521-bit is the biggest curve we operate on, use 1024 for a bit
@@ -323,6 +349,32 @@ class TestNumbertheory(unittest.TestCase):
         for i in factors:
             mult *= i[0] ** i[1]
         assert mult == num
+
+    def test_factorisation_smallprimes(self):
+        exp = 101 * 103
+        assert 101 in smallprimes
+        assert 103 in smallprimes
+        factors = factorization(exp)
+        mult = 1
+        for i in factors:
+            mult *= i[0] ** i[1]
+        assert mult == exp
+
+    def test_factorisation_not_smallprimes(self):
+        exp = 1231 * 1237
+        assert 1231 not in smallprimes
+        assert 1237 not in smallprimes
+        factors = factorization(exp)
+        mult = 1
+        for i in factors:
+            mult *= i[0] ** i[1]
+        assert mult == exp
+
+    def test_jacobi_with_zero(self):
+        assert jacobi(0, 3) == 0
+
+    def test_jacobi_with_one(self):
+        assert jacobi(1, 3) == 1
 
     @settings(**HYP_SETTINGS)
     @given(st.integers(min_value=3, max_value=1000).filter(lambda x: x % 2))

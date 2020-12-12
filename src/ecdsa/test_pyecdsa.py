@@ -5,6 +5,7 @@ try:
 except ImportError:
     import unittest
 import os
+import sys
 import shutil
 import subprocess
 import pytest
@@ -1395,6 +1396,17 @@ class Util(unittest.TestCase):
             ("%x" % (tta("seed", NIST224p.order))).encode(),
             b("6fa59d73bf0446ae8743cf748fc5ac11d5585a90356417e97155c3bc"),
         )
+
+    def test_trytryagain_single(self):
+        tta = util.randrange_from_seed__trytryagain
+        order = 2 ** 8 - 2
+        seed = b"text"
+        n = tta(seed, order)
+        # known issue: https://github.com/warner/python-ecdsa/issues/221
+        if sys.version_info < (3, 0):  # pragma: no branch
+            self.assertEqual(n, 228)
+        else:
+            self.assertEqual(n, 18)
 
     @given(st.integers(min_value=0, max_value=10 ** 200))
     def test_randrange(self, i):
