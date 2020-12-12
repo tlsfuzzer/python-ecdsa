@@ -232,7 +232,7 @@ class PointJacobi(object):
     def __eq__(self, other):
         """Compare for equality two points with each-other.
 
-        Note: only points that lie on the same curve can be equal.
+        Note: only points that lay on the same curve can be equal.
         """
         try:
             self._update_lock.reader_acquire()
@@ -772,7 +772,7 @@ class Point(object):
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise.
 
-        Note: only points that lie on the same curve can be equal.
+        Note: only points that lay on the same curve can be equal.
         """
         if isinstance(other, Point):
             return (

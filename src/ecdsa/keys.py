@@ -213,11 +213,11 @@ class VerifyingKey(object):
             verification, needs to implement the same interface
             as hashlib.sha1
         :type hashfunc: callable
-        :type bool validate_point: whether to check if the point lies on curve
+        :type bool validate_point: whether to check if the point lays on curve
             should always be used if the public point is not a result
             of our own calculation
 
-        :raises MalformedPointError: if the public point does not lie on the
+        :raises MalformedPointError: if the public point does not lay on the
             curve
 
         :return: Initialised VerifyingKey object
@@ -233,7 +233,7 @@ class VerifyingKey(object):
                 curve.generator, point, validate_point
             )
         except ecdsa.InvalidPointError:
-            raise MalformedPointError("Point does not lie on the curve")
+            raise MalformedPointError("Point does not lay on the curve")
         self.pubkey.order = curve.order
         return self
 
@@ -347,16 +347,16 @@ class VerifyingKey(object):
 
         :param string: single point encoding of the public key
         :type string: :term:`bytes-like object`
-        :param curve: the curve on which the public key is expected to lie
+        :param curve: the curve on which the public key is expected to lay
         :type curve: ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as hashlib.sha1
         :type hashfunc: callable
-        :param validate_point: whether to verify that the point lies on the
+        :param validate_point: whether to verify that the point lays on the
             provided curve or not, defaults to True
         :type validate_point: bool
 
-        :raises MalformedPointError: if the public point does not lie on the
+        :raises MalformedPointError: if the public point does not lay on the
             curve or the encoding is invalid
 
         :return: Initialised VerifyingKey object
