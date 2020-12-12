@@ -1,4 +1,5 @@
 # Copyright Mateusz Kobos, (c) 2011
+# Copyright Hubert Kario, (c) 2020
 # https://code.activestate.com/recipes/577803-reader-writer-lock-with-priority-for-writers/
 # released under the MIT licence
 
@@ -45,11 +46,9 @@ class RWLock:
         self.__readers_queue = threading.Lock()
 
     def reader_acquire(self):
-        self.__readers_queue.acquire()
-        self.__no_readers.acquire()
-        self.__read_switch.acquire(self.__no_writers)
-        self.__no_readers.release()
-        self.__readers_queue.release()
+        with self.__readers_queue:
+            with self.__no_readers:
+                self.__read_switch.acquire(self.__no_writers)
 
     def reader_release(self):
         self.__read_switch.release(self.__no_writers)
@@ -72,15 +71,13 @@ class _LightSwitch:
         self.__mutex = threading.Lock()
 
     def acquire(self, lock):
-        self.__mutex.acquire()
-        self.__counter += 1
-        if self.__counter == 1:
-            lock.acquire()
-        self.__mutex.release()
+        with self.__mutex:
+            self.__counter += 1
+            if self.__counter == 1:
+                lock.acquire()
 
     def release(self, lock):
-        self.__mutex.acquire()
-        self.__counter -= 1
-        if self.__counter == 0:
-            lock.release()
-        self.__mutex.release()
+        with self.__mutex:
+            self.__counter -= 1
+            if self.__counter == 0:
+                lock.release()
