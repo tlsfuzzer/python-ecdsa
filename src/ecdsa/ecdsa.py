@@ -118,7 +118,7 @@ class Public_key(object):
         :param bool verify: if True check if point is valid point on curve
 
         :raises InvalidPointError: if the point parameters are invalid or
-            point does not lie on the curve
+            point does not lay on the curve
         """
 
         self.curve = generator.curve()
@@ -131,7 +131,7 @@ class Public_key(object):
                 "The public point has x or y out of range."
             )
         if verify and not self.curve.contains_point(point.x(), point.y()):
-            raise InvalidPointError("Point does not lie on the curve")
+            raise InvalidPointError("Point does not lay on the curve")
         if not n:
             raise InvalidPointError("Generator point must have order.")
         # for curve parameters with base point with cofactor 1, all points
