@@ -21,6 +21,11 @@ from .ecdsa import (
     generator_384,
     generator_521,
     generator_secp256k1,
+    curve_192,
+    InvalidPointError,
+    curve_112r2,
+    generator_112r2,
+    int_to_string,
 )
 
 
@@ -96,6 +101,20 @@ class TestPublicKey(unittest.TestCase):
         pub_key2 = Public_key(gen, point2)
         self.assertNotEqual(pub_key1, pub_key2)
 
+    def test_inequality_different_curves(self):
+        gen = generator_192
+        x1 = 0xC58D61F88D905293BCD4CD0080BCB1B7F811F2FFA41979F6
+        y1 = 0x8804DC7A7C4C7F8B5D437F5156F3312CA7D6DE8A0E11867F
+        point1 = ellipticcurve.Point(gen.curve(), x1, y1)
+
+        x2 = 0x722BA0FB6B8FC8898A4C6AB49E66
+        y2 = 0x2B7344BB57A7ABC8CA0F1A398C7D
+        point2 = ellipticcurve.Point(generator_112r2.curve(), x2, y2)
+
+        pub_key1 = Public_key(gen, point1)
+        pub_key2 = Public_key(generator_112r2, point2)
+        self.assertNotEqual(pub_key1, pub_key2)
+
     def test_inequality_public_key_not_implemented(self):
         gen = generator_192
         x = 0xC58D61F88D905293BCD4CD0080BCB1B7F811F2FFA41979F6
@@ -103,6 +122,106 @@ class TestPublicKey(unittest.TestCase):
         point = ellipticcurve.Point(gen.curve(), x, y)
         pub_key = Public_key(gen, point)
         self.assertNotEqual(pub_key, None)
+
+    def test_public_key_with_generator_without_order(self):
+        gen = ellipticcurve.PointJacobi(
+            generator_192.curve(), generator_192.x(), generator_192.y(), 1
+        )
+
+        x = 0xC58D61F88D905293BCD4CD0080BCB1B7F811F2FFA41979F6
+        y = 0x8804DC7A7C4C7F8B5D437F5156F3312CA7D6DE8A0E11867F
+        point = ellipticcurve.Point(gen.curve(), x, y)
+
+        with self.assertRaises(InvalidPointError) as e:
+            Public_key(gen, point)
+
+        self.assertIn("Generator point must have order", str(e.exception))
+
+    def test_public_point_on_curve_not_scalar_multiple_of_base_point(self):
+        x = 2
+        y = 0xBE6AA4938EF7CFE6FE29595B6B00
+        # we need a curve with cofactor != 1
+        point = ellipticcurve.PointJacobi(curve_112r2, x, y, 1)
+
+        self.assertTrue(curve_112r2.contains_point(x, y))
+
+        with self.assertRaises(InvalidPointError) as e:
+            Public_key(generator_112r2, point)
+
+        self.assertIn("Generator point order", str(e.exception))
+
+    def test_point_is_valid_with_not_scalar_multiple_of_base_point(self):
+        x = 2
+        y = 0xBE6AA4938EF7CFE6FE29595B6B00
+
+        self.assertFalse(point_is_valid(generator_112r2, x, y))
+
+    # the tests to verify the extensiveness of tests in ecdsa.ecdsa
+    # if PointJacobi gets modified to calculate the x and y mod p the tests
+    # below will need to use a fake/mock object
+    def test_invalid_point_x_negative(self):
+        pt = ellipticcurve.PointJacobi(curve_192, -1, 0, 1)
+
+        with self.assertRaises(InvalidPointError) as e:
+            Public_key(generator_192, pt)
+
+        self.assertIn("The public point has x or y", str(e.exception))
+
+    def test_invalid_point_x_equal_p(self):
+        pt = ellipticcurve.PointJacobi(curve_192, curve_192.p(), 0, 1)
+
+        with self.assertRaises(InvalidPointError) as e:
+            Public_key(generator_192, pt)
+
+        self.assertIn("The public point has x or y", str(e.exception))
+
+    def test_invalid_point_y_negative(self):
+        pt = ellipticcurve.PointJacobi(curve_192, 0, -1, 1)
+
+        with self.assertRaises(InvalidPointError) as e:
+            Public_key(generator_192, pt)
+
+        self.assertIn("The public point has x or y", str(e.exception))
+
+    def test_invalid_point_y_equal_p(self):
+        pt = ellipticcurve.PointJacobi(curve_192, 0, curve_192.p(), 1)
+
+        with self.assertRaises(InvalidPointError) as e:
+            Public_key(generator_192, pt)
+
+        self.assertIn("The public point has x or y", str(e.exception))
+
+
+class TestPublicKeyVerifies(unittest.TestCase):
+    # test all the different ways that a signature can be publicly invalid
+    @classmethod
+    def setUpClass(cls):
+        gen = generator_192
+        x = 0xC58D61F88D905293BCD4CD0080BCB1B7F811F2FFA41979F6
+        y = 0x8804DC7A7C4C7F8B5D437F5156F3312CA7D6DE8A0E11867F
+        point = ellipticcurve.Point(gen.curve(), x, y)
+
+        cls.pub_key = Public_key(gen, point)
+
+    def test_sig_with_r_zero(self):
+        sig = Signature(0, 1)
+
+        self.assertFalse(self.pub_key.verifies(1, sig))
+
+    def test_sig_with_r_order(self):
+        sig = Signature(generator_192.order(), 1)
+
+        self.assertFalse(self.pub_key.verifies(1, sig))
+
+    def test_sig_with_s_zero(self):
+        sig = Signature(1, 0)
+
+        self.assertFalse(self.pub_key.verifies(1, sig))
+
+    def test_sig_with_s_order(self):
+        sig = Signature(1, generator_192.order())
+
+        self.assertFalse(self.pub_key.verifies(1, sig))
 
 
 class TestPrivateKey(unittest.TestCase):
@@ -536,3 +655,7 @@ def test_sig_verify(args):
     assert pubkey.verifies(msg, signature)
 
     assert not pubkey.verifies(msg - 1, signature)
+
+
+def test_int_to_string_with_zero():
+    assert int_to_string(0) == b"\x00"
