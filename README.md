@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/tlsfuzzer/python-ecdsa.svg?branch=master)](https://travis-ci.com/tlsfuzzer/python-ecdsa)
 [![Coverage Status](https://coveralls.io/repos/github/tlsfuzzer/python-ecdsa/badge.svg?branch=master)](https://coveralls.io/github/tlsfuzzer/python-ecdsa?branch=master)
-[![condition coverage](https://img.shields.io/badge/condition%20coverage-84%25-yellow)](https://travis-ci.com/github/tlsfuzzer/python-ecdsa/jobs/456999547#L586)
+[![condition coverage](https://img.shields.io/badge/condition%20coverage-87%25-yellow)](https://travis-ci.com/github/tlsfuzzer/python-ecdsa/jobs/458951056#L544)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/context:python)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/alerts/)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
@@ -30,7 +30,9 @@ the OpenSSL tool (`openssl ecparam -list_curves`), are: `prime192v1`,
 regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
 "short names" of those curves are: `brainpoolP160r1`, `brainpoolP192r1`,
 `brainpoolP224r1`, `brainpoolP256r1`, `brainpoolP320r1`, `brainpoolP384r1`,
-`brainpoolP512r1`.
+`brainpoolP512r1`. Few of the small curves from SEC standard are also
+included (mainly to speed-up testing of the library), those are:
+`secp112r1`, `secp112r2`, `secp128r1`, and `secp160r1`.
 No other curves are included, but it is not too hard to add support for more
 curves over prime fields.
 
@@ -91,68 +93,84 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
 ```
                   siglen    keygen   keygen/s      sign     sign/s    verify   verify/s  no PC verify  no PC verify/s
-        NIST192p:     48   0.00033s   2991.13   0.00036s   2740.86   0.00067s   1502.11       0.00136s         737.54
-        NIST224p:     56   0.00042s   2360.67   0.00046s   2190.16   0.00083s   1201.83       0.00170s         587.79
-        NIST256p:     64   0.00053s   1872.02   0.00057s   1743.08   0.00103s    968.53       0.00219s         457.36
-        NIST384p:     96   0.00110s    907.45   0.00116s    861.63   0.00218s    459.38       0.00445s         224.92
-        NIST521p:    132   0.00214s    467.72   0.00223s    448.70   0.00430s    232.76       0.00888s         112.66
-       SECP256k1:     64   0.00054s   1841.11   0.00058s   1722.33   0.00111s    903.07       0.00216s         464.01
- BRAINPOOLP160r1:     40   0.00026s   3780.81   0.00029s   3422.67   0.00054s   1863.09       0.00109s         914.93
- BRAINPOOLP192r1:     48   0.00034s   2942.79   0.00037s   2710.56   0.00070s   1435.59       0.00138s         724.79
- BRAINPOOLP224r1:     56   0.00044s   2278.35   0.00047s   2145.32   0.00090s   1115.34       0.00182s         549.72
- BRAINPOOLP256r1:     64   0.00055s   1832.95   0.00059s   1704.50   0.00110s    911.02       0.00234s         427.22
- BRAINPOOLP320r1:     80   0.00077s   1305.78   0.00082s   1222.47   0.00156s    640.27       0.00321s         311.56
- BRAINPOOLP384r1:     96   0.00112s    893.07   0.00118s    849.32   0.00228s    438.75       0.00478s         209.35
- BRAINPOOLP512r1:    128   0.00213s    470.08   0.00221s    451.98   0.00419s    238.70       0.00940s         106.44
+        NIST192p:     48   0.00032s   3134.06   0.00033s   2985.53   0.00063s   1598.36       0.00129s         774.43
+        NIST224p:     56   0.00040s   2469.24   0.00042s   2367.88   0.00081s   1233.41       0.00170s         586.66
+        NIST256p:     64   0.00051s   1952.73   0.00054s   1867.80   0.00098s   1021.86       0.00212s         471.27
+        NIST384p:     96   0.00107s    935.92   0.00111s    904.23   0.00203s    491.77       0.00446s         224.00
+        NIST521p:    132   0.00210s    475.52   0.00215s    464.16   0.00398s    251.28       0.00874s         114.39
+       SECP256k1:     64   0.00052s   1921.54   0.00054s   1847.49   0.00105s    948.68       0.00210s         477.01
+ BRAINPOOLP160r1:     40   0.00025s   4003.88   0.00026s   3845.12   0.00053s   1893.93       0.00105s         949.92
+ BRAINPOOLP192r1:     48   0.00033s   3043.97   0.00034s   2975.98   0.00063s   1581.50       0.00135s         742.29
+ BRAINPOOLP224r1:     56   0.00041s   2436.44   0.00043s   2315.51   0.00078s   1278.49       0.00180s         556.16
+ BRAINPOOLP256r1:     64   0.00053s   1892.49   0.00054s   1846.24   0.00114s    875.64       0.00229s         437.25
+ BRAINPOOLP320r1:     80   0.00073s   1361.26   0.00076s   1309.25   0.00143s    699.29       0.00322s         310.49
+ BRAINPOOLP384r1:     96   0.00107s    931.29   0.00111s    901.80   0.00230s    434.19       0.00476s         210.20
+ BRAINPOOLP512r1:    128   0.00207s    483.41   0.00212s    471.42   0.00425s    235.43       0.00912s         109.61
+       SECP112r1:     28   0.00015s   6672.53   0.00016s   6440.34   0.00031s   3265.41       0.00056s        1774.20
+       SECP112r2:     28   0.00015s   6697.11   0.00015s   6479.98   0.00028s   3524.72       0.00058s        1716.16
+       SECP128r1:     32   0.00018s   5497.65   0.00019s   5272.89   0.00036s   2747.39       0.00072s        1396.16
+       SECP160r1:     42   0.00025s   3949.32   0.00026s   3894.45   0.00046s   2153.85       0.00102s         985.07
 
                        ecdh     ecdh/s
-        NIST192p:   0.00110s    910.70
-        NIST224p:   0.00143s    701.17
-        NIST256p:   0.00178s    560.44
-        NIST384p:   0.00383s    261.03
-        NIST521p:   0.00745s    134.23
-       SECP256k1:   0.00168s    596.23
- BRAINPOOLP160r1:   0.00085s   1174.02
- BRAINPOOLP192r1:   0.00113s    883.47
- BRAINPOOLP224r1:   0.00145s    687.82
- BRAINPOOLP256r1:   0.00195s    514.03
- BRAINPOOLP320r1:   0.00277s    360.80
- BRAINPOOLP384r1:   0.00412s    242.58
- BRAINPOOLP512r1:   0.00787s    127.12
+        NIST192p:   0.00104s    964.89
+        NIST224p:   0.00134s    748.63
+        NIST256p:   0.00170s    587.08
+        NIST384p:   0.00352s    283.90
+        NIST521p:   0.00717s    139.51
+       SECP256k1:   0.00154s    648.40
+ BRAINPOOLP160r1:   0.00082s   1220.70
+ BRAINPOOLP192r1:   0.00105s    956.75
+ BRAINPOOLP224r1:   0.00136s    734.52
+ BRAINPOOLP256r1:   0.00178s    563.32
+ BRAINPOOLP320r1:   0.00252s    397.23
+ BRAINPOOLP384r1:   0.00376s    266.27
+ BRAINPOOLP512r1:   0.00733s    136.35
+       SECP112r1:   0.00046s   2180.40
+       SECP112r2:   0.00045s   2229.14
+       SECP128r1:   0.00054s   1868.15
+       SECP160r1:   0.00080s   1243.98
 ```
 
 To test performance with `gmpy2` loaded, use `tox -e speedgmpy2`.
 On the same machine I'm getting the following performance with `gmpy2`:
 ```
                   siglen    keygen   keygen/s      sign     sign/s    verify   verify/s  no PC verify  no PC verify/s
-        NIST192p:     48   0.00017s   5878.39   0.00018s   5670.66   0.00034s   2971.38       0.00067s        1484.97
-        NIST224p:     56   0.00021s   4705.08   0.00022s   4587.19   0.00040s   2499.96       0.00088s        1140.97
-        NIST256p:     64   0.00024s   4252.73   0.00024s   4108.48   0.00049s   2038.80       0.00096s        1043.03
-        NIST384p:     96   0.00041s   2455.84   0.00042s   2406.31   0.00079s   1260.03       0.00172s         580.61
-        NIST521p:    132   0.00070s   1419.16   0.00072s   1392.50   0.00139s    719.35       0.00307s         325.96
-       SECP256k1:     64   0.00024s   4228.87   0.00024s   4086.32   0.00047s   2124.86       0.00096s        1037.53
- BRAINPOOLP160r1:     40   0.00014s   6932.12   0.00015s   6678.36   0.00030s   3387.90       0.00056s        1784.02
- BRAINPOOLP192r1:     48   0.00017s   5886.05   0.00017s   5720.63   0.00034s   2941.22       0.00067s        1490.87
- BRAINPOOLP224r1:     56   0.00021s   4748.89   0.00022s   4638.15   0.00041s   2460.86       0.00089s        1128.91
- BRAINPOOLP256r1:     64   0.00024s   4248.00   0.00024s   4135.19   0.00045s   2209.69       0.00099s        1006.45
- BRAINPOOLP320r1:     80   0.00032s   3096.85   0.00033s   3012.43   0.00065s   1547.07       0.00137s         728.60
- BRAINPOOLP384r1:     96   0.00041s   2436.12   0.00042s   2396.23   0.00083s   1211.13       0.00176s         568.39
- BRAINPOOLP512r1:    128   0.00063s   1580.09   0.00064s   1562.78   0.00129s    778.09       0.00279s         358.12
+        NIST192p:     48   0.00017s   5933.40   0.00017s   5751.70   0.00032s   3125.28       0.00067s        1502.41
+        NIST224p:     56   0.00021s   4782.87   0.00022s   4610.05   0.00040s   2487.04       0.00089s        1126.90
+        NIST256p:     64   0.00023s   4263.98   0.00024s   4125.16   0.00045s   2200.88       0.00098s        1016.82
+        NIST384p:     96   0.00041s   2449.54   0.00042s   2399.96   0.00083s   1210.57       0.00172s         581.43
+        NIST521p:    132   0.00071s   1416.07   0.00072s   1389.81   0.00144s    692.93       0.00312s         320.40
+       SECP256k1:     64   0.00024s   4245.05   0.00024s   4122.09   0.00045s   2206.40       0.00094s        1068.32
+ BRAINPOOLP160r1:     40   0.00014s   6939.17   0.00015s   6681.55   0.00029s   3452.43       0.00057s        1769.81
+ BRAINPOOLP192r1:     48   0.00017s   5920.05   0.00017s   5774.36   0.00034s   2979.00       0.00069s        1453.19
+ BRAINPOOLP224r1:     56   0.00021s   4732.12   0.00022s   4622.65   0.00041s   2422.47       0.00087s        1149.87
+ BRAINPOOLP256r1:     64   0.00024s   4233.02   0.00024s   4115.20   0.00047s   2143.27       0.00098s        1015.60
+ BRAINPOOLP320r1:     80   0.00032s   3162.38   0.00032s   3077.62   0.00063s   1598.83       0.00136s         737.34
+ BRAINPOOLP384r1:     96   0.00041s   2436.88   0.00042s   2395.62   0.00083s   1202.68       0.00178s         562.85
+ BRAINPOOLP512r1:    128   0.00063s   1587.60   0.00064s   1558.83   0.00125s    799.96       0.00281s         355.83
+       SECP112r1:     28   0.00009s  11118.66   0.00009s  10775.48   0.00018s   5456.00       0.00033s        3020.83
+       SECP112r2:     28   0.00009s  11322.97   0.00009s  10857.71   0.00017s   5748.77       0.00032s        3094.28
+       SECP128r1:     32   0.00010s  10078.39   0.00010s   9665.27   0.00019s   5200.58       0.00036s        2760.88
+       SECP160r1:     42   0.00015s   6875.51   0.00015s   6647.35   0.00029s   3422.41       0.00057s        1768.35
 
                        ecdh     ecdh/s
-        NIST192p:   0.00051s   1960.26
-        NIST224p:   0.00067s   1502.97
-        NIST256p:   0.00073s   1376.12
-        NIST384p:   0.00132s    758.68
-        NIST521p:   0.00231s    433.23
-       SECP256k1:   0.00072s   1387.18
- BRAINPOOLP160r1:   0.00042s   2366.60
- BRAINPOOLP192r1:   0.00049s   2026.80
- BRAINPOOLP224r1:   0.00067s   1486.52
- BRAINPOOLP256r1:   0.00076s   1310.31
- BRAINPOOLP320r1:   0.00101s    986.16
- BRAINPOOLP384r1:   0.00131s    761.35
- BRAINPOOLP512r1:   0.00211s    473.30
+        NIST192p:   0.00050s   1985.70
+        NIST224p:   0.00066s   1524.16
+        NIST256p:   0.00071s   1413.07
+        NIST384p:   0.00127s    788.89
+        NIST521p:   0.00230s    434.85
+       SECP256k1:   0.00071s   1409.95
+ BRAINPOOLP160r1:   0.00042s   2374.65
+ BRAINPOOLP192r1:   0.00051s   1960.01
+ BRAINPOOLP224r1:   0.00066s   1518.37
+ BRAINPOOLP256r1:   0.00071s   1399.90
+ BRAINPOOLP320r1:   0.00100s    997.21
+ BRAINPOOLP384r1:   0.00129s    777.51
+ BRAINPOOLP512r1:   0.00210s    475.99
+       SECP112r1:   0.00022s   4457.70
+       SECP112r2:   0.00024s   4252.33
+       SECP128r1:   0.00028s   3589.31
+       SECP160r1:   0.00043s   2305.02
 ```
 
 (there's also `gmpy` version, execute it using `tox -e speedgmpy`)
@@ -210,14 +228,16 @@ To run the full test suite, do this:
 
     tox -e coverage
 
-On an Intel Core i7 4790K @ 4.0GHz, the tests take about 16 seconds to execute.
+On an Intel Core i7 4790K @ 4.0GHz, the tests take about 18 seconds to execute.
 The test suite uses
 [`hypothesis`](https://github.com/HypothesisWorks/hypothesis) so there is some
 inherent variability in the test suite execution time.
 
-One part of `test_pyecdsa.py` checks compatibility with OpenSSL, by
-running the "openssl" CLI tool, make sure it's in your `PATH` if you want
-to test compatibility with it.
+One part of `test_pyecdsa.py` and `test_ecdh.py` checks compatibility with
+OpenSSL, by running the "openssl" CLI tool, make sure it's in your `PATH` if
+you want to test compatibility with it (if OpenSSL is missing, too old, or
+doesn't support all the curves supported in upstream releases you will see
+skipped tests in the above `coverage` run).
 
 ## Security
 
