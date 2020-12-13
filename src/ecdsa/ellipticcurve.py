@@ -187,15 +187,11 @@ class PointJacobi(object):
         if self.__generator:
             # since we lack promotion of read-locks to write-locks, we do a
             # "acquire-read-lock, check, acquire-write-lock plus recheck" cycle
-            try:
-                self._update_lock.reader_acquire()
+            with self._update_lock.as_reader:
                 if self.__precompute:
                     return
-            finally:
-                self._update_lock.reader_release()
 
-            try:
-                self._update_lock.writer_acquire()
+            with self._update_lock.as_writer:
                 if self.__precompute:
                     return
                 order = self.__order
@@ -213,15 +209,9 @@ class PointJacobi(object):
                     doubler = doubler.double().scale()
                     self.__precompute.append((doubler.x(), doubler.y()))
 
-            finally:
-                self._update_lock.writer_release()
-
     def __getstate__(self):
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             state = self.__dict__.copy()
-        finally:
-            self._update_lock.reader_release()
         del state["_update_lock"]
         return state
 
@@ -234,21 +224,15 @@ class PointJacobi(object):
 
         Note: only points that lay on the same curve can be equal.
         """
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             if other is INFINITY:
                 return not self.__y or not self.__z
             x1, y1, z1 = self.__x, self.__y, self.__z
-        finally:
-            self._update_lock.reader_release()
         if isinstance(other, Point):
             x2, y2, z2 = other.x(), other.y(), 1
         elif isinstance(other, PointJacobi):
-            try:
-                other._update_lock.reader_acquire()
+            with other._update_lock.as_reader:
                 x2, y2, z2 = other.__x, other.__y, other.__z
-            finally:
-                other._update_lock.reader_release()
         else:
             return NotImplemented
         if self.__curve != other.curve():
@@ -289,14 +273,11 @@ class PointJacobi(object):
         call x() and y() on the returned instance. Or call `scale()`
         and then x() and y() on the returned instance.
         """
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             if self.__z == 1:
                 return self.__x
             x = self.__x
             z = self.__z
-        finally:
-            self._update_lock.reader_release()
         p = self.__curve.p()
         z = numbertheory.inverse_mod(z, p)
         return x * z ** 2 % p
@@ -310,14 +291,11 @@ class PointJacobi(object):
         call x() and y() on the returned instance. Or call `scale()`
         and then x() and y() on the returned instance.
         """
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             if self.__z == 1:
                 return self.__y
             y = self.__y
             z = self.__z
-        finally:
-            self._update_lock.reader_release()
         p = self.__curve.p()
         z = numbertheory.inverse_mod(z, p)
         return y * z ** 3 % p
@@ -328,15 +306,11 @@ class PointJacobi(object):
 
         Modifies point in place, returns self.
         """
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             if self.__z == 1:
                 return self
-        finally:
-            self._update_lock.reader_release()
 
-        try:
-            self._update_lock.writer_acquire()
+        with self._update_lock.as_writer:
             # scaling already scaled point is safe (as inverse of 1 is 1) and
             # quick so we don't need to optimise for the unlikely event when
             # two threads hit the lock at the same time
@@ -348,8 +322,6 @@ class PointJacobi(object):
             # we are setting the z last so that the check above will return
             # true only after all values were already updated
             self.__z = 1
-        finally:
-            self._update_lock.writer_release()
         return self
 
     def to_affine(self):
@@ -428,11 +400,8 @@ class PointJacobi(object):
 
         p, a = self.__curve.p(), self.__curve.a()
 
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             X1, Y1, Z1 = self.__x, self.__y, self.__z
-        finally:
-            self._update_lock.reader_release()
 
         X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
 
@@ -546,16 +515,10 @@ class PointJacobi(object):
             raise ValueError("The other point is on different curve")
 
         p = self.__curve.p()
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             X1, Y1, Z1 = self.__x, self.__y, self.__z
-        finally:
-            self._update_lock.reader_release()
-        try:
-            other._update_lock.reader_acquire()
+        with other._update_lock.as_reader:
             X2, Y2, Z2 = other.__x, other.__y, other.__z
-        finally:
-            other._update_lock.reader_release()
         X3, Y3, Z3 = self._add(X1, Y1, Z1, X2, Y2, Z2, p)
 
         if not Y3 or not Z3:
@@ -736,13 +699,10 @@ class PointJacobi(object):
 
     def __neg__(self):
         """Return negated point."""
-        try:
-            self._update_lock.reader_acquire()
+        with self._update_lock.as_reader:
             return PointJacobi(
                 self.__curve, self.__x, -self.__y, self.__z, self.__order
             )
-        finally:
-            self._update_lock.reader_release()
 
 
 class Point(object):

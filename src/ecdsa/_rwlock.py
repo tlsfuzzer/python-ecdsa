@@ -45,6 +45,34 @@ class RWLock:
         self.__no_writers = threading.Lock()
         self.__readers_queue = threading.Lock()
 
+    @property
+    def as_reader(self):
+        class _reader(object):
+            def __init__(self, rwlock):
+                self._rwlock = rwlock
+
+            def __enter__(self):
+                self._rwlock.reader_acquire()
+
+            def __exit__(self, exc_type, exc_value, trackeback):
+                self._rwlock.reader_release()
+
+        return _reader(self)
+
+    @property
+    def as_writer(self):
+        class _writer(object):
+            def __init__(self, rwlock):
+                self._rwlock = rwlock
+
+            def __enter__(self):
+                self._rwlock.writer_acquire()
+
+            def __exit__(self, exc_type, exc_value, trackeback):
+                self._rwlock.writer_release()
+
+        return _writer(self)
+
     def reader_acquire(self):
         with self.__readers_queue:
             with self.__no_readers:
