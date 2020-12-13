@@ -2,11 +2,20 @@
 # https://code.activestate.com/recipes/577803-reader-writer-lock-with-priority-for-writers/
 # released under the MIT licence
 
-import unittest
+import os
+import signal
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import threading
 import time
 import copy
+import platform
+import pytest
 from ._rwlock import RWLock
+from ._compat import SIGINT
 
 
 class Writer(threading.Thread):
@@ -161,6 +170,35 @@ class RWLockTestCase(unittest.TestCase):
         self.assertTrue(threads[2].exit_time <= threads[4].entry_time)
         self.assertTrue(threads[5].exit_time <= threads[3].entry_time)
         self.assertTrue(threads[5].exit_time <= threads[4].entry_time)
+
+    @pytest.mark.skipif(
+        platform.system() == "Windows",
+        reason="event handling on Windows is weird...",
+    )
+    def test_handling_of_sigint(self):
+        def _deffered_signal():
+            time.sleep(0.1)
+            if platform.system() == "Windows":  # pragma: no branch
+                os.kill(0, SIGINT)
+            else:  # pragma: no branch
+                os.kill(os.getpid(), SIGINT)
+
+        t = threading.Thread(target=_deffered_signal)
+        t.start()
+
+        lock = RWLock()
+
+        # it seems the setup on Travis-CI masks the CTRL_C_EVENT so the
+        # KeyboardInterrupt doesn't get raised
+        if platform.system() == "Windows":  # pragma: no branch
+            with lock.as_reader:
+                time.sleep(0.2)
+        else:  # pragma: no branch
+            with self.assertRaises(KeyboardInterrupt):
+                with lock.as_reader:
+                    time.sleep(0.2)
+
+        t.join()
 
     @staticmethod
     def __init_variables():

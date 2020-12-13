@@ -3,7 +3,15 @@ Common functions for providing cross-python version compatibility.
 """
 import sys
 import re
+import platform
+import signal
 from six import integer_types
+
+
+if platform.system() == "Windows":  # pragma: no branch
+    SIGINT = signal.CTRL_C_EVENT
+else:  # pragma: no branch
+    SIGINT = signal.SIGINT
 
 
 def str_idx_as_int(string, index):

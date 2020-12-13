@@ -3,6 +3,7 @@
 # https://code.activestate.com/recipes/577803-reader-writer-lock-with-priority-for-writers/
 # released under the MIT licence
 
+import signal
 import threading
 
 
@@ -21,10 +22,17 @@ class RWLock:
        reading unless a writer is also waiting for the share,
     2) no writer should be kept waiting for the share longer than absolutely
        necessary.
+    3) even when the process receives KeyboardInterrupt during lock acquisition
+       or release the object is left in consistent state
 
     The implementation is based on [1, secs. 4.2.2, 4.2.6, 4.2.7]
     with a modification -- adding an additional lock (C{self.__readers_queue})
     -- in accordance with [2].
+
+    Note: because of requirement 3 above, the handling of SIGINT
+    (KeyboardInterrupt) is delayed until after *_release() or context
+    manager exit. I.e. critical section won't get interrupted with
+    KeyboardInterrupt.
 
     Sources:
     [1] A.B. Downey: "The little book of semaphores", Version 2.1.5, 2008
@@ -44,6 +52,8 @@ class RWLock:
         self.__no_readers = threading.Lock()
         self.__no_writers = threading.Lock()
         self.__readers_queue = threading.Lock()
+        self._signal_received = False
+        self._old_handler = None
 
     @property
     def as_reader(self):
@@ -73,7 +83,24 @@ class RWLock:
 
         return _writer(self)
 
+    def _signal_handler_start(self):
+        if threading.current_thread().__class__.__name__ == "_MainThread":
+            # signal handlers can be changed only in the MainThread
+            self._signal_received = False
+            self._old_handler = signal.signal(signal.SIGINT, self._handler)
+
+    def _signal_handler_end(self):
+        if threading.current_thread().__class__.__name__ == "_MainThread":
+            signal.signal(signal.SIGINT, self._old_handler)
+            if self._signal_received:
+                self._old_handler(*self._signal_received)
+
+    def _handler(self, sig, frame):
+        self._signal_received = (sig, frame)
+
     def reader_acquire(self):
+        self._signal_handler_start()
+
         with self.__readers_queue:
             with self.__no_readers:
                 self.__read_switch.acquire(self.__no_writers)
@@ -81,13 +108,19 @@ class RWLock:
     def reader_release(self):
         self.__read_switch.release(self.__no_writers)
 
+        self._signal_handler_end()
+
     def writer_acquire(self):
+        self._signal_handler_start()
+
         self.__write_switch.acquire(self.__no_readers)
         self.__no_writers.acquire()
 
     def writer_release(self):
         self.__no_writers.release()
         self.__write_switch.release(self.__no_readers)
+
+        self._signal_handler_end()
 
 
 class _LightSwitch:
