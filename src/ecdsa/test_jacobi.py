@@ -5,6 +5,12 @@ try:
 except ImportError:
     import unittest
 
+import os
+import sys
+import signal
+import pytest
+import threading
+import platform
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings, example
 
@@ -15,8 +21,15 @@ from .ecdsa import (
     generator_224,
     generator_brainpoolp160r1,
     curve_brainpoolp160r1,
+    generator_112r2,
 )
 from .numbertheory import inverse_mod
+from .util import randrange
+
+
+NO_OLD_SETTINGS = {}
+if sys.version_info > (2, 7):  # pragma: no branch
+    NO_OLD_SETTINGS["deadline"] = 5000
 
 
 class TestJacobi(unittest.TestCase):
@@ -543,3 +556,102 @@ class TestJacobi(unittest.TestCase):
     def test_pickle(self):
         pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)
+
+    @settings(**NO_OLD_SETTINGS)
+    @given(st.integers(min_value=1, max_value=10))
+    def test_multithreading(self, thread_num):
+        # ensure that generator's precomputation table is filled
+        generator_112r2 * 2
+
+        # create a fresh point that doesn't have a filled precomputation table
+        gen = generator_112r2
+        gen = PointJacobi(gen.curve(), gen.x(), gen.y(), 1, gen.order(), True)
+
+        self.assertEqual(gen._PointJacobi__precompute, [])
+
+        def runner(generator):
+            order = generator.order()
+            for _ in range(10):
+                generator * randrange(order)
+
+        threads = []
+        for _ in range(thread_num):
+            threads.append(threading.Thread(target=runner, args=(gen,)))
+
+        for t in threads:
+            t.start()
+
+        runner(gen)
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(
+            gen._PointJacobi__precompute,
+            generator_112r2._PointJacobi__precompute,
+        )
+
+    @pytest.mark.skipif(
+        platform.system() == "Windows",
+        reason="there are no signals on Windows",
+    )
+    def test_multithreading_with_interrupts(self):
+        thread_num = 10
+        # ensure that generator's precomputation table is filled
+        generator_112r2 * 2
+
+        # create a fresh point that doesn't have a filled precomputation table
+        gen = generator_112r2
+        gen = PointJacobi(gen.curve(), gen.x(), gen.y(), 1, gen.order(), True)
+
+        self.assertEqual(gen._PointJacobi__precompute, [])
+
+        def runner(generator):
+            order = generator.order()
+            for _ in range(50):
+                generator * randrange(order)
+
+        def interrupter(barrier_start, barrier_end, lock_exit):
+            # wait until MainThread can handle KeyboardInterrupt
+            barrier_start.release()
+            barrier_end.acquire()
+            os.kill(os.getpid(), signal.SIGINT)
+            lock_exit.release()
+
+        threads = []
+        for _ in range(thread_num):
+            threads.append(threading.Thread(target=runner, args=(gen,)))
+
+        barrier_start = threading.Lock()
+        barrier_start.acquire()
+        barrier_end = threading.Lock()
+        barrier_end.acquire()
+        lock_exit = threading.Lock()
+        lock_exit.acquire()
+
+        threads.append(
+            threading.Thread(
+                target=interrupter,
+                args=(barrier_start, barrier_end, lock_exit),
+            )
+        )
+
+        for t in threads:
+            t.start()
+
+        with self.assertRaises(KeyboardInterrupt):
+            # signal to interrupter that we can now handle the signal
+            barrier_start.acquire()
+            barrier_end.release()
+            runner(gen)
+            # use the lock to ensure we never go past the scope of
+            # assertRaises before the os.kill is called
+            lock_exit.acquire()
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual(
+            gen._PointJacobi__precompute,
+            generator_112r2._PointJacobi__precompute,
+        )
