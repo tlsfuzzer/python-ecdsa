@@ -2,7 +2,10 @@
 # https://code.activestate.com/recipes/577803-reader-writer-lock-with-priority-for-writers/
 # released under the MIT licence
 
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 import threading
 import time
 import copy
