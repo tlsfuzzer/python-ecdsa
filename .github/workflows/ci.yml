@@ -188,6 +188,15 @@ jobs:
           fi
       - name: Display installed python package versions
         run: pip list
+      - name: Test native speed
+        if: ${{ !contains(matrix.tox-env, 'gmpy') }}
+        run: tox -e speed
+      - name: Test speed with gmpy
+        if: ${{ contains(matrix.tox-env, 'gmpyp') }}
+        run: tox -e speedgmpy
+      - name: Test speed with gmpy2
+        if: ${{ contains(matrix.tox-env, 'gmpy2') }}
+        run: tox -e speedgmpy2
       - name: Run unit tests
         if: ${{ matrix.tox-env }}
         run: tox -e ${{ matrix.tox-env }}
