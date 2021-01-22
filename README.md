@@ -1,6 +1,6 @@
 # Pure-Python ECDSA and ECDH
 
-[![Build Status](https://travis-ci.com/tlsfuzzer/python-ecdsa.svg?branch=master)](https://travis-ci.com/tlsfuzzer/python-ecdsa)
+[![Build Status](https://github.com/tlsfuzzer/python-ecdsa/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tlsfuzzer/python-ecdsa/actions?query=workflow%3A%22GitHub+CI%22+branch%3Amaster)
 [![Coverage Status](https://coveralls.io/repos/github/tlsfuzzer/python-ecdsa/badge.svg?branch=master)](https://coveralls.io/github/tlsfuzzer/python-ecdsa?branch=master)
 [![condition coverage](https://img.shields.io/badge/condition%20coverage-87%25-yellow)](https://travis-ci.com/github/tlsfuzzer/python-ecdsa/jobs/458951056#L544)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/context:python)
