@@ -1,0 +1,217 @@
+name: GitHub CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: py2.6
+            os: ubuntu-latest
+            container: centos:6
+            python-version: 2.6
+            tox-env: py26
+          - name: py2.7
+            os: ubuntu-16.04
+            python-version: 2.7
+            tox-env: py27
+          - name: py2.7 with old gmpy
+            os: ubuntu-16.04
+            python-version: 2.7
+            tox-env: py27_old_gmpy
+          - name: py2.7 with old gmpy2
+            os: ubuntu-16.04
+            python-version: 2.7
+            tox-env: py27_old_gmpy2
+          - name: py2.7 with old six
+            os: ubuntu-16.04
+            python-version: 2.7
+            tox-env: py27_old_six
+          - name: py2.7 with gmpy
+            os: ubuntu-16.04
+            python-version: 2.7
+            tox-env: gmpypy27
+          - name: py2.7 with gmpy2
+            os: ubuntu-16.04
+            python-version: 2.7
+            tox-env: gmpy2py27
+          - name: py3.3
+            os: ubuntu-18.04
+            python-version: 3.3
+            tox-env: py33
+          - name: py3.4
+            os: ubuntu-18.04
+            python-version: 3.4
+            tox-env: py34
+          - name: py3.5
+            os: ubuntu-18.04
+            python-version: 3.5
+            tox-env: py35
+          - name: py3.6
+            os: ubuntu-18.04
+            python-version: 3.6
+            tox-env: py36
+          - name: py3.7
+            os: ubuntu-latest
+            python-version: 3.7
+            tox-env: py37
+          - name: py3.8
+            os: ubuntu-latest
+            python-version: 3.8
+            tox-env: py38
+          - name: py3.9
+            os: ubuntu-latest
+            python-version: 3.9
+            tox-env: py39
+          - name: py3.9 with gmpy
+            os: ubuntu-latest
+            python-version: 3.9
+            tox-env: gmpypy39
+          - name: py3.9 with gmpy2
+            os: ubuntu-latest
+            python-version: 3.9
+            tox-env: gmpy2py39
+          - name: pypy
+            os: ubuntu-latest
+            python-version: pypy-2.7
+            tox-env: pypy
+          - name: pypy3
+            os: ubuntu-latest
+            python-version: pypy-3.7
+            tox-env: pypy3
+          # special configurations
+          - name: py2.7 with instrumental
+            os: ubuntu-16.04
+            python-version: 2.7
+            opt-deps: ['instrumental']
+          - name: code checks
+            os: ubuntu-latest
+            python-version: 3.9
+            tox-env: codechecks
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ !matrix.container }}
+        with:
+          fetch-depth: 50
+      - uses: actions/checkout@v1
+        # centos 6 doesn't have glibc new enough for the nodejs used by v2
+        if: ${{ matrix.container }}
+        with:
+          fetch-depth: 50
+      - name: Ensure dependencies on CentOS
+        if: ${{ matrix.container }}
+        run: |
+          ls /etc/yum.repos.d/
+          cat /etc/yum.repos.d/CentOS-Base.repo
+          rm /etc/yum.repos.d/CentOS-Base.repo
+          cat > /etc/yum.repos.d/CentOS-Base.repo <<EOF
+          [base]
+          name=CentOS-$releasever - Base
+          baseurl=https://vault.centos.org/6.10/os/x86_64/
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+          [updates]
+          name=CentOS-$releasever - Updates
+          baseurl=https://vault.centos.org/6.10/updates/x86_64/
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+          [extras]
+          name=CentOS-$releasever - Extras
+          baseurl=https://vault.centos.org/6.10/extras/x86_64/
+          gpgcheck=1
+          gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-6
+
+          EOF
+          echo installing
+          yum clean all
+          yum repolist all
+          yum install -y git make python curl gcc libffi-devel python-devel glibc-devel openssl-devel
+      - name: Verify git status
+        run: |
+          git status
+          git remote -v
+      - name: Ensure we have baseline branch for quality coverage
+        run: git fetch origin master:refs/remotes/origin/master
+      - name: Set up Python ${{ matrix.python-version }}
+        # we use containers to use the native python version from them
+        if: ${{ !matrix.container }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Display installed python package versions
+        run: |
+          pip list || :
+      - name: Ensure working pip on 3.3
+        if: ${{ matrix.python-version == '3.3' }}
+        run: |
+          curl -o get-pip.py https://bootstrap.pypa.io/3.3/get-pip.py;
+          python get-pip.py
+      - name: Ensure working pip on 2.6
+        if: ${{ matrix.python-version == '2.6' }}
+        run: |
+          curl -o get-pip.py https://bootstrap.pypa.io/2.6/get-pip.py;
+          python get-pip.py
+          pip list
+          pip install setuptools==28.8.0 wheel==0.30.0a0
+      - name: Install instrumental
+        if: ${{ contains(matrix.tox-env, 'instrumental') }}
+        run: pip install instrumental
+      - name: Install gmpy
+        if: ${{ contains(matrix.tox-env, 'gmpy') }}
+        run: pip install gmpy
+      - name: Install gmpy2 dependencies
+        if: ${{ contains(matrix.tox-env, 'gmpy2') }}
+        run: sudo apt-get install -y libmpfr-dev libmpc-dev
+      - name: Install gmpy2
+        if: ${{ contains(matrix.tox-env, 'gmpy2') }}
+        run: pip install gmpy2
+      - name: Install build dependencies
+        run: |
+          PYTHON_VERSION=${{ matrix.python-version }}
+          PYTHON_VERSION=${PYTHON_VERSION#pypy-}
+          if [[ -e build-requirements-${PYTHON_VERSION}.txt ]]; then
+            pip install -r build-requirements-${PYTHON_VERSION}.txt;
+          else
+            pip install -r build-requirements.txt;
+          fi
+      - name: Display installed python package versions
+        run: pip list
+      - name: Run unit tests
+        if: ${{ matrix.tox-env }}
+        run: tox -e ${{ matrix.tox-env }}
+      - name: Publish coverage to Coveralls
+        if: ${{ !matrix.opt-deps && matrix.tox-env != 'codechecks' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.name }}
+          COVERALLS_PARALLEL: true
+          COVERALLS_SERVICE_NAME: github
+        run: coveralls
+
+  coveralls:
+    name: Indicate completion to coveralls.io
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+      - name: Install coveralls
+        run: |
+          pip3 install --upgrade coveralls
+      - name: Send "finished" signal to coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_SERVICE_NAME: github
+        run: |
+          coveralls --finish

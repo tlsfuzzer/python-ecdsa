@@ -2,5 +2,4 @@ tox
 git+https://github.com/tomato42/coveralls-python.git@add-py26#egg=coveralls
 hypothesis
 pytest>=4.6.0
-PyYAML<5.3
 coverage
