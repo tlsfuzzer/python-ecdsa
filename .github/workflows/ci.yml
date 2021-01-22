@@ -169,7 +169,7 @@ jobs:
         if: ${{ contains(matrix.tox-env, 'instrumental') }}
         run: pip install instrumental
       - name: Install gmpy
-        if: ${{ contains(matrix.tox-env, 'gmpy') }}
+        if: ${{ contains(matrix.tox-env, 'gmpyp') }}
         run: pip install gmpy
       - name: Install gmpy2 dependencies
         if: ${{ contains(matrix.tox-env, 'gmpy2') }}
