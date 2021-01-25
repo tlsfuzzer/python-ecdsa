@@ -166,16 +166,16 @@ jobs:
           pip list
           pip install setuptools==28.8.0 wheel==0.30.0a0
       - name: Install instrumental
-        if: ${{ contains(matrix.tox-env, 'instrumental') }}
+        if: ${{ contains(matrix.opt-deps, 'instrumental') }}
         run: pip install instrumental
       - name: Install gmpy
-        if: ${{ contains(matrix.tox-env, 'gmpy') }}
+        if: ${{ contains(matrix.tox-env, 'gmpyp') }}
         run: pip install gmpy
       - name: Install gmpy2 dependencies
-        if: ${{ contains(matrix.tox-env, 'gmpy2') }}
+        if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') }}
         run: sudo apt-get install -y libmpfr-dev libmpc-dev
       - name: Install gmpy2
-        if: ${{ contains(matrix.tox-env, 'gmpy2') }}
+        if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') }}
         run: pip install gmpy2
       - name: Install build dependencies
         run: |
@@ -188,9 +188,41 @@ jobs:
           fi
       - name: Display installed python package versions
         run: pip list
+      - name: Test native speed
+        if: ${{ !contains(matrix.tox-env, 'gmpy') }}
+        run: tox -e speed
+      - name: Test speed with gmpy
+        if: ${{ contains(matrix.tox-env, 'gmpyp') }}
+        run: tox -e speedgmpy
+      - name: Test speed with gmpy2
+        if: ${{ contains(matrix.tox-env, 'gmpy2') }}
+        run: tox -e speedgmpy2
       - name: Run unit tests
         if: ${{ matrix.tox-env }}
         run: tox -e ${{ matrix.tox-env }}
+      - name: instrumental test coverage on PR
+        if: ${{ contains(matrix.opt-deps, 'instrumental') && github.event.pull_request }}
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch origin $BASE_REF
+          MERGE_BASE=$(git merge-base origin/$BASE_REF HEAD)
+          echo "MERGE_BASE:" $MERGE_BASE
+          git checkout $MERGE_BASE
+          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa/test*.py
+          instrumental -f .instrumental.cov -s
+          instrumental -f .instrumental.cov -s | python diff-instrumental.py --save .diff-instrumental
+          git checkout $GITHUB_SHA
+          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa/test*.py
+          instrumental -f .instrumental.cov -sr
+          instrumental -f .instrumental.cov -s | python diff-instrumental.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
+      - name: instrumental test coverage on push
+        if: ${{ contains(matrix.opt-deps, 'instrumental') && !github.event.pull_request }}
+        run: |
+          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa
+          instrumental -f .instrumental.cov -s
+          # just log the values when merging
+          instrumental -f .instrumental.cov -s | python diff-instrumental.py
       - name: Publish coverage to Coveralls
         if: ${{ !matrix.opt-deps && matrix.tox-env != 'codechecks' }}
         env:
