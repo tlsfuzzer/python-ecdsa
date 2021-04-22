@@ -18,7 +18,6 @@ jobs:
             os: ubuntu-latest
             container: centos:6
             python-version: 2.6
-            tox-env: py26
           - name: py2.7
             os: ubuntu-16.04
             python-version: 2.7
@@ -135,7 +134,7 @@ jobs:
           echo installing
           yum clean all
           yum repolist all
-          yum install -y git make python curl gcc libffi-devel python-devel glibc-devel openssl-devel
+          yum install -y git make python curl gcc libffi-devel python-devel glibc-devel openssl-devel wget
       - name: Verify git status
         run: |
           git status
@@ -156,15 +155,23 @@ jobs:
       - name: Ensure working pip on 3.3
         if: ${{ matrix.python-version == '3.3' }}
         run: |
-          curl -o get-pip.py https://bootstrap.pypa.io/3.3/get-pip.py;
+          curl -o get-pip.py https://bootstrap.pypa.io/pip/3.3/get-pip.py
           python get-pip.py
       - name: Ensure working pip on 2.6
         if: ${{ matrix.python-version == '2.6' }}
         run: |
-          curl -o get-pip.py https://bootstrap.pypa.io/2.6/get-pip.py;
-          python get-pip.py
+          # pypi deprecated SNI-less access to the CDN, so we have to download
+          # the packages manually
+          curl -o get-pip.py https://bootstrap.pypa.io/pip/2.6/get-pip.py
+          wget https://files.pythonhosted.org/packages/ac/95/a05b56bb975efa78d3557efa36acaf9cf5d2fd0ee0062060493687432e03/pip-9.0.3-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/27/f6/fabfc9c71c9b1b99d2ec4768a6e1f73b2e924f51c89d436302b8c2a25459/setuptools-36.8.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/8a/e9/8468cd68b582b06ef554be0b96b59f59779627131aad48f8a5bce4b13450/wheel-0.29.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/f2/94/3af39d34be01a24a6e65433d19e107099374224905f1e0cc6bbe1fd22a2f/argparse-1.4.0-py2.py3-none-any.whl
+          python get-pip.py pip-9.0.3-py2.py3-none-any.whl setuptools-36.8.0-py2.py3-none-any.whl wheel-0.29.0-py2.py3-none-any.whl argparse-1.4.0-py2.py3-none-any.whl
           pip list
-          pip install setuptools==28.8.0 wheel==0.30.0a0
+          wget https://files.pythonhosted.org/packages/3b/7e/293d19ccd106119e35db4bf3e111b1895098f618b455b758aa636496cf03/setuptools-28.8.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/83/53/e120833aa2350db333df89a40dea3b310dd9dabf6f29eaa18934a597dc79/wheel-0.30.0a0-py2.py3-none-any.whl
+          pip install setuptools-28.8.0-py2.py3-none-any.whl wheel-0.30.0a0-py2.py3-none-any.whl
       - name: Install instrumental
         if: ${{ contains(matrix.opt-deps, 'instrumental') }}
         run: pip install instrumental
@@ -177,7 +184,43 @@ jobs:
       - name: Install gmpy2
         if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') }}
         run: pip install gmpy2
+      - name: Install build dependencies (2.6)
+        if: ${{ matrix.python-version == '2.6' }}
+        run: |
+          wget https://files.pythonhosted.org/packages/1d/4e/20c679f8c5948f7c48591fde33d442e716af66a31a88f5791850a75041eb/tox-2.9.1-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/d9/9d/077582a4c6d771e3b742631e6c1d3688f48210626de488e032776242b3f2/inflect-0.3.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/79/db/7c0cfe4aa8341a5fab4638952520d8db6ab85ff84505e12c00ea311c3516/pyOpenSSL-17.5.0-py2.py3-none-any.whl 
+          wget https://files.pythonhosted.org/packages/2d/bf/960e5a422db3ac1a5e612cb35ca436c3fc985ed4b7ed13a1b4879006f450/cffi-1.13.2.tar.gz
+          wget https://files.pythonhosted.org/packages/4b/2a/0276479a4b3caeb8a8c1af2f8e4355746a97fab05a372e4a2c6a6b876165/idna-2.7-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/72/20/7f0f433060a962200b7272b8c12ba90ef5b903e218174301d0abfd523813/unittest2-1.1.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/a8/5a/5cf074e1c6681dcbb4e640113f58bed16955e7da9a6c8090b518031775e7/hypothesis-2.0.0.tar.gz
+          wget https://files.pythonhosted.org/packages/85/d5/818d0e603685c4a613d56f065a721013e942088047ff1027a632948bdae6/coverage-4.5.4.tar.gz
+          wget https://files.pythonhosted.org/packages/e6/35/f187bdf23be87092bd0f1200d43d23076cee4d0dec109f195173fd3ebc79/mock-2.0.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/ed/ea/e20b5cbebf45d3096e8138ab74eda139595d827677f38e9dd543e6015bdf/virtualenv-15.2.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/53/67/9620edf7803ab867b175e4fd23c7b8bd8eba11cb761514dcd2e726ef07da/py-1.4.34-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/65/26/32b8464df2a97e6dd1b656ed26b2c194606c16fe163c695a992b36c11cdf/six-1.13.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/4d/d1/e478b8a33230f85f38e35b386376fbd115219de2a2c4c8783610851ad1c3/pluggy-0.5.2-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/78/c5/7188f15a92413096c93053d5304718e1f6ba88b818357d05d19250ebff85/cryptography-2.1.4.tar.gz
+          wget https://files.pythonhosted.org/packages/8c/2d/aad7f16146f4197a11f8e91fb81df177adcc2073d36a17b1491fd09df6ed/pycparser-2.18.tar.gz
+          wget https://files.pythonhosted.org/packages/a2/55/8f8cab2afd404cf578136ef2cc5dfb50baa1761b68c9da1fb1e4eed343c9/docopt-0.6.2.tar.gz
+          wget https://files.pythonhosted.org/packages/65/47/7e02164a2a3db50ed6d8a6ab1d6d60b69c4c3fdf57a284257925dfc12bda/requests-2.19.1-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/17/0a/6ac05a3723017a967193456a2efa0aa9ac4b51456891af1e2353bb9de21e/traceback2-1.4.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/31/77/3781f65cafe55480b56914def99022a5d2965a4bb269655c89ef2f1de3cd/importlib-1.0.4.zip
+          wget https://files.pythonhosted.org/packages/7d/b0/23d19892f8d91ec9c5b8a2035659bce23587fed419d68fa3d70b6abf8bcd/Counter-1.0.0.tar.gz
+          wget https://files.pythonhosted.org/packages/69/cb/f5be453359271714c01b9bd06126eaf2e368f1fddfff30818754b5ac2328/funcsigs-1.0.2-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/fb/48/69046506f6ac61c1eaa9a0d42d22d54673b69e176d30ca98e3f61513e980/pbr-5.5.1-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/b5/a8/56be92dcd4a5bf1998705a9b4028249fe7c9a035b955fe93b6a3e5b829f8/asn1crypto-1.4.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/6f/2c/a9386903ece2ea85e9807e0e062174dc26fdce8b05f216d00491be29fad5/enum34-1.1.10-py2-none-any.whl
+          wget https://files.pythonhosted.org/packages/c2/f8/49697181b1651d8347d24c095ce46c7346c37335ddc7d255833e7cde674d/ipaddress-1.0.23-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/bc/a9/01ffebfb562e4274b6487b4bb1ddec7ca55ec7510b22e4c51f14098443b8/chardet-3.0.4-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/bd/c9/6fdd990019071a4a32a5e7cb78a1d92c53851ef4f56f62a3486e6a7d8ffb/urllib3-1.23-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/5e/a0/5f06e1e1d463903cf0c0eebeb751791119ed7a4b3737fdc9a77f1cdfb51f/certifi-2020.12.5-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/c7/a3/c5da2a44c85bfbb6eebcfc1dde24933f8704441b98fdde6528f4831757a6/linecache2-1.0.0-py2.py3-none-any.whl
+          wget https://files.pythonhosted.org/packages/53/25/ef88e8e45db141faa9598fbf7ad0062df8f50f881a36ed6a0073e1572126/ordereddict-1.1.tar.gz
+          wget https://files.pythonhosted.org/packages/ef/41/d8a61f1b2ba308e96b36106e95024977e30129355fd12087f23e4b9852a1/pytest-3.2.5-py2.py3-none-any.whl
+          pip install pycparser-2.18.tar.gz importlib-1.0.4.zip Counter-1.0.0.tar.gz tox-2.9.1-py2.py3-none-any.whl inflect-0.3.0-py2.py3-none-any.whl pyOpenSSL-17.5.0-py2.py3-none-any.whl cffi-1.13.2.tar.gz idna-2.7-py2.py3-none-any.whl unittest2-1.1.0-py2.py3-none-any.whl hypothesis-2.0.0.tar.gz coverage-4.5.4.tar.gz mock-2.0.0-py2.py3-none-any.whl virtualenv-15.2.0-py2.py3-none-any.whl py-1.4.34-py2.py3-none-any.whl six-1.13.0-py2.py3-none-any.whl pluggy-0.5.2-py2.py3-none-any.whl cryptography-2.1.4.tar.gz docopt-0.6.2.tar.gz requests-2.19.1-py2.py3-none-any.whl traceback2-1.4.0-py2.py3-none-any.whl funcsigs-1.0.2-py2.py3-none-any.whl pbr-5.5.1-py2.py3-none-any.whl asn1crypto-1.4.0-py2.py3-none-any.whl enum34-1.1.10-py2-none-any.whl ipaddress-1.0.23-py2.py3-none-any.whl chardet-3.0.4-py2.py3-none-any.whl urllib3-1.23-py2.py3-none-any.whl certifi-2020.12.5-py2.py3-none-any.whl linecache2-1.0.0-py2.py3-none-any.whl ordereddict-1.1.tar.gz pytest-3.2.5-py2.py3-none-any.whl git+https://github.com/tomato42/coveralls-python.git@add-py26#egg=coveralls
       - name: Install build dependencies
+        if: ${{ matrix.python-version != '2.6' }}
         run: |
           PYTHON_VERSION=${{ matrix.python-version }}
           PYTHON_VERSION=${PYTHON_VERSION#pypy-}
@@ -189,7 +232,8 @@ jobs:
       - name: Display installed python package versions
         run: pip list
       - name: Test native speed
-        if: ${{ !contains(matrix.tox-env, 'gmpy') }}
+        # tox uses pip to install dependenceis, so it breaks on py2.6
+        if: ${{ !contains(matrix.tox-env, 'gmpy') && matrix.python-version != '2.6'}}
         run: tox -e speed
       - name: Test speed with gmpy
         if: ${{ contains(matrix.tox-env, 'gmpyp') }}
@@ -197,6 +241,12 @@ jobs:
       - name: Test speed with gmpy2
         if: ${{ contains(matrix.tox-env, 'gmpy2') }}
         run: tox -e speedgmpy2
+      - name: Run unit tests (2.6)
+        if: ${{ matrix.python-version == '2.6' }}
+        run: |
+          # because tox uses pip, and pip is broken on py2.6, we need run the
+          # tests directly on the system
+          coverage run --branch -m pytest
       - name: Run unit tests
         if: ${{ matrix.tox-env }}
         run: tox -e ${{ matrix.tox-env }}
