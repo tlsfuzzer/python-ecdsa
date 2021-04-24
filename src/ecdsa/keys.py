@@ -64,6 +64,10 @@ Primary classes for performing signing and verification operations.
         string) is endianess dependant! Signature computed over ``array.array``
         of integers on a big-endian system will not be verified on a
         little-endian system and vice-versa.
+
+    set-like object
+        All the types that support the ``in`` operator, like ``list``,
+        ``tuple``, ``set``, ``frozenset``, etc.
 """
 
 import binascii
@@ -332,7 +336,12 @@ class VerifyingKey(object):
 
     @classmethod
     def from_string(
-        cls, string, curve=NIST192p, hashfunc=sha1, validate_point=True
+        cls,
+        string,
+        curve=NIST192p,
+        hashfunc=sha1,
+        validate_point=True,
+        valid_encodings=None,
     ):
         """
         Initialise the object from byte encoding of public key.
@@ -355,6 +364,11 @@ class VerifyingKey(object):
         :param validate_point: whether to verify that the point lays on the
             provided curve or not, defaults to True
         :type validate_point: bool
+        :param valid_encodings: list of acceptable point encoding formats,
+            supported ones are: :term:`uncompressed`, :term:`compressed`,
+            :term:`hybrid`, and :term:`raw encoding` (specified with ``raw``
+            name). All formats by default (specified with ``None``).
+        :type valid_encodings: :term:`set-like object`
 
         :raises MalformedPointError: if the public point does not lay on the
             curve or the encoding is invalid
@@ -362,31 +376,43 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        if valid_encodings is None:
+            valid_encodings = set(
+                ["uncompressed", "compressed", "hybrid", "raw"]
+            )
         string = normalise_bytes(string)
         sig_len = len(string)
-        if sig_len == curve.verifying_key_length:
+        if sig_len == curve.verifying_key_length and "raw" in valid_encodings:
             point = cls._from_raw_encoding(string, curve)
-        elif sig_len == curve.verifying_key_length + 1:
-            if string[:1] in (b("\x06"), b("\x07")):
+        elif sig_len == curve.verifying_key_length + 1 and (
+            "hybrid" in valid_encodings or "uncompressed" in valid_encodings
+        ):
+            if (
+                string[:1] in (b("\x06"), b("\x07"))
+                and "hybrid" in valid_encodings
+            ):
                 point = cls._from_hybrid(string, curve, validate_point)
-            elif string[:1] == b("\x04"):
+            elif string[:1] == b("\x04") and "uncompressed" in valid_encodings:
                 point = cls._from_raw_encoding(string[1:], curve)
             else:
                 raise MalformedPointError(
                     "Invalid X9.62 encoding of the public point"
                 )
-        elif sig_len == curve.verifying_key_length // 2 + 1:
+        elif (
+            sig_len == curve.verifying_key_length // 2 + 1
+            and "compressed" in valid_encodings
+        ):
             point = cls._from_compressed(string, curve)
         else:
             raise MalformedPointError(
                 "Length of string does not match lengths of "
-                "any of the supported encodings of {0} "
-                "curve.".format(curve.name)
+                "any of the enabled ({1}) encodings of {0} "
+                "curve.".format(curve.name, ", ".join(valid_encodings))
             )
         return cls.from_public_point(point, curve, hashfunc, validate_point)
 
     @classmethod
-    def from_pem(cls, string, hashfunc=sha1):
+    def from_pem(cls, string, hashfunc=sha1, valid_encodings=None):
         """
         Initialise from public key stored in :term:`PEM` format.
 
@@ -400,14 +426,23 @@ class VerifyingKey(object):
 
         :param string: text with PEM-encoded public ECDSA key
         :type string: str
+        :param valid_encodings: list of allowed point encodings.
+            By default :term:`uncompressed`, :term:`compressed`, and
+            :term:`hybrid`. To read malformed files, include
+            :term:`raw encoding` with ``raw`` in the list.
+        :type valid_encodings: :term:`set-like object
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
-        return cls.from_der(der.unpem(string), hashfunc=hashfunc)
+        return cls.from_der(
+            der.unpem(string),
+            hashfunc=hashfunc,
+            valid_encodings=valid_encodings,
+        )
 
     @classmethod
-    def from_der(cls, string, hashfunc=sha1):
+    def from_der(cls, string, hashfunc=sha1, valid_encodings=None):
         """
         Initialise the key stored in :term:`DER` format.
 
@@ -432,10 +467,17 @@ class VerifyingKey(object):
 
         :param string: binary string with the DER encoding of public ECDSA key
         :type string: bytes-like object
+        :param valid_encodings: list of allowed point encodings.
+            By default :term:`uncompressed`, :term:`compressed`, and
+            :term:`hybrid`. To read malformed files, include
+            :term:`raw encoding` with ``raw`` in the list.
+        :type valid_encodings: :term:`set-like object
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        if valid_encodings is None:
+            valid_encodings = set(["uncompressed", "compressed", "hybrid"])
         string = normalise_bytes(string)
         # [[oid_ecPublicKey,oid_curve], point_str_bitstring]
         s1, empty = der.remove_sequence(string)
@@ -467,7 +509,12 @@ class VerifyingKey(object):
         # raw encoding of point is invalid in DER files
         if len(point_str) == curve.verifying_key_length:
             raise der.UnexpectedDER("Malformed encoding of public point")
-        return cls.from_string(point_str, curve, hashfunc=hashfunc)
+        return cls.from_string(
+            point_str,
+            curve,
+            hashfunc=hashfunc,
+            valid_encodings=valid_encodings,
+        )
 
     @classmethod
     def from_public_key_recovery(

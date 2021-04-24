@@ -13,7 +13,7 @@ import array
 import pytest
 import hashlib
 
-from .keys import VerifyingKey, SigningKey
+from .keys import VerifyingKey, SigningKey, MalformedPointError
 from .der import unpem
 from .util import (
     sigencode_string,
@@ -152,6 +152,12 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         cls.vk2 = VerifyingKey.from_pem(key_str)
 
         cls.sk2 = SigningKey.generate(vk.curve)
+
+    def test_load_key_with_disabled_format(self):
+        with self.assertRaises(MalformedPointError) as e:
+            VerifyingKey.from_der(self.key_bytes, valid_encodings=["raw"])
+
+        self.assertIn("enabled (raw) encodings", str(e.exception))
 
     def test_custom_hashfunc(self):
         vk = VerifyingKey.from_der(self.key_bytes, hashlib.sha256)
