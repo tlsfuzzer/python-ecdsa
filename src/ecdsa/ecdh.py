@@ -216,7 +216,7 @@ class ECDH(object):
 
         :return: public (verifying) key from local private key.
         :rtype: VerifyingKey object
-       """
+        """
         return self.private_key.get_verifying_key()
 
     def load_received_public_key(self, public_key):
@@ -237,7 +237,9 @@ class ECDH(object):
             raise InvalidCurveError("Curve mismatch.")
         self.public_key = public_key
 
-    def load_received_public_key_bytes(self, public_key_str):
+    def load_received_public_key_bytes(
+        self, public_key_str, valid_encodings=None
+    ):
         """
         Load public key from byte string.
 
@@ -247,9 +249,16 @@ class ECDH(object):
 
         :param public_key_str: public key in bytes string format
         :type public_key_str: :term:`bytes-like object`
+        :param valid_encodings: list of acceptable point encoding formats,
+            supported ones are: :term:`uncompressed`, :term:`compressed`,
+            :term:`hybrid`, and :term:`raw encoding` (specified with ``raw``
+            name). All formats by default (specified with ``None``).
+        :type valid_encodings: :term:`set-like object`
         """
         return self.load_received_public_key(
-            VerifyingKey.from_string(public_key_str, self.curve)
+            VerifyingKey.from_string(
+                public_key_str, self.curve, valid_encodings
+            )
         )
 
     def load_received_public_key_der(self, public_key_der):

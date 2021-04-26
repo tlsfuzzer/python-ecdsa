@@ -722,6 +722,65 @@ class ECDSA(unittest.TestCase):
         from_uncompressed = VerifyingKey.from_string(b("\x06") + enc)
         self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
 
+    def test_uncompressed_decoding_as_only_alowed(self):
+        enc = b(
+            "\x04"
+            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        )
+        vk = VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
+        sk = SigningKey.from_secret_exponent(123456789)
+
+        self.assertEqual(vk, sk.verifying_key)
+
+    def test_raw_decoding_with_blocked_format(self):
+        enc = b(
+            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        )
+        with self.assertRaises(MalformedPointError) as exp:
+            VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
+
+        self.assertIn("hybrid", str(exp.exception))
+
+    def test_uncompressed_decoding_with_blocked_format(self):
+        enc = b(
+            "\x04"
+            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        )
+        with self.assertRaises(MalformedPointError) as exp:
+            VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
+
+        self.assertIn("Invalid X9.62 encoding", str(exp.exception))
+
+    def test_hybrid_decoding_with_blocked_format(self):
+        enc = b(
+            "\x06"
+            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        )
+        with self.assertRaises(MalformedPointError) as exp:
+            VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
+
+        self.assertIn("Invalid X9.62 encoding", str(exp.exception))
+
+    def test_compressed_decoding_with_blocked_format(self):
+        enc = b(
+            "\x02"
+            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        )[:25]
+        with self.assertRaises(MalformedPointError) as exp:
+            VerifyingKey.from_string(enc, valid_encodings=("hybrid", "raw"))
+
+        self.assertIn("(hybrid, raw)", str(exp.exception))
+
     def test_decoding_with_malformed_uncompressed(self):
         enc = b(
             "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
