@@ -745,6 +745,12 @@ class ECDSA(unittest.TestCase):
 
         self.assertIn("hybrid", str(exp.exception))
 
+    def test_decoding_with_unknown_format(self):
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_string(b"", valid_encodings=("raw", "foobar"))
+
+        self.assertIn("Only uncompressed, compressed", str(e.exception))
+
     def test_uncompressed_decoding_with_blocked_format(self):
         enc = b(
             "\x04"

@@ -90,6 +90,8 @@ from .util import (
     MalformedSignature,
 )
 from ._compat import normalise_bytes
+from .errors import MalformedPointError
+from .ellipticcurve import PointJacobi
 
 
 __all__ = [
@@ -118,12 +120,6 @@ class BadSignatureError(Exception):
 
 class BadDigestError(Exception):
     """Raised in case the selected hash is too large for the curve."""
-
-    pass
-
-
-class MalformedPointError(AssertionError):
-    """Raised in case the encoding of private or public key is malformed."""
 
     pass
 
@@ -269,71 +265,6 @@ class VerifyingKey(object):
         if not lazy:
             self.pubkey.point * 2
 
-    @staticmethod
-    def _from_raw_encoding(string, curve):
-        """
-        Decode public point from :term:`raw encoding`.
-
-        :term:`raw encoding` is the same as the :term:`uncompressed` encoding,
-        but without the 0x04 byte at the beginning.
-        """
-        order = curve.order
-        # real assert, from_string() should not call us with different length
-        assert len(string) == curve.verifying_key_length
-        xs = string[: curve.verifying_key_length // 2]
-        ys = string[curve.verifying_key_length // 2 :]
-        # real assert, verifying_key_length is calculated by multiplying an
-        # integer by two so it will always be even
-        assert len(xs) == curve.verifying_key_length // 2
-        assert len(ys) == curve.verifying_key_length // 2
-        x = string_to_number(xs)
-        y = string_to_number(ys)
-
-        return ellipticcurve.PointJacobi(curve.curve, x, y, 1, order)
-
-    @staticmethod
-    def _from_compressed(string, curve):
-        """Decode public point from compressed encoding."""
-        if string[:1] not in (b("\x02"), b("\x03")):
-            raise MalformedPointError("Malformed compressed point encoding")
-
-        is_even = string[:1] == b("\x02")
-        x = string_to_number(string[1:])
-        order = curve.order
-        p = curve.curve.p()
-        alpha = (pow(x, 3, p) + (curve.curve.a() * x) + curve.curve.b()) % p
-        try:
-            beta = square_root_mod_prime(alpha, p)
-        except SquareRootError as e:
-            raise MalformedPointError(
-                "Encoding does not correspond to a point on curve", e
-            )
-        if is_even == bool(beta & 1):
-            y = p - beta
-        else:
-            y = beta
-        return ellipticcurve.PointJacobi(curve.curve, x, y, 1, order)
-
-    @classmethod
-    def _from_hybrid(cls, string, curve, validate_point):
-        """Decode public point from hybrid encoding."""
-        # real assert, from_string() should not call us with different types
-        assert string[:1] in (b("\x06"), b("\x07"))
-
-        # primarily use the uncompressed as it's easiest to handle
-        point = cls._from_raw_encoding(string[1:], curve)
-
-        # but validate if it's self-consistent if we're asked to do that
-        if validate_point and (
-            point.y() & 1
-            and string[:1] != b("\x07")
-            or (not point.y() & 1)
-            and string[:1] != b("\x06")
-        ):
-            raise MalformedPointError("Inconsistent hybrid point encoding")
-
-        return point
-
     @classmethod
     def from_string(
         cls,
@@ -348,7 +279,7 @@ class VerifyingKey(object):
 
         The method does accept and automatically detect the type of point
         encoding used. It supports the :term:`raw encoding`,
-        :term:`uncompressed`, :term:`compressed` and :term:`hybrid` encodings.
+        :term:`uncompressed`, :term:`compressed`, and :term:`hybrid` encodings.
 
         Note, while the method is named "from_string" it's a misnomer from
         Python 2 days when there were no binary strings. In Python 3 the
@@ -376,39 +307,12 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
-        if valid_encodings is None:
-            valid_encodings = set(
-                ["uncompressed", "compressed", "hybrid", "raw"]
-            )
-        string = normalise_bytes(string)
-        sig_len = len(string)
-        if sig_len == curve.verifying_key_length and "raw" in valid_encodings:
-            point = cls._from_raw_encoding(string, curve)
-        elif sig_len == curve.verifying_key_length + 1 and (
-            "hybrid" in valid_encodings or "uncompressed" in valid_encodings
-        ):
-            if (
-                string[:1] in (b("\x06"), b("\x07"))
-                and "hybrid" in valid_encodings
-            ):
-                point = cls._from_hybrid(string, curve, validate_point)
-            elif string[:1] == b("\x04") and "uncompressed" in valid_encodings:
-                point = cls._from_raw_encoding(string[1:], curve)
-            else:
-                raise MalformedPointError(
-                    "Invalid X9.62 encoding of the public point"
-                )
-        elif (
-            sig_len == curve.verifying_key_length // 2 + 1
-            and "compressed" in valid_encodings
-        ):
-            point = cls._from_compressed(string, curve)
-        else:
-            raise MalformedPointError(
-                "Length of string does not match lengths of "
-                "any of the enabled ({1}) encodings of {0} "
-                "curve.".format(curve.name, ", ".join(valid_encodings))
-            )
+        point = PointJacobi.from_bytes(
+            curve.curve,
+            string,
+            validate_encoding=validate_point,
+            valid_encodings=valid_encodings
+        )
         return cls.from_public_point(point, curve, hashfunc, validate_point)
 
     @classmethod
