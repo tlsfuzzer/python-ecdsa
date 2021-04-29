@@ -78,7 +78,6 @@ from . import der
 from . import rfc6979
 from . import ellipticcurve
 from .curves import NIST192p, find_curve
-from .numbertheory import square_root_mod_prime, SquareRootError
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string, bit_length
@@ -311,7 +310,7 @@ class VerifyingKey(object):
             curve.curve,
             string,
             validate_encoding=validate_point,
-            valid_encodings=valid_encodings
+            valid_encodings=valid_encodings,
         )
         return cls.from_public_point(point, curve, hashfunc, validate_point)
 
@@ -526,30 +525,6 @@ class VerifyingKey(object):
         ]
         return verifying_keys
 
-    def _raw_encode(self):
-        """Convert the public key to the :term:`raw encoding`."""
-        order = self.curve.curve.p()
-        x_str = number_to_string(self.pubkey.point.x(), order)
-        y_str = number_to_string(self.pubkey.point.y(), order)
-        return x_str + y_str
-
-    def _compressed_encode(self):
-        """Encode the public point into the compressed form."""
-        order = self.curve.curve.p()
-        x_str = number_to_string(self.pubkey.point.x(), order)
-        if self.pubkey.point.y() & 1:
-            return b("\x03") + x_str
-        else:
-            return b("\x02") + x_str
-
-    def _hybrid_encode(self):
-        """Encode the public point into the hybrid form."""
-        raw_enc = self._raw_encode()
-        if self.pubkey.point.y() & 1:
-            return b("\x07") + raw_enc
-        else:
-            return b("\x06") + raw_enc
-
     def to_string(self, encoding="raw"):
         """
         Convert the public key to a byte string.
@@ -571,14 +546,7 @@ class VerifyingKey(object):
         :rtype: bytes
         """
         assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
-        if encoding == "raw":
-            return self._raw_encode()
-        elif encoding == "uncompressed":
-            return b("\x04") + self._raw_encode()
-        elif encoding == "hybrid":
-            return self._hybrid_encode()
-        else:
-            return self._compressed_encode()
+        return self.pubkey.point.to_bytes(encoding)
 
     def to_pem(self, point_encoding="uncompressed"):
         """
