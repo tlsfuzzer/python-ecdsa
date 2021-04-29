@@ -51,7 +51,7 @@ from six import python_2_unicode_compatible
 from . import numbertheory
 from ._compat import normalise_bytes
 from .errors import MalformedPointError
-from .util import orderlen, string_to_number
+from .util import orderlen, string_to_number, number_to_string
 
 
 @python_2_unicode_compatible
@@ -101,10 +101,11 @@ class CurveFp(object):
         only the prime and curve parameters are considered.
         """
         if isinstance(other, CurveFp):
+            p = self.__p
             return (
                 self.__p == other.__p
-                and self.__a == other.__a
-                and self.__b == other.__b
+                and self.__a % p == other.__a % p
+                and self.__b % p == other.__b % p
             )
         return NotImplemented
 
@@ -142,6 +143,7 @@ class CurveFp(object):
 
 class AbstractPoint(object):
     """Class for common methods of elliptic curve points."""
+
     @staticmethod
     def _from_raw_encoding(data, raw_encoding_length):
         """
@@ -207,11 +209,7 @@ class AbstractPoint(object):
 
     @classmethod
     def from_bytes(
-        cls,
-        curve,
-        data,
-        validate_encoding=True,
-        valid_encodings=None
+        cls, curve, data, validate_encoding=True, valid_encodings=None
     ):
         """
         Initialise the object from byte encoding of a point.
@@ -265,17 +263,14 @@ class AbstractPoint(object):
         elif key_len == raw_encoding_length + 1 and (
             "hybrid" in valid_encodings or "uncompressed" in valid_encodings
         ):
-            if (
-                data[:1] in (b"\x06", b"\x07")
-                and "hybrid" in valid_encodings
-            ):
+            if data[:1] in (b"\x06", b"\x07") and "hybrid" in valid_encodings:
                 coord_x, coord_y = cls._from_hybrid(
                     data, raw_encoding_length, validate_encoding
                 )
             elif data[:1] == b"\x04" and "uncompressed" in valid_encodings:
-                 coord_x, coord_y = cls._from_raw_encoding(
+                coord_x, coord_y = cls._from_raw_encoding(
                     data[1:], raw_encoding_length
-                 )
+                )
             else:
                 raise MalformedPointError(
                     "Invalid X9.62 encoding of the public point"
@@ -292,6 +287,49 @@ class AbstractPoint(object):
                 "curve.".format(", ".join(valid_encodings))
             )
         return coord_x, coord_y
+
+    def _raw_encode(self):
+        """Convert the point to the :term:`raw encoding`."""
+        prime = self.curve().p()
+        x_str = number_to_string(self.x(), prime)
+        y_str = number_to_string(self.y(), prime)
+        return x_str + y_str
+
+    def _compressed_encode(self):
+        """Encode the point into the compressed form."""
+        prime = self.curve().p()
+        x_str = number_to_string(self.x(), prime)
+        if self.y() & 1:
+            return b"\x03" + x_str
+        return b"\x02" + x_str
+
+    def _hybrid_encode(self):
+        """Encode the point into the hybrid form."""
+        raw_enc = self._raw_encode()
+        if self.y() & 1:
+            return b"\x07" + raw_enc
+        return b"\x06" + raw_enc
+
+    def to_bytes(self, encoding="raw"):
+        """
+        Convert the point to a byte string.
+
+        The method by default uses the :term:`raw encoding` (specified
+        by `encoding="raw"`. It can also output points in :term:`uncompressed`,
+        :term:`compressed`, and :term:`hybrid` formats.
+
+        :return: :term:`raw encoding` of a public on the curve
+        :rtype: bytes
+        """
+        assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
+        if encoding == "raw":
+            return self._raw_encode()
+        elif encoding == "uncompressed":
+            return b"\x04" + self._raw_encode()
+        elif encoding == "hybrid":
+            return self._hybrid_encode()
+        else:
+            return self._compressed_encode()
 
 
 class PointJacobi(AbstractPoint):
@@ -341,7 +379,7 @@ class PointJacobi(AbstractPoint):
         validate_encoding=True,
         valid_encodings=None,
         order=None,
-        generator=False
+        generator=False,
     ):
         """
         Initialise the object from byte encoding of a point.
@@ -920,7 +958,7 @@ class Point(AbstractPoint):
         data,
         validate_encoding=True,
         valid_encodings=None,
-        order=None
+        order=None,
     ):
         """
         Initialise the object from byte encoding of a point.
@@ -955,7 +993,6 @@ class Point(AbstractPoint):
             curve, data, validate_encoding, valid_encodings
         )
         return Point(curve, coord_x, coord_y, order)
-
 
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise.
