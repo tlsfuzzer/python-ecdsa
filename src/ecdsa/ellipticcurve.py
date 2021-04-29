@@ -684,7 +684,7 @@ class PointJacobi(object):
 
 
 class Point(object):
-    """A point on an elliptic curve. Altering x and y is forbidding,
+    """A point on an elliptic curve. Altering x and y is forbidden,
      but they can be read by the x() and y() methods."""
 
     def __init__(self, curve, x, y, order=None):
