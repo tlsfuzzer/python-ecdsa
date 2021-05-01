@@ -1,5 +1,6 @@
 from __future__ import division
 
+from six import PY2
 from . import der, ecdsa, ellipticcurve
 from .util import orderlen, number_to_string, string_to_number
 from ._compat import normalise_bytes
@@ -79,6 +80,9 @@ class Curve:
         :param str point_encoding: the point encoding of the generator when
             explicit curve encoding is used. Ignored for ``named_curve``
             format.
+
+        :return: DER encoded ECParameters structure
+        :rtype: bytes
         """
         if encoding is None:
             if self.oid:
@@ -116,6 +120,24 @@ class Curve:
             seq_elements.append(cofactor)
 
         return der.encode_sequence(*seq_elements)
+
+    def to_pem(self, encoding=None, point_encoding="uncompressed"):
+        """
+        Serialise the curve parameters to the :term:`PEM` format.
+
+        :param str encoding: the format to save the curve parameters in.
+            Default is ``named_curve``, with fallback being the ``explicit``
+            if the OID is not set for the curve.
+        :param str point_encoding: the point encoding of the generator when
+            explicit curve encoding is used. Ignored for ``named_curve``
+            format.
+
+        :return: PEM encoded ECParameters structure
+        :rtype: str
+        """
+        return der.topem(
+            self.to_der(encoding, point_encoding), "EC PARAMETERS"
+        )
 
     @staticmethod
     def from_der(data):
@@ -189,6 +211,21 @@ class Curve:
             if tmp_curve == i:
                 return i
         return tmp_curve
+
+    @classmethod
+    def from_pem(cls, string):
+        """Decode the curve parameters from PEM file.
+
+        :param str string: the text string to decode the parameters from
+        """
+        if not PY2 and isinstance(string, str):  # pragma: no branch
+            string = string.encode()
+
+        ec_param_index = string.find(b"-----BEGIN EC PARAMETERS-----")
+        if ec_param_index == -1:
+            raise der.UnexpectedDER("EC PARAMETERS PEM header not found")
+
+        return cls.from_der(der.unpem(string[ec_param_index:]))
 
 
 # the SEC curves
