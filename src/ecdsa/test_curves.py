@@ -24,6 +24,45 @@ class TestParameterEncoding(unittest.TestCase):
             "AiEA/////wAAAAD//////////7zm+q2nF56E87nKwvxjJVECAQE="
         )
 
+    def test_from_pem(self):
+        pem_params = (
+            "-----BEGIN EC PARAMETERS-----\n"
+            "MIHgAgEBMCwGByqGSM49AQECIQD/////AAAAAQAAAAAAAAAAAAAAAP/////////\n"
+            "//////zBEBCD/////AAAAAQAAAAAAAAAAAAAAAP///////////////AQgWsY12K\n"
+            "o6k+ez671VdpiGvGUdBrDMU7D2O848PifSYEsEQQRrF9Hy4SxCR/i85uVjpEDyd\n"
+            "wN9gS3rM6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1\n"
+            "AiEA/////wAAAAD//////////7zm+q2nF56E87nKwvxjJVECAQE=\n"
+            "-----END EC PARAMETERS-----\n"
+        )
+        curve = Curve.from_pem(pem_params)
+
+        self.assertIs(curve, NIST256p)
+
+    def test_from_pem_with_wrong_header(self):
+        pem_params = (
+            "-----BEGIN PARAMETERS-----\n"
+            "MIHgAgEBMCwGByqGSM49AQECIQD/////AAAAAQAAAAAAAAAAAAAAAP/////////\n"
+            "//////zBEBCD/////AAAAAQAAAAAAAAAAAAAAAP///////////////AQgWsY12K\n"
+            "o6k+ez671VdpiGvGUdBrDMU7D2O848PifSYEsEQQRrF9Hy4SxCR/i85uVjpEDyd\n"
+            "wN9gS3rM6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1\n"
+            "AiEA/////wAAAAD//////////7zm+q2nF56E87nKwvxjJVECAQE=\n"
+            "-----END PARAMETERS-----\n"
+        )
+        with self.assertRaises(der.UnexpectedDER) as e:
+            Curve.from_pem(pem_params)
+
+        self.assertIn("PARAMETERS PEM header", str(e.exception))
+
+    def test_to_pem(self):
+        pem_params = (
+            b"-----BEGIN EC PARAMETERS-----\n"
+            b"BggqhkjOPQMBBw==\n"
+            b"-----END EC PARAMETERS-----\n"
+        )
+        encoding = NIST256p.to_pem()
+
+        self.assertEqual(pem_params, encoding)
+
     def test_compare_with_different_object(self):
         self.assertNotEqual(NIST256p, 256)
 
