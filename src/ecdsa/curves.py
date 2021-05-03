@@ -140,18 +140,31 @@ class Curve:
         )
 
     @staticmethod
-    def from_der(data):
+    def from_der(data, valid_encodings=None):
         """Decode the curve parameters from DER file.
 
         :param data: the binary string to decode the parameters from
-        :type data: bytes-like object
+        :type data: :term:`bytes-like object`
+        :param valid_encodings: set of names of allowed encodings, by default
+            all (set by passing ``None``), supported ones are ``named_curve``
+            and ``explicit``
+        :type valid_encodings: :term:`set-like object`
         """
+        if valid_encodings is None:
+            valid_encodings = set(("named_curve", "explicit"))
         data = normalise_bytes(data)
         if not der.is_sequence(data):
+            if "named_curve" not in valid_encodings:
+                raise der.UnexpectedDER(
+                    "named_curve curve parameters not allowed"
+                )
             oid, empty = der.remove_object(data)
             if empty:
                 raise der.UnexpectedDER("Unexpected data after OID")
             return find_curve(oid)
+
+        if "explicit" not in valid_encodings:
+            raise der.UnexpectedDER("explicit curve parameters not allowed")
 
         seq, empty = der.remove_sequence(data)
         if empty:
@@ -213,10 +226,14 @@ class Curve:
         return tmp_curve
 
     @classmethod
-    def from_pem(cls, string):
+    def from_pem(cls, string, valid_encodings=None):
         """Decode the curve parameters from PEM file.
 
         :param str string: the text string to decode the parameters from
+        :param valid_encodings: set of names of allowed encodings, by default
+            all (set by passing ``None``), supported ones are ``named_curve``
+            and ``explicit``
+        :type valid_encodings: :term:`set-like object`
         """
         if not PY2 and isinstance(string, str):  # pragma: no branch
             string = string.encode()
@@ -225,7 +242,9 @@ class Curve:
         if ec_param_index == -1:
             raise der.UnexpectedDER("EC PARAMETERS PEM header not found")
 
-        return cls.from_der(der.unpem(string[ec_param_index:]))
+        return cls.from_der(
+            der.unpem(string[ec_param_index:]), valid_encodings
+        )
 
 
 # the SEC curves
