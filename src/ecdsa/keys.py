@@ -77,7 +77,7 @@ from . import ecdsa
 from . import der
 from . import rfc6979
 from . import ellipticcurve
-from .curves import NIST192p, find_curve
+from .curves import NIST192p, Curve
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string, bit_length
@@ -315,7 +315,13 @@ class VerifyingKey(object):
         return cls.from_public_point(point, curve, hashfunc, validate_point)
 
     @classmethod
-    def from_pem(cls, string, hashfunc=sha1, valid_encodings=None):
+    def from_pem(
+        cls,
+        string,
+        hashfunc=sha1,
+        valid_encodings=None,
+        valid_curve_encodings=None,
+    ):
         """
         Initialise from public key stored in :term:`PEM` format.
 
@@ -324,7 +330,7 @@ class VerifyingKey(object):
         See the :func:`~VerifyingKey.from_der()` method for details of the
         format supported.
 
-        Note: only a single PEM object encoding is supported in provided
+        Note: only a single PEM object decoding is supported in provided
         string.
 
         :param string: text with PEM-encoded public ECDSA key
@@ -334,6 +340,11 @@ class VerifyingKey(object):
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
         :type valid_encodings: :term:`set-like object
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
+
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
@@ -342,10 +353,17 @@ class VerifyingKey(object):
             der.unpem(string),
             hashfunc=hashfunc,
             valid_encodings=valid_encodings,
+            valid_curve_encodings=valid_curve_encodings,
         )
 
     @classmethod
-    def from_der(cls, string, hashfunc=sha1, valid_encodings=None):
+    def from_der(
+        cls,
+        string,
+        hashfunc=sha1,
+        valid_encodings=None,
+        valid_curve_encodings=None,
+    ):
         """
         Initialise the key stored in :term:`DER` format.
 
@@ -375,6 +393,10 @@ class VerifyingKey(object):
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
         :type valid_encodings: :term:`set-like object
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
@@ -391,18 +413,12 @@ class VerifyingKey(object):
         s2, point_str_bitstring = der.remove_sequence(s1)
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
-        oid_curve, empty = der.remove_object(rest)
-        if empty != b"":
-            raise der.UnexpectedDER(
-                "trailing junk after DER pubkey objects: %s"
-                % binascii.hexlify(empty)
-            )
         if not oid_pk == oid_ecPublicKey:
             raise der.UnexpectedDER(
                 "Unexpected object identifier in DER "
                 "encoding: {0!r}".format(oid_pk)
             )
-        curve = find_curve(oid_curve)
+        curve = Curve.from_der(rest, valid_curve_encodings)
         point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
         if empty != b"":
             raise der.UnexpectedDER(
@@ -849,7 +865,7 @@ class SigningKey(object):
         return cls.from_secret_exponent(secexp, curve, hashfunc)
 
     @classmethod
-    def from_pem(cls, string, hashfunc=sha1):
+    def from_pem(cls, string, hashfunc=sha1, valid_curve_encodings=None):
         """
         Initialise from key stored in :term:`PEM` format.
 
@@ -869,6 +885,11 @@ class SigningKey(object):
 
         :param string: text with PEM-encoded private ECDSA key
         :type string: str
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
+
 
         :raises MalformedPointError: if the length of encoding doesn't match
             the provided curve or the encoded values is too large
@@ -889,10 +910,14 @@ class SigningKey(object):
         if private_key_index == -1:
             private_key_index = string.index(b"-----BEGIN PRIVATE KEY-----")
 
-        return cls.from_der(der.unpem(string[private_key_index:]), hashfunc)
+        return cls.from_der(
+            der.unpem(string[private_key_index:]),
+            hashfunc,
+            valid_curve_encodings,
+        )
 
     @classmethod
-    def from_der(cls, string, hashfunc=sha1):
+    def from_der(cls, string, hashfunc=sha1, valid_curve_encodings=None):
         """
         Initialise from key stored in :term:`DER` format.
 
@@ -913,8 +938,8 @@ class SigningKey(object):
         `publicKey` field is ignored completely (errors, if any, in it will
         be undetected).
 
-        The only format supported for the `parameters` field is the named
-        curve method. Explicit encoding of curve parameters is not supported.
+        Two formats are supported for the `parameters` field: the named
+        curve and the explicit encoding of curve parameters.
         In the legacy ssleay format, this implementation requires the optional
         `parameters` field to get the curve name. In PKCS #8 format, the curve
         is part of the PrivateKeyAlgorithmIdentifier.
@@ -937,6 +962,10 @@ class SigningKey(object):
 
         :param string: binary string with DER-encoded private ECDSA key
         :type string: bytes like object
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
 
         :raises MalformedPointError: if the length of encoding doesn't match
             the provided curve or the encoded values is too large
@@ -971,8 +1000,7 @@ class SigningKey(object):
 
             sequence, s = der.remove_sequence(s)
             algorithm_oid, algorithm_identifier = der.remove_object(sequence)
-            curve_oid, empty = der.remove_object(algorithm_identifier)
-            curve = find_curve(curve_oid)
+            curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
 
             if algorithm_oid not in (oid_ecPublicKey, oid_ecDH, oid_ecMQV):
                 raise der.UnexpectedDER(
@@ -1014,13 +1042,7 @@ class SigningKey(object):
                 raise der.UnexpectedDER(
                     "expected tag 0 in DER privkey, got %d" % tag
                 )
-            curve_oid, empty = der.remove_object(curve_oid_str)
-            if empty != b(""):
-                raise der.UnexpectedDER(
-                    "trailing junk after DER privkey "
-                    "curve_oid: %s" % binascii.hexlify(empty)
-                )
-            curve = find_curve(curve_oid)
+            curve = Curve.from_der(curve_oid_str, valid_curve_encodings)
 
         # we don't actually care about the following fields
         #
