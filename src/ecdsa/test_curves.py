@@ -38,6 +38,32 @@ class TestParameterEncoding(unittest.TestCase):
 
         self.assertIs(curve, NIST256p)
 
+    def test_from_pem_with_explicit_when_explicit_disabled(self):
+        pem_params = (
+            "-----BEGIN EC PARAMETERS-----\n"
+            "MIHgAgEBMCwGByqGSM49AQECIQD/////AAAAAQAAAAAAAAAAAAAAAP/////////\n"
+            "//////zBEBCD/////AAAAAQAAAAAAAAAAAAAAAP///////////////AQgWsY12K\n"
+            "o6k+ez671VdpiGvGUdBrDMU7D2O848PifSYEsEQQRrF9Hy4SxCR/i85uVjpEDyd\n"
+            "wN9gS3rM6D0oTlF2JjClk/jQuL+Gn+bjufrSnwPnhYrzjNXazFezsu2QGg3v1H1\n"
+            "AiEA/////wAAAAD//////////7zm+q2nF56E87nKwvxjJVECAQE=\n"
+            "-----END EC PARAMETERS-----\n"
+        )
+        with self.assertRaises(der.UnexpectedDER) as e:
+            Curve.from_pem(pem_params, ["named_curve"])
+
+        self.assertIn("explicit curve parameters not", str(e.exception))
+
+    def test_from_pem_with_named_curve_with_named_curve_disabled(self):
+        pem_params = (
+            "-----BEGIN EC PARAMETERS-----\n"
+            "BggqhkjOPQMBBw==\n"
+            "-----END EC PARAMETERS-----\n"
+        )
+        with self.assertRaises(der.UnexpectedDER) as e:
+            Curve.from_pem(pem_params, ["explicit"])
+
+        self.assertIn("named_curve curve parameters not", str(e.exception))
+
     def test_from_pem_with_wrong_header(self):
         pem_params = (
             "-----BEGIN PARAMETERS-----\n"
@@ -118,6 +144,12 @@ class TestParameterEncoding(unittest.TestCase):
         curve = Curve.from_der(bytes(base64.b64decode(self.base64_params)))
 
         self.assertIs(curve, NIST256p)
+
+    def test_decoding_with_incorrect_valid_encodings(self):
+        with self.assertRaises(ValueError) as e:
+            Curve.from_der(b"", ["explicitCA"])
+
+        self.assertIn("Only named_curve", str(e.exception))
 
     def test_compare_curves_with_different_generators(self):
         curve_fp = CurveFp(23, 1, 7)
