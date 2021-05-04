@@ -564,7 +564,9 @@ class VerifyingKey(object):
         assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
         return self.pubkey.point.to_bytes(encoding)
 
-    def to_pem(self, point_encoding="uncompressed"):
+    def to_pem(
+        self, point_encoding="uncompressed", curve_parameters_encoding=None
+    ):
         """
         Convert the public key to the :term:`PEM` format.
 
@@ -578,6 +580,9 @@ class VerifyingKey(object):
             of public keys. "uncompressed" is most portable, "compressed" is
             smallest. "hybrid" is uncommon and unsupported by most
             implementations, it is as big as "uncompressed".
+        :param str curve_parameters_encoding: the encoding for curve parameters
+            to use, by default tries to use ``named_curve`` encoding,
+            if that is not possible, falls back to ``named_curve`` encoding.
 
         :return: portable encoding of the public key
         :rtype: bytes
@@ -585,9 +590,14 @@ class VerifyingKey(object):
         .. warning:: The PEM is encoded to US-ASCII, it needs to be
             re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
-        return der.topem(self.to_der(point_encoding), "PUBLIC KEY")
+        return der.topem(
+            self.to_der(point_encoding, curve_parameters_encoding),
+            "PUBLIC KEY",
+        )
 
-    def to_der(self, point_encoding="uncompressed"):
+    def to_der(
+        self, point_encoding="uncompressed", curve_parameters_encoding=None
+    ):
         """
         Convert the public key to the :term:`DER` format.
 
@@ -599,6 +609,9 @@ class VerifyingKey(object):
             of public keys. "uncompressed" is most portable, "compressed" is
             smallest. "hybrid" is uncommon and unsupported by most
             implementations, it is as big as "uncompressed".
+        :param str curve_parameters_encoding: the encoding for curve parameters
+            to use, by default tries to use ``named_curve`` encoding,
+            if that is not possible, falls back to ``named_curve`` encoding.
 
         :return: DER encoding of the public key
         :rtype: bytes
@@ -608,7 +621,8 @@ class VerifyingKey(object):
         point_str = self.to_string(point_encoding)
         return der.encode_sequence(
             der.encode_sequence(
-                encoded_oid_ecPublicKey, self.curve.encoded_oid
+                encoded_oid_ecPublicKey,
+                self.curve.to_der(curve_parameters_encoding),
             ),
             # 0 is the number of unused bits in the
             # bit string
@@ -1078,7 +1092,12 @@ class SigningKey(object):
         s = number_to_string(secexp, self.privkey.order)
         return s
 
-    def to_pem(self, point_encoding="uncompressed", format="ssleay"):
+    def to_pem(
+        self,
+        point_encoding="uncompressed",
+        format="ssleay",
+        curve_parameters_encoding=None,
+    ):
         """
         Convert the private key to the :term:`PEM` format.
 
@@ -1092,6 +1111,11 @@ class SigningKey(object):
 
         :param str point_encoding: format to use for encoding public point
         :param str format: either ``ssleay`` (default) or ``pkcs8``
+        :param str curve_parameters_encoding: format of encoded curve
+            parameters, default depends on the curve, if the curve has
+            an associated OID, ``named_curve`` format will be used,
+            if no OID is associated with the curve, the fallback of
+            ``explicit`` parameters will be used.
 
         :return: PEM encoded private key
         :rtype: bytes
@@ -1102,9 +1126,17 @@ class SigningKey(object):
         # TODO: "BEGIN ECPARAMETERS"
         assert format in ("ssleay", "pkcs8")
         header = "EC PRIVATE KEY" if format == "ssleay" else "PRIVATE KEY"
-        return der.topem(self.to_der(point_encoding, format), header)
+        return der.topem(
+            self.to_der(point_encoding, format, curve_parameters_encoding),
+            header,
+        )
 
-    def to_der(self, point_encoding="uncompressed", format="ssleay"):
+    def to_der(
+        self,
+        point_encoding="uncompressed",
+        format="ssleay",
+        curve_parameters_encoding=None,
+    ):
         """
         Convert the private key to the :term:`DER` format.
 
@@ -1115,6 +1147,11 @@ class SigningKey(object):
 
         :param str point_encoding: format to use for encoding public point
         :param str format: either ``ssleay`` (default) or ``pkcs8``
+        :param str curve_parameters_encoding: format of encoded curve
+            parameters, default depends on the curve, if the curve has
+            an associated OID, ``named_curve`` format will be used,
+            if no OID is associated with the curve, the fallback of
+            ``explicit`` parameters will be used.
 
         :return: DER encoded private key
         :rtype: bytes
@@ -1125,14 +1162,22 @@ class SigningKey(object):
             raise ValueError("raw encoding not allowed in DER")
         assert format in ("ssleay", "pkcs8")
         encoded_vk = self.get_verifying_key().to_string(point_encoding)
-        # the 0 in encode_bitstring specifies the number of unused bits
-        # in the `encoded_vk` string
-        ec_private_key = der.encode_sequence(
+        priv_key_elems = [
             der.encode_integer(1),
             der.encode_octet_string(self.to_string()),
-            der.encode_constructed(0, self.curve.encoded_oid),
-            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
+        ]
+        if format == "ssleay":
+            priv_key_elems.append(
+                der.encode_constructed(
+                    0, self.curve.to_der(curve_parameters_encoding)
+                )
+            )
+        # the 0 in encode_bitstring specifies the number of unused bits
+        # in the `encoded_vk` string
+        priv_key_elems.append(
+            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0))
         )
+        ec_private_key = der.encode_sequence(*priv_key_elems)
 
         if format == "ssleay":
             return ec_private_key
@@ -1142,7 +1187,8 @@ class SigningKey(object):
                 # top-level structure.
                 der.encode_integer(1),
                 der.encode_sequence(
-                    der.encode_oid(*oid_ecPublicKey), self.curve.encoded_oid
+                    der.encode_oid(*oid_ecPublicKey),
+                    self.curve.to_der(curve_parameters_encoding),
                 ),
                 der.encode_octet_string(ec_private_key),
             )
