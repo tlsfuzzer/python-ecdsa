@@ -745,6 +745,12 @@ class ECDSA(unittest.TestCase):
 
         self.assertIn("hybrid", str(exp.exception))
 
+    def test_decoding_with_unknown_format(self):
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_string(b"", valid_encodings=("raw", "foobar"))
+
+        self.assertIn("Only uncompressed, compressed", str(e.exception))
+
     def test_uncompressed_decoding_with_blocked_format(self):
         enc = b(
             "\x04"
@@ -1313,10 +1319,34 @@ class OpenSSL(unittest.TestCase):
             % mdarg
         )
 
+        with open("t/privkey-explicit.pem", "wb") as e:
+            e.write(sk.to_pem(curve_parameters_encoding="explicit"))
+        run_openssl(
+            "dgst %s -sign t/privkey-explicit.pem -out t/data.sig2 t/data.txt"
+            % mdarg
+        )
+        run_openssl(
+            "dgst %s -verify t/pubkey.pem -signature t/data.sig2 t/data.txt"
+            % mdarg
+        )
+
         with open("t/privkey-p8.pem", "wb") as e:
             e.write(sk.to_pem(format="pkcs8"))
         run_openssl(
             "dgst %s -sign t/privkey-p8.pem -out t/data.sig3 t/data.txt"
+            % mdarg
+        )
+        run_openssl(
+            "dgst %s -verify t/pubkey.pem -signature t/data.sig3 t/data.txt"
+            % mdarg
+        )
+
+        with open("t/privkey-p8-explicit.pem", "wb") as e:
+            e.write(
+                sk.to_pem(format="pkcs8", curve_parameters_encoding="explicit")
+            )
+        run_openssl(
+            "dgst %s -sign t/privkey-p8-explicit.pem -out t/data.sig3 t/data.txt"
             % mdarg
         )
         run_openssl(

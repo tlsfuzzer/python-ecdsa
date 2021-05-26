@@ -49,6 +49,9 @@ except ImportError:  # pragma: no branch
 
 from six import python_2_unicode_compatible
 from . import numbertheory
+from ._compat import normalise_bytes
+from .errors import MalformedPointError
+from .util import orderlen, string_to_number, number_to_string
 
 
 @python_2_unicode_compatible
@@ -98,10 +101,11 @@ class CurveFp(object):
         only the prime and curve parameters are considered.
         """
         if isinstance(other, CurveFp):
+            p = self.__p
             return (
                 self.__p == other.__p
-                and self.__a == other.__a
-                and self.__b == other.__b
+                and self.__a % p == other.__a % p
+                and self.__b % p == other.__b % p
             )
         return NotImplemented
 
@@ -137,7 +141,198 @@ class CurveFp(object):
         )
 
 
-class PointJacobi(object):
+class AbstractPoint(object):
+    """Class for common methods of elliptic curve points."""
+
+    @staticmethod
+    def _from_raw_encoding(data, raw_encoding_length):
+        """
+        Decode public point from :term:`raw encoding`.
+
+        :term:`raw encoding` is the same as the :term:`uncompressed` encoding,
+        but without the 0x04 byte at the beginning.
+        """
+        # real assert, from_bytes() should not call us with different length
+        assert len(data) == raw_encoding_length
+        xs = data[: raw_encoding_length // 2]
+        ys = data[raw_encoding_length // 2 :]
+        # real assert, raw_encoding_length is calculated by multiplying an
+        # integer by two so it will always be even
+        assert len(xs) == raw_encoding_length // 2
+        assert len(ys) == raw_encoding_length // 2
+        coord_x = string_to_number(xs)
+        coord_y = string_to_number(ys)
+
+        return coord_x, coord_y
+
+    @staticmethod
+    def _from_compressed(data, curve):
+        """Decode public point from compressed encoding."""
+        if data[:1] not in (b"\x02", b"\x03"):
+            raise MalformedPointError("Malformed compressed point encoding")
+
+        is_even = data[:1] == b"\x02"
+        x = string_to_number(data[1:])
+        p = curve.p()
+        alpha = (pow(x, 3, p) + (curve.a() * x) + curve.b()) % p
+        try:
+            beta = numbertheory.square_root_mod_prime(alpha, p)
+        except numbertheory.SquareRootError as e:
+            raise MalformedPointError(
+                "Encoding does not correspond to a point on curve", e
+            )
+        if is_even == bool(beta & 1):
+            y = p - beta
+        else:
+            y = beta
+        return x, y
+
+    @classmethod
+    def _from_hybrid(cls, data, raw_encoding_length, validate_encoding):
+        """Decode public point from hybrid encoding."""
+        # real assert, from_bytes() should not call us with different types
+        assert data[:1] in (b"\x06", b"\x07")
+
+        # primarily use the uncompressed as it's easiest to handle
+        x, y = cls._from_raw_encoding(data[1:], raw_encoding_length)
+
+        # but validate if it's self-consistent if we're asked to do that
+        if validate_encoding and (
+            y & 1
+            and data[:1] != b"\x07"
+            or (not y & 1)
+            and data[:1] != b"\x06"
+        ):
+            raise MalformedPointError("Inconsistent hybrid point encoding")
+
+        return x, y
+
+    @classmethod
+    def from_bytes(
+        cls, curve, data, validate_encoding=True, valid_encodings=None
+    ):
+        """
+        Initialise the object from byte encoding of a point.
+
+        The method does accept and automatically detect the type of point
+        encoding used. It supports the :term:`raw encoding`,
+        :term:`uncompressed`, :term:`compressed`, and :term:`hybrid` encodings.
+
+        Note: generally you will want to call the ``from_bytes()`` method of
+        either a child class, PointJacobi or Point.
+
+        :param data: single point encoding of the public key
+        :type data: :term:`bytes-like object`
+        :param curve: the curve on which the public key is expected to lay
+        :type curve: ecdsa.ellipticcurve.CurveFp
+        :param validate_encoding: whether to verify that the encoding of the
+            point is self-consistent, defaults to True, has effect only
+            on ``hybrid`` encoding
+        :type validate_encoding: bool
+        :param valid_encodings: list of acceptable point encoding formats,
+            supported ones are: :term:`uncompressed`, :term:`compressed`,
+            :term:`hybrid`, and :term:`raw encoding` (specified with ``raw``
+            name). All formats by default (specified with ``None``).
+        :type valid_encodings: :term:`set-like object`
+
+        :raises MalformedPointError: if the public point does not lay on the
+            curve or the encoding is invalid
+
+        :return: x and y coordinates of the encoded point
+        :rtype: tuple(int, int)
+        """
+        if not valid_encodings:
+            valid_encodings = set(
+                ["uncompressed", "compressed", "hybrid", "raw"]
+            )
+        if not all(
+            i in set(("uncompressed", "compressed", "hybrid", "raw"))
+            for i in valid_encodings
+        ):
+            raise ValueError(
+                "Only uncompressed, compressed, hybrid or raw encoding "
+                "supported."
+            )
+        data = normalise_bytes(data)
+        key_len = len(data)
+        raw_encoding_length = 2 * orderlen(curve.p())
+        if key_len == raw_encoding_length and "raw" in valid_encodings:
+            coord_x, coord_y = cls._from_raw_encoding(
+                data, raw_encoding_length
+            )
+        elif key_len == raw_encoding_length + 1 and (
+            "hybrid" in valid_encodings or "uncompressed" in valid_encodings
+        ):
+            if data[:1] in (b"\x06", b"\x07") and "hybrid" in valid_encodings:
+                coord_x, coord_y = cls._from_hybrid(
+                    data, raw_encoding_length, validate_encoding
+                )
+            elif data[:1] == b"\x04" and "uncompressed" in valid_encodings:
+                coord_x, coord_y = cls._from_raw_encoding(
+                    data[1:], raw_encoding_length
+                )
+            else:
+                raise MalformedPointError(
+                    "Invalid X9.62 encoding of the public point"
+                )
+        elif (
+            key_len == raw_encoding_length // 2 + 1
+            and "compressed" in valid_encodings
+        ):
+            coord_x, coord_y = cls._from_compressed(data, curve)
+        else:
+            raise MalformedPointError(
+                "Length of string does not match lengths of "
+                "any of the enabled ({0}) encodings of the "
+                "curve.".format(", ".join(valid_encodings))
+            )
+        return coord_x, coord_y
+
+    def _raw_encode(self):
+        """Convert the point to the :term:`raw encoding`."""
+        prime = self.curve().p()
+        x_str = number_to_string(self.x(), prime)
+        y_str = number_to_string(self.y(), prime)
+        return x_str + y_str
+
+    def _compressed_encode(self):
+        """Encode the point into the compressed form."""
+        prime = self.curve().p()
+        x_str = number_to_string(self.x(), prime)
+        if self.y() & 1:
+            return b"\x03" + x_str
+        return b"\x02" + x_str
+
+    def _hybrid_encode(self):
+        """Encode the point into the hybrid form."""
+        raw_enc = self._raw_encode()
+        if self.y() & 1:
+            return b"\x07" + raw_enc
+        return b"\x06" + raw_enc
+
+    def to_bytes(self, encoding="raw"):
+        """
+        Convert the point to a byte string.
+
+        The method by default uses the :term:`raw encoding` (specified
+        by `encoding="raw"`. It can also output points in :term:`uncompressed`,
+        :term:`compressed`, and :term:`hybrid` formats.
+
+        :return: :term:`raw encoding` of a public on the curve
+        :rtype: bytes
+        """
+        assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
+        if encoding == "raw":
+            return self._raw_encode()
+        elif encoding == "uncompressed":
+            return b"\x04" + self._raw_encode()
+        elif encoding == "hybrid":
+            return self._hybrid_encode()
+        else:
+            return self._compressed_encode()
+
+
+class PointJacobi(AbstractPoint):
     """
     Point on an elliptic curve. Uses Jacobi coordinates.
 
@@ -165,6 +360,7 @@ class PointJacobi(object):
           such, it will be commonly used with scalar multiplication. This will
           cause to precompute multiplication table generation for it
         """
+        super(PointJacobi, self).__init__()
         self.__curve = curve
         if GMPY:  # pragma: no branch
             self.__coords = (mpz(x), mpz(y), mpz(z))
@@ -174,6 +370,53 @@ class PointJacobi(object):
             self.__order = order
         self.__generator = generator
         self.__precompute = []
+
+    @classmethod
+    def from_bytes(
+        cls,
+        curve,
+        data,
+        validate_encoding=True,
+        valid_encodings=None,
+        order=None,
+        generator=False,
+    ):
+        """
+        Initialise the object from byte encoding of a point.
+
+        The method does accept and automatically detect the type of point
+        encoding used. It supports the :term:`raw encoding`,
+        :term:`uncompressed`, :term:`compressed`, and :term:`hybrid` encodings.
+
+        :param data: single point encoding of the public key
+        :type data: :term:`bytes-like object`
+        :param curve: the curve on which the public key is expected to lay
+        :type curve: ecdsa.ellipticcurve.CurveFp
+        :param validate_encoding: whether to verify that the encoding of the
+            point is self-consistent, defaults to True, has effect only
+            on ``hybrid`` encoding
+        :type validate_encoding: bool
+        :param valid_encodings: list of acceptable point encoding formats,
+            supported ones are: :term:`uncompressed`, :term:`compressed`,
+            :term:`hybrid`, and :term:`raw encoding` (specified with ``raw``
+            name). All formats by default (specified with ``None``).
+        :type valid_encodings: :term:`set-like object`
+        :param int order: the point order, must be non zero when using
+            generator=True
+        :param bool generator: the point provided is a curve generator, as
+            such, it will be commonly used with scalar multiplication. This
+            will cause to precompute multiplication table generation for it
+
+        :raises MalformedPointError: if the public point does not lay on the
+            curve or the encoding is invalid
+
+        :return: Point on curve
+        :rtype: PointJacobi
+        """
+        coord_x, coord_y = super(PointJacobi, cls).from_bytes(
+            curve, data, validate_encoding, valid_encodings
+        )
+        return PointJacobi(curve, coord_x, coord_y, 1, order, generator)
 
     def _maybe_precompute(self):
         if not self.__generator or self.__precompute:
@@ -683,12 +926,13 @@ class PointJacobi(object):
         return PointJacobi(self.__curve, x, -y, z, self.__order)
 
 
-class Point(object):
+class Point(AbstractPoint):
     """A point on an elliptic curve. Altering x and y is forbidden,
      but they can be read by the x() and y() methods."""
 
     def __init__(self, curve, x, y, order=None):
         """curve, x, y, order; order (optional) is the order of this point."""
+        super(Point, self).__init__()
         self.__curve = curve
         if GMPY:
             self.__x = x and mpz(x)
@@ -706,6 +950,49 @@ class Point(object):
         # not necessary to verify that. See Section 3.2.2.1 of SEC 1 v2
         if curve and curve.cofactor() != 1 and order:
             assert self * order == INFINITY
+
+    @classmethod
+    def from_bytes(
+        cls,
+        curve,
+        data,
+        validate_encoding=True,
+        valid_encodings=None,
+        order=None,
+    ):
+        """
+        Initialise the object from byte encoding of a point.
+
+        The method does accept and automatically detect the type of point
+        encoding used. It supports the :term:`raw encoding`,
+        :term:`uncompressed`, :term:`compressed`, and :term:`hybrid` encodings.
+
+        :param data: single point encoding of the public key
+        :type data: :term:`bytes-like object`
+        :param curve: the curve on which the public key is expected to lay
+        :type curve: ecdsa.ellipticcurve.CurveFp
+        :param validate_encoding: whether to verify that the encoding of the
+            point is self-consistent, defaults to True, has effect only
+            on ``hybrid`` encoding
+        :type validate_encoding: bool
+        :param valid_encodings: list of acceptable point encoding formats,
+            supported ones are: :term:`uncompressed`, :term:`compressed`,
+            :term:`hybrid`, and :term:`raw encoding` (specified with ``raw``
+            name). All formats by default (specified with ``None``).
+        :type valid_encodings: :term:`set-like object`
+        :param int order: the point order, must be non zero when using
+            generator=True
+
+        :raises MalformedPointError: if the public point does not lay on the
+            curve or the encoding is invalid
+
+        :return: Point on curve
+        :rtype: Point
+        """
+        coord_x, coord_y = super(Point, cls).from_bytes(
+            curve, data, validate_encoding, valid_encodings
+        )
+        return Point(curve, coord_x, coord_y, order)
 
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise.

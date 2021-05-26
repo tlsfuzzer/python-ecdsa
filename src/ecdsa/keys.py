@@ -77,8 +77,7 @@ from . import ecdsa
 from . import der
 from . import rfc6979
 from . import ellipticcurve
-from .curves import NIST192p, find_curve
-from .numbertheory import square_root_mod_prime, SquareRootError
+from .curves import NIST192p, Curve
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string, bit_length
@@ -90,6 +89,8 @@ from .util import (
     MalformedSignature,
 )
 from ._compat import normalise_bytes
+from .errors import MalformedPointError
+from .ellipticcurve import PointJacobi
 
 
 __all__ = [
@@ -118,12 +119,6 @@ class BadSignatureError(Exception):
 
 class BadDigestError(Exception):
     """Raised in case the selected hash is too large for the curve."""
-
-    pass
-
-
-class MalformedPointError(AssertionError):
-    """Raised in case the encoding of private or public key is malformed."""
 
     pass
 
@@ -269,71 +264,6 @@ class VerifyingKey(object):
         if not lazy:
             self.pubkey.point * 2
 
-    @staticmethod
-    def _from_raw_encoding(string, curve):
-        """
-        Decode public point from :term:`raw encoding`.
-
-        :term:`raw encoding` is the same as the :term:`uncompressed` encoding,
-        but without the 0x04 byte at the beginning.
-        """
-        order = curve.order
-        # real assert, from_string() should not call us with different length
-        assert len(string) == curve.verifying_key_length
-        xs = string[: curve.verifying_key_length // 2]
-        ys = string[curve.verifying_key_length // 2 :]
-        # real assert, verifying_key_length is calculated by multiplying an
-        # integer by two so it will always be even
-        assert len(xs) == curve.verifying_key_length // 2
-        assert len(ys) == curve.verifying_key_length // 2
-        x = string_to_number(xs)
-        y = string_to_number(ys)
-
-        return ellipticcurve.PointJacobi(curve.curve, x, y, 1, order)
-
-    @staticmethod
-    def _from_compressed(string, curve):
-        """Decode public point from compressed encoding."""
-        if string[:1] not in (b("\x02"), b("\x03")):
-            raise MalformedPointError("Malformed compressed point encoding")
-
-        is_even = string[:1] == b("\x02")
-        x = string_to_number(string[1:])
-        order = curve.order
-        p = curve.curve.p()
-        alpha = (pow(x, 3, p) + (curve.curve.a() * x) + curve.curve.b()) % p
-        try:
-            beta = square_root_mod_prime(alpha, p)
-        except SquareRootError as e:
-            raise MalformedPointError(
-                "Encoding does not correspond to a point on curve", e
-            )
-        if is_even == bool(beta & 1):
-            y = p - beta
-        else:
-            y = beta
-        return ellipticcurve.PointJacobi(curve.curve, x, y, 1, order)
-
-    @classmethod
-    def _from_hybrid(cls, string, curve, validate_point):
-        """Decode public point from hybrid encoding."""
-        # real assert, from_string() should not call us with different types
-        assert string[:1] in (b("\x06"), b("\x07"))
-
-        # primarily use the uncompressed as it's easiest to handle
-        point = cls._from_raw_encoding(string[1:], curve)
-
-        # but validate if it's self-consistent if we're asked to do that
-        if validate_point and (
-            point.y() & 1
-            and string[:1] != b("\x07")
-            or (not point.y() & 1)
-            and string[:1] != b("\x06")
-        ):
-            raise MalformedPointError("Inconsistent hybrid point encoding")
-
-        return point
-
     @classmethod
     def from_string(
         cls,
@@ -348,7 +278,7 @@ class VerifyingKey(object):
 
         The method does accept and automatically detect the type of point
         encoding used. It supports the :term:`raw encoding`,
-        :term:`uncompressed`, :term:`compressed` and :term:`hybrid` encodings.
+        :term:`uncompressed`, :term:`compressed`, and :term:`hybrid` encodings.
 
         Note, while the method is named "from_string" it's a misnomer from
         Python 2 days when there were no binary strings. In Python 3 the
@@ -376,43 +306,22 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
-        if valid_encodings is None:
-            valid_encodings = set(
-                ["uncompressed", "compressed", "hybrid", "raw"]
-            )
-        string = normalise_bytes(string)
-        sig_len = len(string)
-        if sig_len == curve.verifying_key_length and "raw" in valid_encodings:
-            point = cls._from_raw_encoding(string, curve)
-        elif sig_len == curve.verifying_key_length + 1 and (
-            "hybrid" in valid_encodings or "uncompressed" in valid_encodings
-        ):
-            if (
-                string[:1] in (b("\x06"), b("\x07"))
-                and "hybrid" in valid_encodings
-            ):
-                point = cls._from_hybrid(string, curve, validate_point)
-            elif string[:1] == b("\x04") and "uncompressed" in valid_encodings:
-                point = cls._from_raw_encoding(string[1:], curve)
-            else:
-                raise MalformedPointError(
-                    "Invalid X9.62 encoding of the public point"
-                )
-        elif (
-            sig_len == curve.verifying_key_length // 2 + 1
-            and "compressed" in valid_encodings
-        ):
-            point = cls._from_compressed(string, curve)
-        else:
-            raise MalformedPointError(
-                "Length of string does not match lengths of "
-                "any of the enabled ({1}) encodings of {0} "
-                "curve.".format(curve.name, ", ".join(valid_encodings))
-            )
+        point = PointJacobi.from_bytes(
+            curve.curve,
+            string,
+            validate_encoding=validate_point,
+            valid_encodings=valid_encodings,
+        )
         return cls.from_public_point(point, curve, hashfunc, validate_point)
 
     @classmethod
-    def from_pem(cls, string, hashfunc=sha1, valid_encodings=None):
+    def from_pem(
+        cls,
+        string,
+        hashfunc=sha1,
+        valid_encodings=None,
+        valid_curve_encodings=None,
+    ):
         """
         Initialise from public key stored in :term:`PEM` format.
 
@@ -421,7 +330,7 @@ class VerifyingKey(object):
         See the :func:`~VerifyingKey.from_der()` method for details of the
         format supported.
 
-        Note: only a single PEM object encoding is supported in provided
+        Note: only a single PEM object decoding is supported in provided
         string.
 
         :param string: text with PEM-encoded public ECDSA key
@@ -431,6 +340,11 @@ class VerifyingKey(object):
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
         :type valid_encodings: :term:`set-like object
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
+
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
@@ -439,10 +353,17 @@ class VerifyingKey(object):
             der.unpem(string),
             hashfunc=hashfunc,
             valid_encodings=valid_encodings,
+            valid_curve_encodings=valid_curve_encodings,
         )
 
     @classmethod
-    def from_der(cls, string, hashfunc=sha1, valid_encodings=None):
+    def from_der(
+        cls,
+        string,
+        hashfunc=sha1,
+        valid_encodings=None,
+        valid_curve_encodings=None,
+    ):
         """
         Initialise the key stored in :term:`DER` format.
 
@@ -472,6 +393,10 @@ class VerifyingKey(object):
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
         :type valid_encodings: :term:`set-like object
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
 
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
@@ -488,18 +413,12 @@ class VerifyingKey(object):
         s2, point_str_bitstring = der.remove_sequence(s1)
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
-        oid_curve, empty = der.remove_object(rest)
-        if empty != b"":
-            raise der.UnexpectedDER(
-                "trailing junk after DER pubkey objects: %s"
-                % binascii.hexlify(empty)
-            )
         if not oid_pk == oid_ecPublicKey:
             raise der.UnexpectedDER(
                 "Unexpected object identifier in DER "
                 "encoding: {0!r}".format(oid_pk)
             )
-        curve = find_curve(oid_curve)
+        curve = Curve.from_der(rest, valid_curve_encodings)
         point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
         if empty != b"":
             raise der.UnexpectedDER(
@@ -622,30 +541,6 @@ class VerifyingKey(object):
         ]
         return verifying_keys
 
-    def _raw_encode(self):
-        """Convert the public key to the :term:`raw encoding`."""
-        order = self.curve.curve.p()
-        x_str = number_to_string(self.pubkey.point.x(), order)
-        y_str = number_to_string(self.pubkey.point.y(), order)
-        return x_str + y_str
-
-    def _compressed_encode(self):
-        """Encode the public point into the compressed form."""
-        order = self.curve.curve.p()
-        x_str = number_to_string(self.pubkey.point.x(), order)
-        if self.pubkey.point.y() & 1:
-            return b("\x03") + x_str
-        else:
-            return b("\x02") + x_str
-
-    def _hybrid_encode(self):
-        """Encode the public point into the hybrid form."""
-        raw_enc = self._raw_encode()
-        if self.pubkey.point.y() & 1:
-            return b("\x07") + raw_enc
-        else:
-            return b("\x06") + raw_enc
-
     def to_string(self, encoding="raw"):
         """
         Convert the public key to a byte string.
@@ -667,16 +562,11 @@ class VerifyingKey(object):
         :rtype: bytes
         """
         assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
-        if encoding == "raw":
-            return self._raw_encode()
-        elif encoding == "uncompressed":
-            return b("\x04") + self._raw_encode()
-        elif encoding == "hybrid":
-            return self._hybrid_encode()
-        else:
-            return self._compressed_encode()
+        return self.pubkey.point.to_bytes(encoding)
 
-    def to_pem(self, point_encoding="uncompressed"):
+    def to_pem(
+        self, point_encoding="uncompressed", curve_parameters_encoding=None
+    ):
         """
         Convert the public key to the :term:`PEM` format.
 
@@ -690,6 +580,9 @@ class VerifyingKey(object):
             of public keys. "uncompressed" is most portable, "compressed" is
             smallest. "hybrid" is uncommon and unsupported by most
             implementations, it is as big as "uncompressed".
+        :param str curve_parameters_encoding: the encoding for curve parameters
+            to use, by default tries to use ``named_curve`` encoding,
+            if that is not possible, falls back to ``named_curve`` encoding.
 
         :return: portable encoding of the public key
         :rtype: bytes
@@ -697,9 +590,14 @@ class VerifyingKey(object):
         .. warning:: The PEM is encoded to US-ASCII, it needs to be
             re-encoded if the system is incompatible (e.g. uses UTF-16)
         """
-        return der.topem(self.to_der(point_encoding), "PUBLIC KEY")
+        return der.topem(
+            self.to_der(point_encoding, curve_parameters_encoding),
+            "PUBLIC KEY",
+        )
 
-    def to_der(self, point_encoding="uncompressed"):
+    def to_der(
+        self, point_encoding="uncompressed", curve_parameters_encoding=None
+    ):
         """
         Convert the public key to the :term:`DER` format.
 
@@ -711,6 +609,9 @@ class VerifyingKey(object):
             of public keys. "uncompressed" is most portable, "compressed" is
             smallest. "hybrid" is uncommon and unsupported by most
             implementations, it is as big as "uncompressed".
+        :param str curve_parameters_encoding: the encoding for curve parameters
+            to use, by default tries to use ``named_curve`` encoding,
+            if that is not possible, falls back to ``named_curve`` encoding.
 
         :return: DER encoding of the public key
         :rtype: bytes
@@ -720,7 +621,8 @@ class VerifyingKey(object):
         point_str = self.to_string(point_encoding)
         return der.encode_sequence(
             der.encode_sequence(
-                encoded_oid_ecPublicKey, self.curve.encoded_oid
+                encoded_oid_ecPublicKey,
+                self.curve.to_der(curve_parameters_encoding),
             ),
             # 0 is the number of unused bits in the
             # bit string
@@ -977,7 +879,7 @@ class SigningKey(object):
         return cls.from_secret_exponent(secexp, curve, hashfunc)
 
     @classmethod
-    def from_pem(cls, string, hashfunc=sha1):
+    def from_pem(cls, string, hashfunc=sha1, valid_curve_encodings=None):
         """
         Initialise from key stored in :term:`PEM` format.
 
@@ -997,6 +899,11 @@ class SigningKey(object):
 
         :param string: text with PEM-encoded private ECDSA key
         :type string: str
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
+
 
         :raises MalformedPointError: if the length of encoding doesn't match
             the provided curve or the encoded values is too large
@@ -1017,10 +924,14 @@ class SigningKey(object):
         if private_key_index == -1:
             private_key_index = string.index(b"-----BEGIN PRIVATE KEY-----")
 
-        return cls.from_der(der.unpem(string[private_key_index:]), hashfunc)
+        return cls.from_der(
+            der.unpem(string[private_key_index:]),
+            hashfunc,
+            valid_curve_encodings,
+        )
 
     @classmethod
-    def from_der(cls, string, hashfunc=sha1):
+    def from_der(cls, string, hashfunc=sha1, valid_curve_encodings=None):
         """
         Initialise from key stored in :term:`DER` format.
 
@@ -1041,8 +952,8 @@ class SigningKey(object):
         `publicKey` field is ignored completely (errors, if any, in it will
         be undetected).
 
-        The only format supported for the `parameters` field is the named
-        curve method. Explicit encoding of curve parameters is not supported.
+        Two formats are supported for the `parameters` field: the named
+        curve and the explicit encoding of curve parameters.
         In the legacy ssleay format, this implementation requires the optional
         `parameters` field to get the curve name. In PKCS #8 format, the curve
         is part of the PrivateKeyAlgorithmIdentifier.
@@ -1065,6 +976,10 @@ class SigningKey(object):
 
         :param string: binary string with DER-encoded private ECDSA key
         :type string: bytes like object
+        :param valid_curve_encodings: list of allowed encoding formats
+            for curve parameters. By default (``None``) all are supported:
+            ``named_curve`` and ``explicit``.
+        :type valid_curve_encodings: :term:`set-like object`
 
         :raises MalformedPointError: if the length of encoding doesn't match
             the provided curve or the encoded values is too large
@@ -1099,8 +1014,7 @@ class SigningKey(object):
 
             sequence, s = der.remove_sequence(s)
             algorithm_oid, algorithm_identifier = der.remove_object(sequence)
-            curve_oid, empty = der.remove_object(algorithm_identifier)
-            curve = find_curve(curve_oid)
+            curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
 
             if algorithm_oid not in (oid_ecPublicKey, oid_ecDH, oid_ecMQV):
                 raise der.UnexpectedDER(
@@ -1142,13 +1056,7 @@ class SigningKey(object):
                 raise der.UnexpectedDER(
                     "expected tag 0 in DER privkey, got %d" % tag
                 )
-            curve_oid, empty = der.remove_object(curve_oid_str)
-            if empty != b(""):
-                raise der.UnexpectedDER(
-                    "trailing junk after DER privkey "
-                    "curve_oid: %s" % binascii.hexlify(empty)
-                )
-            curve = find_curve(curve_oid)
+            curve = Curve.from_der(curve_oid_str, valid_curve_encodings)
 
         # we don't actually care about the following fields
         #
@@ -1184,7 +1092,12 @@ class SigningKey(object):
         s = number_to_string(secexp, self.privkey.order)
         return s
 
-    def to_pem(self, point_encoding="uncompressed", format="ssleay"):
+    def to_pem(
+        self,
+        point_encoding="uncompressed",
+        format="ssleay",
+        curve_parameters_encoding=None,
+    ):
         """
         Convert the private key to the :term:`PEM` format.
 
@@ -1198,6 +1111,11 @@ class SigningKey(object):
 
         :param str point_encoding: format to use for encoding public point
         :param str format: either ``ssleay`` (default) or ``pkcs8``
+        :param str curve_parameters_encoding: format of encoded curve
+            parameters, default depends on the curve, if the curve has
+            an associated OID, ``named_curve`` format will be used,
+            if no OID is associated with the curve, the fallback of
+            ``explicit`` parameters will be used.
 
         :return: PEM encoded private key
         :rtype: bytes
@@ -1208,9 +1126,17 @@ class SigningKey(object):
         # TODO: "BEGIN ECPARAMETERS"
         assert format in ("ssleay", "pkcs8")
         header = "EC PRIVATE KEY" if format == "ssleay" else "PRIVATE KEY"
-        return der.topem(self.to_der(point_encoding, format), header)
+        return der.topem(
+            self.to_der(point_encoding, format, curve_parameters_encoding),
+            header,
+        )
 
-    def to_der(self, point_encoding="uncompressed", format="ssleay"):
+    def to_der(
+        self,
+        point_encoding="uncompressed",
+        format="ssleay",
+        curve_parameters_encoding=None,
+    ):
         """
         Convert the private key to the :term:`DER` format.
 
@@ -1221,6 +1147,11 @@ class SigningKey(object):
 
         :param str point_encoding: format to use for encoding public point
         :param str format: either ``ssleay`` (default) or ``pkcs8``
+        :param str curve_parameters_encoding: format of encoded curve
+            parameters, default depends on the curve, if the curve has
+            an associated OID, ``named_curve`` format will be used,
+            if no OID is associated with the curve, the fallback of
+            ``explicit`` parameters will be used.
 
         :return: DER encoded private key
         :rtype: bytes
@@ -1231,14 +1162,22 @@ class SigningKey(object):
             raise ValueError("raw encoding not allowed in DER")
         assert format in ("ssleay", "pkcs8")
         encoded_vk = self.get_verifying_key().to_string(point_encoding)
-        # the 0 in encode_bitstring specifies the number of unused bits
-        # in the `encoded_vk` string
-        ec_private_key = der.encode_sequence(
+        priv_key_elems = [
             der.encode_integer(1),
             der.encode_octet_string(self.to_string()),
-            der.encode_constructed(0, self.curve.encoded_oid),
-            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)),
+        ]
+        if format == "ssleay":
+            priv_key_elems.append(
+                der.encode_constructed(
+                    0, self.curve.to_der(curve_parameters_encoding)
+                )
+            )
+        # the 0 in encode_bitstring specifies the number of unused bits
+        # in the `encoded_vk` string
+        priv_key_elems.append(
+            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0))
         )
+        ec_private_key = der.encode_sequence(*priv_key_elems)
 
         if format == "ssleay":
             return ec_private_key
@@ -1248,7 +1187,8 @@ class SigningKey(object):
                 # top-level structure.
                 der.encode_integer(1),
                 der.encode_sequence(
-                    der.encode_oid(*oid_ecPublicKey), self.curve.encoded_oid
+                    der.encode_oid(*oid_ecPublicKey),
+                    self.curve.to_der(curve_parameters_encoding),
                 ),
                 der.encode_octet_string(ec_private_key),
             )

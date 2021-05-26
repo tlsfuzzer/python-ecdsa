@@ -14,7 +14,7 @@ import pytest
 import hashlib
 
 from .keys import VerifyingKey, SigningKey, MalformedPointError
-from .der import unpem
+from .der import unpem, UnexpectedDER
 from .util import (
     sigencode_string,
     sigencode_der,
@@ -153,6 +153,47 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         cls.sk2 = SigningKey.generate(vk.curve)
 
+    def test_load_key_with_explicit_parameters(self):
+        pub_key_str = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAA\n"
+            "AAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA////\n"
+            "///////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMVAMSd\n"
+            "NgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5\n"
+            "RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA\n"
+            "//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABIr1UkgYs5jmbFc7it1/YI2X\n"
+            "T//IlaEjMNZft1owjqpBYH2ErJHk4U5Pp4WvWq1xmHwIZlsH7Ig4KmefCfR6SmU=\n"
+            "-----END PUBLIC KEY-----"
+        )
+        pk = VerifyingKey.from_pem(pub_key_str)
+
+        pk_exp = VerifyingKey.from_string(
+            b"\x04\x8a\xf5\x52\x48\x18\xb3\x98\xe6\x6c\x57\x3b\x8a\xdd\x7f"
+            b"\x60\x8d\x97\x4f\xff\xc8\x95\xa1\x23\x30\xd6\x5f\xb7\x5a\x30"
+            b"\x8e\xaa\x41\x60\x7d\x84\xac\x91\xe4\xe1\x4e\x4f\xa7\x85\xaf"
+            b"\x5a\xad\x71\x98\x7c\x08\x66\x5b\x07\xec\x88\x38\x2a\x67\x9f"
+            b"\x09\xf4\x7a\x4a\x65",
+            curve=NIST256p,
+        )
+        self.assertEqual(pk, pk_exp)
+
+    def test_load_key_with_explicit_with_explicit_disabled(self):
+        pub_key_str = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAA\n"
+            "AAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA////\n"
+            "///////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMVAMSd\n"
+            "NgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg9KE5\n"
+            "RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8AAAAA\n"
+            "//////////+85vqtpxeehPO5ysL8YyVRAgEBA0IABIr1UkgYs5jmbFc7it1/YI2X\n"
+            "T//IlaEjMNZft1owjqpBYH2ErJHk4U5Pp4WvWq1xmHwIZlsH7Ig4KmefCfR6SmU=\n"
+            "-----END PUBLIC KEY-----"
+        )
+        with self.assertRaises(UnexpectedDER):
+            VerifyingKey.from_pem(
+                pub_key_str, valid_curve_encodings=["named_curve"]
+            )
+
     def test_load_key_with_disabled_format(self):
         with self.assertRaises(MalformedPointError) as e:
             VerifyingKey.from_der(self.key_bytes, valid_encodings=["raw"])
@@ -262,6 +303,50 @@ class TestSigningKey(unittest.TestCase):
             "-----END EC PRIVATE KEY-----\n"
         )
         cls.sk2 = SigningKey.from_pem(prv_key_str)
+
+    def test_decoding_explicit_curve_parameters(self):
+        prv_key_str = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MIIBeQIBADCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAAB\n"
+            "AAAAAAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA\n"
+            "///////////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMV\n"
+            "AMSdNgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg\n"
+            "9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8A\n"
+            "AAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBBG0wawIBAQQgIXtREfUmR16r\n"
+            "ZbmvDGD2lAEFPZa2DLPyz0czSja58yChRANCAASK9VJIGLOY5mxXO4rdf2CNl0//\n"
+            "yJWhIzDWX7daMI6qQWB9hKyR5OFOT6eFr1qtcZh8CGZbB+yIOCpnnwn0ekpl\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+
+        sk = SigningKey.from_pem(prv_key_str)
+
+        sk2 = SigningKey.from_string(
+            b"\x21\x7b\x51\x11\xf5\x26\x47\x5e\xab\x65\xb9\xaf\x0c\x60\xf6"
+            b"\x94\x01\x05\x3d\x96\xb6\x0c\xb3\xf2\xcf\x47\x33\x4a\x36\xb9"
+            b"\xf3\x20",
+            curve=NIST256p,
+        )
+
+        self.assertEqual(sk, sk2)
+
+    def test_decoding_explicit_curve_parameters_with_explicit_disabled(self):
+        prv_key_str = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MIIBeQIBADCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAAB\n"
+            "AAAAAAAAAAAAAAAA////////////////MFsEIP////8AAAABAAAAAAAAAAAAAAAA\n"
+            "///////////////8BCBaxjXYqjqT57PrvVV2mIa8ZR0GsMxTsPY7zjw+J9JgSwMV\n"
+            "AMSdNgiG5wSTamZ44ROdJreBn36QBEEEaxfR8uEsQkf4vOblY6RA8ncDfYEt6zOg\n"
+            "9KE5RdiYwpZP40Li/hp/m47n60p8D54WK84zV2sxXs7LtkBoN79R9QIhAP////8A\n"
+            "AAAA//////////+85vqtpxeehPO5ysL8YyVRAgEBBG0wawIBAQQgIXtREfUmR16r\n"
+            "ZbmvDGD2lAEFPZa2DLPyz0czSja58yChRANCAASK9VJIGLOY5mxXO4rdf2CNl0//\n"
+            "yJWhIzDWX7daMI6qQWB9hKyR5OFOT6eFr1qtcZh8CGZbB+yIOCpnnwn0ekpl\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+
+        with self.assertRaises(UnexpectedDER):
+            SigningKey.from_pem(
+                prv_key_str, valid_curve_encodings=["named_curve"]
+            )
 
     def test_equality_on_signing_keys(self):
         sk = SigningKey.from_secret_exponent(
