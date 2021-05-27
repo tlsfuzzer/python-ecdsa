@@ -1,3 +1,64 @@
+* Relase 0.17.0 (27 May 2021)
+
+New API:
+* Keys that use explicit curve parameters can now be read and written.
+  Reading of explicit curves can be disabled by using the
+  `valid_curve_encodings` keyword argument in `VerifyingKey.from_pem()`,
+  `VerifyingKey.from_der()`, `SigningKey.from_pem()`, and
+  `SigningKey.from_der()`.
+* Keys can now be written with use of explicit curve parameters,
+  use `curve_parameters_encoding` keyword argument of `VerifyingKey.to_pem()`,
+  `VerifyingKey.to_der()`, `SigningKey.to_pem(), or `SigningKey.to_der()` to
+  specify the format. By default `named_curve` will be used, unless the
+  curve doesn't have an associated OID (as will be the case for an unsupported
+  curve), then `explicit` encoding will be used.
+* Allow specifying acceptable point formats when loading public keys
+  (this also fixes a minor bug where python-ecdsa would accept raw
+  encoding for points in PKCS#8 files). Set of accepted encodings is controlled
+  by `valid_encodings` keyword argument in
+  `ECDH.load_received_public_key_bytes()`, `VerifyingKey.from_string()`,
+  `VerifyingKey.from_pem()`, VerifyingKey.from_der()`.
+* `PointJacobi` and `Point` now inherit from `AbstractPoint` that implements
+  the methods for parsing points. That added `from_bytes()` and
+  `to_bytes()` methods to both of them.
+* Curve parameters can now be read and written to PEM and DER files. The
+  `Curve` class supports new `to_der()`, `from_der()`, `to_pem()`, and
+  `from_pem()` methods.
+
+Doc fix:
+* Describe in detail which methods can raise `RSZeroError`, and that
+  `SigningKey.sign_deterministic()` won't raise it.
+
+Bug fix:
+* Correctly truncate hash values larger than the curve order (only impacted
+  custom curves and the curves added in this release).
+* Correctly handle curves for which the order is larger than the prime
+  (only impacted custom curves and the secp160r1 curve added in this release).
+* Fix the handling of `==` and `!=` for `Public_key`, `Private_key`, `Point`,
+  `PointJacobi`, `VerifyingKey`, and `SigningKey` so that it behaves
+  consistently and in the expected way both in Python 2 and Python 3.
+* Implement lock-less algorithm inside PointJacobi for keeping shared state
+  so that when calculation is aborted with KeyboardInterrupt, the state doesn't
+  become corrupted (this fixes the occasional breakage of ecdsa in interactive
+  shells).
+
+New features:
+* The `speed.py` script now provides performance for signature verification
+  without use of precomputation.
+* New curves supported: secp112r1, secp112r2, secp128r1, secp160r1.
+
+Performance:
+* Use 2-ary Non-Adjacent Form for the combined multiply-add. This speeds up
+  single-shot verify (i.e. without precomputation) by about 4 to 5%.
+* Use native Python 3.8 support for calculating multiplicative inverses.
+
+Maintenace:
+* Include Python 3.9 in PyPI keywords.
+* More realistic branch coverage counting (ignore Python version-specific
+  branches).
+* Additional test coverage to many parts of the library.
+* Migrate to Github Actions for Continuous Testing.
+
 * Release 0.16.1 (12 Nov 2020)
 
 New API:
