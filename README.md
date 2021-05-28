@@ -39,7 +39,7 @@ curves over prime fields.
 ## Dependencies
 
 This library uses only Python and the 'six' package. It is compatible with
-Python 2.6, 2.7 and 3.3+. It also supports execution on the alternative
+Python 2.6, 2.7, and 3.3+. It also supports execution on alternative
 implementations like pypy and pypy3.
 
 If `gmpy2` or `gmpy` is installed, they will be used for faster arithmetic.
@@ -78,7 +78,7 @@ pip install ecdsa[gmpy]
 The following table shows how long this library takes to generate keypairs
 (`keygen`), to sign data (`sign`), to verify those signatures (`verify`),
 to derive a shared secret (`ecdh`), and
-to verify the signatures with no key specific precomputation (`no PC verify`).
+to verify the signatures with no key-specific precomputation (`no PC verify`).
 All those values are in seconds.
 For convenience, the inverses of those values are also provided:
 how many keys per second can be generated (`keygen/s`), how many signatures
@@ -87,7 +87,7 @@ per second (`verify/s`), how many shared secrets can be derived per second
 (`ecdh/s`), and how many signatures with no key specific
 precomputation can be verified per second (`no PC verify/s`). The size of raw
 signature (generally the smallest
-way a signature can be encoded) is also provided in the `siglen` column.
+the way a signature can be encoded) is also provided in the `siglen` column.
 Use `tox -e speed` to generate this table on your own computer.
 On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
 
@@ -176,8 +176,8 @@ On the same machine I'm getting the following performance with `gmpy2`:
 (there's also `gmpy` version, execute it using `tox -e speedgmpy`)
 
 For comparison, a highly optimised implementation (including curve-specific
-assembly for some curves), like the one in OpenSSL 1.1.1d, provides following
-performance numbers on the same machine.
+assembly for some curves), like the one in OpenSSL 1.1.1d, provides the
+following performance numbers on the same machine.
 Run `openssl speed ecdsa` and `openssl speed ecdh` to reproduce it:
 ```
                               sign    verify    sign/s verify/s
@@ -247,7 +247,7 @@ OpenSSL. [pyca/cryptography](https://cryptography.io) is one example of such
 a wrapper. The primary use-case of this library is as a portable library for
 interoperability testing and as a teaching tool.
 
-**This library does not protect against side channel attacks.**
+**This library does not protect against side-channel attacks.**
 
 Do not allow attackers to measure how long it takes you to generate a keypair
 or sign a message. Do not allow attackers to run code on the same physical
@@ -262,7 +262,7 @@ operation with a private key will be sufficient to completely
 reconstruct the private key**.
 
 Please also note that any Pure-python cryptographic library will be vulnerable
-to the same side channel attacks. This is because Python does not provide
+to the same side-channel attacks. This is because Python does not provide
 side-channel secure primitives (with the exception of
 [`hmac.compare_digest()`][3]), making side-channel secure programming
 impossible.
@@ -363,7 +363,7 @@ vk2 = VerifyingKey.from_pem(vk_pem)
 There are a couple of different ways to compute a signature. Fundamentally,
 ECDSA takes a number that represents the data being signed, and returns a
 pair of numbers that represent the signature. The `hashfunc=` argument to
-`sk.sign()` and `vk.verify()` is used to turn an arbitrary string into
+`sk.sign()` and `vk.verify()` is used to turn an arbitrary string into a
 fixed-length digest, which is then turned into a number that ECDSA can sign,
 and both sign and verify must use the same approach. The default value is
 `hashlib.sha1`, but if you use NIST256p or a longer curve, you can use
