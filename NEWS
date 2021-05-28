@@ -1,4 +1,4 @@
-* Relase 0.17.0 (27 May 2021)
+* Release 0.17.0 (27 May 2021)
 
 New API:
 * Keys that use explicit curve parameters can now be read and written.
@@ -38,13 +38,13 @@ Bug fix:
   `PointJacobi`, `VerifyingKey`, and `SigningKey` so that it behaves
   consistently and in the expected way both in Python 2 and Python 3.
 * Implement lock-less algorithm inside PointJacobi for keeping shared state
-  so that when calculation is aborted with KeyboardInterrupt, the state doesn't
-  become corrupted (this fixes the occasional breakage of ecdsa in interactive
-  shells).
+  so that when a calculation is aborted with KeyboardInterrupt, the state
+  doesn't become corrupted (this fixes the occasional breakage of ecdsa in
+  interactive shells).
 
 New features:
 * The `speed.py` script now provides performance for signature verification
-  without use of precomputation.
+  without the use of precomputation.
 * New curves supported: secp112r1, secp112r2, secp128r1, secp160r1.
 
 Performance:
@@ -89,11 +89,11 @@ Support for reading and writing private keys in PKCS#8 format.
 
 New API:
 `to_pem` and `to_der` now accept new parameter, `format`, to specify
-the format of the encoded files, either the dafault, legacy "ssleay", or
+the format of the encoded files, either the default, legacy `ssleay`, or
 the new `pkcs8` to use PKCS#8. Note that only unencrypted PKCS#8 files are
 supported.
 Add `allow_truncate` to `verify` in `VerifyingKey`, it defaults to True,
-when specified as False, use of large hashes smaller than curves will be
+when specified as False, the use of large hashes smaller than curves will be
 disallowed (as it was in 0.14.1 and earlier).
 
 Bug fix:
@@ -108,7 +108,7 @@ as such.
 Maintenance:
 Ensure that version checks will work with Python 4.
 Format the source with black.
-Fix uses of `assert_` in test suite.
+Fix uses of `assert_` in the test suite.
 Use newer Ubuntu in Travis to test against OpenSSL 1.1.1 (and thus
 test the interoperability of ECDH code in Travis).
 
@@ -131,24 +131,24 @@ New API:
 `ecdsa.ecdh` module and `ECDH` class.
 `PointJacobi` added.
 `VerifyingKey.verify_digest`, `SigningKey.sign_digest` and
-`SigningKey.sign_digest_deterministic` methods now accept `allow_truncate`
-argument to enable use of hashes larger than the curve order.
+`SigningKey.sign_digest_deterministic` methods now accept the `allow_truncate`
+argument to enable the use of hashes larger than the curve order.
 `VerifyingKey` `from_pem` and `from_der` now accept `hashfunc` parameter
 like other `from*` methods.
-`VerifyingKey` has `precompute` method now.
+`VerifyingKey` has the `precompute` method now.
 `VerifyingKey.from_public_point` may now not perform validation of public
-point when `validate_point=False` argument is passed to method.
+point when `validate_point=False` argument is passed to the method.
 `CurveFp` constructor now accepts the `h` parameter - the cofactor of the
-elliptic curve, it's used for selection of algorithm of public point
+elliptic curve, it's used for the selection of algorithm of public point
 verification.
 
 Performance:
-`randrange` now will now perform much fewer calls to system random number
+`randrange` now will perform much fewer calls to the system random number
 generator.
 `PointJacobi` introduced and used as the underlying implementation; speeds up
 the library by a factor of about 20.
-Library has now optional dependencies on `gmpy` and `gmpy2`. When they are
-availbale, the elliptic curve calculations will be about 3 times faster.
+The library has now optional dependencies on `gmpy` and `gmpy2`. When they are
+available, the elliptic curve calculations will be about 3 times faster.
 
 Maintenance:
 expected minimum version of `six` module (1.9.0) is now specified explicitly
@@ -173,13 +173,13 @@ Make `SigningKey.sign_digest_deterministic` use default object hashfunc when
 none was provided.
 `encode_integer` now works for large integers.
 Make `encode_oid` and `remove_object` correctly handle OBJECT IDENTIFIERs
-with large second subidentifier and padding in encoded subidentifiers.
+with large second sub-identifier and padding in encoded sub-identifiers.
 
 New features:
-Deterministic signature methods now accept `extra_entropy` parameter to further
-randomise the selection of `k` (the nonce) for signature, as specified in
-RFC6979.
-Recovery of public key from signature is now supported.
+Deterministic signature methods now accept the `extra_entropy` parameter to
+further randomise the selection of `k` (the nonce) for signature, as specified
+in RFC6979.
+Recovery of the public key from signature is now supported.
 Support for SEC1/X9.62 formatted keys, all three encodings are supported:
 "uncompressed", "compressed" and "hybrid". Both string, and PEM/DER will
 automatically accept them, if the size of the key matches the curve.
@@ -204,7 +204,7 @@ added.
 `VerifyingKey`: `__repr__` is now supported
 
 Deprecations:
-Python 2.5 is not supported any more - dead code removal.
+Python 2.5 is not supported anymore - dead code removal.
 `from ecdsa.keys import *` will now import only objects defined in that module.
 Trying to decode a malformed point using `VerifyingKey.from_string`
 will rise now the `MalformedPointError` exception (that inherits from
@@ -223,10 +223,10 @@ modular_exp: will emit `DeprecationWarning`
 
 Hardening:
 Deterministic signatures now verify that the signature won't leak private
-key through very unlikely selection of `k` value (the nonce).
+key through a very unlikely selection of `k` value (the nonce).
 Nonce bit size hiding was added (hardening against Minerva attack). Please
-note that it DOES NOT make library secure against side channel attacks (timing
-attacks).
+note that it DOES NOT make the library secure against side-channel attacks
+(timing attacks).
 
 Performance:
 The public key in key generation is not verified twice now, making key
@@ -311,14 +311,15 @@ hashfunc=sha256 in each time they call sign() or verify().
 
 Fix test failure against OpenSSL-1.0.0 (previous versions only worked against
 openssl-0.9.8 or earlier). Increase python requirement to py2.5 or later
-(still no py3 compatibility, but work is underway). Replace use of obsolete
+(still no py3 compatibility, but work is underway). Replace the use of obsolete
 'sha' library with modern 'hashlib'. Clean up unit test runner (stop using
 subprocesses).
 
 * Release 0.6 (15 Oct 2010)
 
-Small packaging changes: extract version number from git, add 'setup.py test'
-command, set exit code correctly on test failure. Fix pyflakes warnings.
+Small packaging changes: extract the version number from git, add
+'setup.py test' command, set exit code correctly on test failure. Fix pyflakes
+warnings.
 
 * Release 0.5 (27 Apr 2010)
 
