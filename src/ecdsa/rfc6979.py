@@ -42,14 +42,17 @@ def bits2octets(data, order):
 # https://tools.ietf.org/html/rfc6979#section-3.2
 def generate_k(order, secexp, hash_func, data, retry_gen=0, extra_entropy=b""):
     """
-    order - order of the DSA generator used in the signature
-    secexp - secure exponent (private key) in numeric form
-    hash_func - reference to the same hash function used for generating
-        hash
-    data - hash in binary form of the signing data
-    retry_gen - int - how many good 'k' values to skip before returning
-    extra_entropy - extra added data in binary form as per section-3.6 of
-        rfc6979
+    Generate the ``k`` value - the nonce for DSA.
+
+    :param int order: order of the DSA generator used in the signature
+    :param int secexp: secure exponent (private key) in numeric form
+    :param hash_func: reference to the same hash function used for generating
+        hash, like :py:class:`hashlib.sha1`
+    :param bytes data: hash in binary form of the signing data
+    :param int retry_gen: how many good 'k' values to skip before returning
+    :param bytes extra_entropy: additional added data in binary form as per
+        section-3.6 of rfc6979
+    :rtype: int
     """
 
     qlen = bit_length(order)
