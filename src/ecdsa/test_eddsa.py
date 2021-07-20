@@ -4,6 +4,8 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+from hypothesis import given, settings, example
+import hypothesis.strategies as st
 from .ellipticcurve import PointEdwards, INFINITY, CurveEdTw
 from .eddsa import (
     generator_ed25519,
@@ -12,6 +14,7 @@ from .eddsa import (
     curve_ed448,
 )
 from .ecdsa import generator_256, curve_256
+from .errors import MalformedPointError
 
 
 def test_ed25519_curve_compare():
@@ -405,3 +408,104 @@ def test_ed448_add_and_mul_equivalence():
 
     assert g + g == g * 2
     assert g + g + g == g * 3
+
+
+def test_ed25519_encode():
+    g = generator_ed25519
+    g_bytes = g.to_bytes()
+    assert len(g_bytes) == 32
+    exp_bytes = (
+        b"\x58\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+        b"\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+    )
+    assert g_bytes == exp_bytes
+
+
+def test_ed25519_decode():
+    exp_bytes = (
+        b"\x58\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+        b"\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+    )
+    a = PointEdwards.from_bytes(curve_ed25519, exp_bytes)
+
+    assert a == generator_ed25519
+
+
+class TestEdwardsMalformed(unittest.TestCase):
+    def test_invalid_point(self):
+        exp_bytes = (
+            b"\x78\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+            b"\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+        )
+        with self.assertRaises(MalformedPointError):
+            PointEdwards.from_bytes(curve_ed25519, exp_bytes)
+
+    def test_invalid_length(self):
+        exp_bytes = (
+            b"\x58\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+            b"\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66\x66"
+            b"\x66"
+        )
+        with self.assertRaises(MalformedPointError) as e:
+            PointEdwards.from_bytes(curve_ed25519, exp_bytes)
+
+        self.assertIn("length", str(e.exception))
+
+    def test_ed448_invalid(self):
+        exp_bytes = b"\xff" * 57
+        with self.assertRaises(MalformedPointError):
+            PointEdwards.from_bytes(curve_ed448, exp_bytes)
+
+
+def test_ed448_encode():
+    g = generator_ed448
+    g_bytes = g.to_bytes()
+    assert len(g_bytes) == 57
+    exp_bytes = (
+        b"\x14\xfa\x30\xf2\x5b\x79\x08\x98\xad\xc8\xd7\x4e\x2c\x13\xbd"
+        b"\xfd\xc4\x39\x7c\xe6\x1c\xff\xd3\x3a\xd7\xc2\xa0\x05\x1e\x9c"
+        b"\x78\x87\x40\x98\xa3\x6c\x73\x73\xea\x4b\x62\xc7\xc9\x56\x37"
+        b"\x20\x76\x88\x24\xbc\xb6\x6e\x71\x46\x3f\x69\x00"
+    )
+    assert g_bytes == exp_bytes
+
+
+def test_ed448_decode():
+    exp_bytes = (
+        b"\x14\xfa\x30\xf2\x5b\x79\x08\x98\xad\xc8\xd7\x4e\x2c\x13\xbd"
+        b"\xfd\xc4\x39\x7c\xe6\x1c\xff\xd3\x3a\xd7\xc2\xa0\x05\x1e\x9c"
+        b"\x78\x87\x40\x98\xa3\x6c\x73\x73\xea\x4b\x62\xc7\xc9\x56\x37"
+        b"\x20\x76\x88\x24\xbc\xb6\x6e\x71\x46\x3f\x69\x00"
+    )
+
+    a = PointEdwards.from_bytes(curve_ed448, exp_bytes)
+
+    assert a == generator_ed448
+
+
+HYP_SETTINGS = dict()
+HYP_SETTINGS["max_examples"] = 10
+
+
+@settings(**HYP_SETTINGS)
+@example(1)
+@example(5)  # smallest multiple that requires changing sign of x
+@given(st.integers(min_value=1, max_value=int(generator_ed25519.order() - 1)))
+def test_ed25519_encode_decode(multiple):
+    a = generator_ed25519 * multiple
+
+    b = PointEdwards.from_bytes(curve_ed25519, a.to_bytes())
+
+    assert a == b
+
+
+@settings(**HYP_SETTINGS)
+@example(1)
+@example(2)  # smallest multiple that requires changing the sign of x
+@given(st.integers(min_value=1, max_value=int(generator_ed448.order() - 1)))
+def test_ed448_encode_decode(multiple):
+    a = generator_ed448 * multiple
+
+    b = PointEdwards.from_bytes(curve_ed448, a.to_bytes())
+
+    assert a == b
