@@ -146,29 +146,35 @@ class CurveEdTw(object):
 
     if GMPY:  # pragma: no branch
 
-        def __init__(self, p, a, d, h=None):
+        def __init__(self, p, a, d, h=None, hash_func=None):
             """
             The curve of points satisfying a*x^2 + y^2 = 1 + d*x^2*y^2 (mod p).
 
             h is the cofactor of the curve.
+            hash_func is the hash function associated with the curve
+             (like SHA-512 for Ed25519)
             """
             self.__p = mpz(p)
             self.__a = mpz(a)
             self.__d = mpz(d)
             self.__h = h
+            self.__hash_func = hash_func
 
     else:
 
-        def __init__(self, p, a, d, h=None):
+        def __init__(self, p, a, d, h=None, hash_func=None):
             """
             The curve of points satisfying a*x^2 + y^2 = 1 + d*x^2*y^2 (mod p).
 
             h is the cofactor of the curve.
+            hash_func is the hash function associated with the curve
+             (like SHA-512 for Ed25519)
             """
             self.__p = p
             self.__a = a
             self.__d = d
             self.__h = h
+            self.__hash_func = hash_func
 
     def __eq__(self, other):
         """Returns True if other is an identical curve."""
@@ -202,6 +208,9 @@ class CurveEdTw(object):
 
     def d(self):
         return self.__d
+
+    def hash_func(self, data):
+        return self.__hash_func(data)
 
     def cofactor(self):
         return self.__h
