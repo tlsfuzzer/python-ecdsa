@@ -14,7 +14,13 @@ import pytest
 import hashlib
 
 from .keys import VerifyingKey, SigningKey, MalformedPointError
-from .der import unpem, UnexpectedDER
+from .der import (
+    unpem,
+    UnexpectedDER,
+    encode_sequence,
+    encode_oid,
+    encode_bitstring,
+)
 from .util import (
     sigencode_string,
     sigencode_der,
@@ -23,7 +29,7 @@ from .util import (
     sigdecode_der,
     sigdecode_strings,
 )
-from .curves import NIST256p, Curve, BRAINPOOLP160r1
+from .curves import NIST256p, Curve, BRAINPOOLP160r1, Ed25519
 from .ellipticcurve import Point, PointJacobi, CurveFp, INFINITY
 from .ecdsa import generator_brainpoolp160r1
 
@@ -267,6 +273,47 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         vk = VerifyingKey.from_public_point(point, self.vk.curve)
 
         self.assertEqual(vk, self.vk)
+
+    def test_ed25519_VerifyingKey_repr__(self):
+        sk = SigningKey.from_string(Ed25519.generator.to_bytes(), Ed25519)
+        string = repr(sk.verifying_key)
+
+        self.assertEqual(
+            "VerifyingKey.from_string("
+            "bytearray(b'K\\x0c\\xfbZH\\x8e\\x8c\\x8c\\x07\\xee\\xda\\xfb"
+            "\\xe1\\x97\\xcd\\x90\\x18\\x02\\x15h]\\xfe\\xbe\\xcbB\\xba\\xe6r"
+            "\\x10\\xae\\xf1P'), Ed25519, None)",
+            string,
+        )
+
+    def test_edwards_from_public_point(self):
+        point = Ed25519.generator
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_public_point(point, Ed25519)
+
+        self.assertIn("incompatible with Edwards", str(e.exception))
+
+    def test_edwards_precompute_no_side_effect(self):
+        sk = SigningKey.from_string(Ed25519.generator.to_bytes(), Ed25519)
+        vk = sk.verifying_key
+        vk2 = VerifyingKey.from_string(vk.to_string(), Ed25519)
+        vk.precompute()
+
+        self.assertEqual(vk, vk2)
+
+    def test_edwards_from_public_key_recovery(self):
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_public_key_recovery(b"", b"", Ed25519)
+
+        self.assertIn("unsupported for Edwards", str(e.exception))
+
+    def test_edwards_from_public_key_recovery_with_digest(self):
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_public_key_recovery_with_digest(
+                b"", b"", Ed25519
+            )
+
+        self.assertIn("unsupported for Edwards", str(e.exception))
 
 
 class TestSigningKey(unittest.TestCase):

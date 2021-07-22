@@ -102,6 +102,20 @@ class PublicKey(object):
                 self.curve, public_key
             )
 
+    def __eq__(self, other):
+        if isinstance(other, PublicKey):
+            return (
+                self.curve == other.curve and self.__encoded == other.__encoded
+            )
+        return NotImplemented
+
+    def __ne__(self, other):
+        return not self == other
+
+    @property
+    def point(self):
+        return self.__point
+
     def public_point(self):
         return self.__point
 
@@ -110,6 +124,7 @@ class PublicKey(object):
 
     def verify(self, data, signature):
         """Verify a Pure EdDSA signature over data."""
+        data = compat26_str(data)
         if len(signature) != 2 * self.baselen:
             raise ValueError(
                 "Invalid signature length, expected: {0} bytes".format(
@@ -161,6 +176,17 @@ class PrivateKey(object):
         scalar = bytes_to_int(a, "little")
         self.__s = scalar
 
+    def __eq__(self, other):
+        if isinstance(other, PrivateKey):
+            return (
+                self.curve == other.curve
+                and self.__private_key == other.__private_key
+            )
+        return NotImplemented
+
+    def __ne__(self, other):
+        return not self == other
+
     def _key_prune(self, key):
         # make sure the key is not in a small subgroup
         h = self.curve.cofactor()
@@ -196,6 +222,7 @@ class PrivateKey(object):
 
     def sign(self, data):
         """Perform a Pure EdDSA signature over data."""
+        data = compat26_str(data)
         A = self.public_key().public_key()
 
         prefix = self.__h[self.baselen :]

@@ -72,8 +72,9 @@ Primary classes for performing signing and verification operations.
 
 import binascii
 from hashlib import sha1
+import os
 from six import PY2, b
-from . import ecdsa
+from . import ecdsa, eddsa
 from . import der
 from . import rfc6979
 from . import ellipticcurve
@@ -90,7 +91,7 @@ from .util import (
 )
 from ._compat import normalise_bytes
 from .errors import MalformedPointError
-from .ellipticcurve import PointJacobi
+from .ellipticcurve import PointJacobi, CurveEdTw
 
 
 __all__ = [
@@ -180,8 +181,12 @@ class VerifyingKey(object):
 
     def __repr__(self):
         pub_key = self.to_string("compressed")
+        if self.default_hashfunc:
+            hash_name = self.default_hashfunc().name
+        else:
+            hash_name = "None"
         return "VerifyingKey.from_string({0!r}, {1!r}, {2})".format(
-            pub_key, self.curve, self.default_hashfunc().name
+            pub_key, self.curve, hash_name
         )
 
     def __eq__(self, other):
@@ -223,6 +228,8 @@ class VerifyingKey(object):
         :rtype: VerifyingKey
         """
         self = cls(_error__please_use_generate=True)
+        if isinstance(curve.curve, CurveEdTw):
+            raise ValueError("Method incompatible with Edwards curves")
         if not isinstance(point, ellipticcurve.PointJacobi):
             point = ellipticcurve.PointJacobi.from_affine(point)
         self.curve = curve
@@ -255,6 +262,8 @@ class VerifyingKey(object):
            (if set to False) or if it should be delayed to the time of first
            use (when set to True)
         """
+        if isinstance(self.curve.curve, CurveEdTw):
+            return
         self.pubkey.point = ellipticcurve.PointJacobi.from_affine(
             self.pubkey.point, True
         )
@@ -279,6 +288,9 @@ class VerifyingKey(object):
         The method does accept and automatically detect the type of point
         encoding used. It supports the :term:`raw encoding`,
         :term:`uncompressed`, :term:`compressed`, and :term:`hybrid` encodings.
+        It also works with the native encoding of Ed25519 and Ed448 public
+        keys (technically those are compressed, but encoded differently than
+        in other signature systems).
 
         Note, while the method is named "from_string" it's a misnomer from
         Python 2 days when there were no binary strings. In Python 3 the
@@ -289,15 +301,17 @@ class VerifyingKey(object):
         :param curve: the curve on which the public key is expected to lay
         :type curve: ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
-            verification, needs to implement the same interface as hashlib.sha1
+            verification, needs to implement the same interface as
+            hashlib.sha1. Ignored for EdDSA.
         :type hashfunc: callable
         :param validate_point: whether to verify that the point lays on the
-            provided curve or not, defaults to True
+            provided curve or not, defaults to True. Ignored for EdDSA.
         :type validate_point: bool
         :param valid_encodings: list of acceptable point encoding formats,
             supported ones are: :term:`uncompressed`, :term:`compressed`,
             :term:`hybrid`, and :term:`raw encoding` (specified with ``raw``
             name). All formats by default (specified with ``None``).
+            Ignored for EdDSA.
         :type valid_encodings: :term:`set-like object`
 
         :raises MalformedPointError: if the public point does not lay on the
@@ -306,6 +320,16 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        if isinstance(curve.curve, CurveEdTw):
+            self = cls(_error__please_use_generate=True)
+            self.curve = curve
+            self.default_hashfunc = None  # ignored for EdDSA
+            try:
+                self.pubkey = eddsa.PublicKey(curve.generator, string)
+            except ValueError:
+                raise MalformedPointError("Malformed point for the curve")
+            return self
+
         point = PointJacobi.from_bytes(
             curve.curve,
             string,
@@ -474,6 +498,8 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey objects
         :rtype: list of VerifyingKey
         """
+        if isinstance(curve.curve, CurveEdTw):
+            raise ValueError("Method unsupported for Edwards curves")
         data = normalise_bytes(data)
         digest = hashfunc(data).digest()
         return cls.from_public_key_recovery_with_digest(
@@ -525,6 +551,8 @@ class VerifyingKey(object):
         :return: Initialised VerifyingKey object
         :rtype: VerifyingKey
         """
+        if isinstance(curve.curve, CurveEdTw):
+            raise ValueError("Method unsupported for Edwards curves")
         generator = curve.generator
         r, s = sigdecode(signature, generator.order())
         sig = ecdsa.Signature(r, s)
@@ -676,6 +704,12 @@ class VerifyingKey(object):
         # signature doesn't have to be a bytes-like-object so don't normalise
         # it, the decoders will do that
         data = normalise_bytes(data)
+        if isinstance(self.curve.curve, CurveEdTw):
+            signature = normalise_bytes(signature)
+            try:
+                return self.pubkey.verify(data, signature)
+            except (ValueError, MalformedPointError) as e:
+                raise BadSignatureError("Signature verification failed", e)
 
         hashfunc = hashfunc or self.default_hashfunc
         digest = hashfunc(data).digest()
@@ -775,6 +809,33 @@ class SigningKey(object):
         return not self == other
 
     @classmethod
+    def _twisted_edwards_keygen(cls, curve, entropy):
+        """Generate a private key on a Twisted Edwards curve."""
+        if not entropy:
+            entropy = os.urandom
+        random = entropy(curve.baselen)
+        private_key = eddsa.PrivateKey(curve.generator, random)
+        public_key = private_key.public_key()
+
+        verifying_key = VerifyingKey.from_string(
+            public_key.public_key(), curve
+        )
+
+        self = cls(_error__please_use_generate=True)
+        self.curve = curve
+        self.default_hashfunc = None
+        self.baselen = curve.baselen
+        self.privkey = private_key
+        self.verifying_key = verifying_key
+        return self
+
+    @classmethod
+    def _weierstrass_keygen(cls, curve, entropy, hashfunc):
+        """Generate a private key on a Weierstrass curve."""
+        secexp = randrange(curve.order, entropy)
+        return cls.from_secret_exponent(secexp, curve, hashfunc)
+
+    @classmethod
     def generate(cls, curve=NIST192p, entropy=None, hashfunc=sha1):
         """
         Generate a random private key.
@@ -794,8 +855,9 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
-        secexp = randrange(curve.order, entropy)
-        return cls.from_secret_exponent(secexp, curve, hashfunc)
+        if isinstance(curve.curve, CurveEdTw):
+            return cls._twisted_edwards_keygen(curve, entropy)
+        return cls._weierstrass_keygen(curve, entropy, hashfunc)
 
     @classmethod
     def from_secret_exponent(cls, secexp, curve=NIST192p, hashfunc=sha1):
@@ -822,6 +884,11 @@ class SigningKey(object):
         :return: Initialised SigningKey object
         :rtype: SigningKey
         """
+        if isinstance(curve.curve, CurveEdTw):
+            raise ValueError(
+                "Edwards keys don't support setting the secret scalar "
+                "(exponent) directly"
+            )
         self = cls(_error__please_use_generate=True)
         self.curve = curve
         self.default_hashfunc = hashfunc
@@ -870,11 +937,22 @@ class SigningKey(object):
         :rtype: SigningKey
         """
         string = normalise_bytes(string)
+
         if len(string) != curve.baselen:
             raise MalformedPointError(
                 "Invalid length of private key, received {0}, "
                 "expected {1}".format(len(string), curve.baselen)
             )
+        if isinstance(curve.curve, CurveEdTw):
+            self = cls(_error__please_use_generate=True)
+            self.curve = curve
+            self.default_hashfunc = None  # Ignored for EdDSA
+            self.baselen = curve.baselen
+            self.privkey = eddsa.PrivateKey(curve.generator, string)
+            self.verifying_key = VerifyingKey.from_string(
+                self.privkey.public_key().public_key(), curve
+            )
+            return self
         secexp = string_to_number(string)
         return cls.from_secret_exponent(secexp, curve, hashfunc)
 
@@ -1213,9 +1291,15 @@ class SigningKey(object):
         extra_entropy=b"",
     ):
         """
-        Create signature over data using the deterministic RFC6979 algorithm.
+        Create signature over data.
 
-        The data will be hashed using the `hashfunc` function before signing.
+        For Weierstrass curves it uses the deterministic RFC6979 algorithm.
+        For Edwards curves it uses the standard EdDSA algorithm.
+
+        For ECDSA the data will be hashed using the `hashfunc` function before
+        signing.
+        For EdDSA the data will be hashed with the hash associated with the
+        curve (SHA-512 for Ed25519 and SHAKE-256 for Ed448).
 
         This is the recommended method for performing signatures when hashing
         of data is necessary.
@@ -1227,6 +1311,7 @@ class SigningKey(object):
             object initialisation will be used (see
             `VerifyingKey.default_hashfunc`). The object needs to implement
             the same interface as hashlib.sha1.
+            Ignored with EdDSA.
         :type hashfunc: callable
         :param sigencode: function used to encode the signature.
             The function needs to accept three parameters: the two integers
@@ -1234,9 +1319,11 @@ class SigningKey(object):
             signature was computed. It needs to return an encoded signature.
             See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
             as examples of such functions.
+            Ignored with EdDSA.
         :type sigencode: callable
         :param extra_entropy: additional data that will be fed into the random
             number generator used in the RFC6979 process. Entirely optional.
+            Ignored with EdDSA.
         :type extra_entropy: bytes like object
 
         :return: encoded signature over `data`
@@ -1244,6 +1331,10 @@ class SigningKey(object):
         """
         hashfunc = hashfunc or self.default_hashfunc
         data = normalise_bytes(data)
+
+        if isinstance(self.curve.curve, CurveEdTw):
+            return self.privkey.sign(data)
+
         extra_entropy = normalise_bytes(extra_entropy)
         digest = hashfunc(data).digest()
 
@@ -1299,6 +1390,8 @@ class SigningKey(object):
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependant type
         """
+        if isinstance(self.curve.curve, CurveEdTw):
+            raise ValueError("Method unsupported for Edwards curves")
         secexp = self.privkey.secret_multiplier
         hashfunc = hashfunc or self.default_hashfunc
         digest = normalise_bytes(digest)
@@ -1340,7 +1433,11 @@ class SigningKey(object):
         allow_truncate=True,
     ):
         """
-        Create signature over data using the probabilistic ECDSA algorithm.
+        Create signature over data.
+
+        Uses the probabilistic ECDSA algorithm for Weierstrass curves
+        (NIST256p, etc.) and the deterministic EdDSA algorithm for the
+        Edwards curves (Ed25519, Ed448).
 
         This method uses the standard ECDSA algorithm that requires a
         cryptographically secure random number generator.
@@ -1350,7 +1447,8 @@ class SigningKey(object):
 
         :param data: data that will be hashed for signing
         :type data: bytes like object
-        :param callable entropy: randomness source, os.urandom by default
+        :param callable entropy: randomness source, os.urandom by default.
+            Ignored with EdDSA.
         :param hashfunc: hash function to use for hashing the provided `data`.
             If unspecified the default hash function selected during
             object initialisation will be used (see
@@ -1363,6 +1461,7 @@ class SigningKey(object):
             hash will effectively be wrapped mod n).
             Use hashfunc=hashlib.sha1 to match openssl's -ecdsa-with-SHA1 mode,
             or hashfunc=hashlib.sha256 for openssl-1.0.0's -ecdsa-with-SHA256.
+            Ignored for EdDSA
         :type hashfunc: callable
         :param sigencode: function used to encode the signature.
             The function needs to accept three parameters: the two integers
@@ -1370,15 +1469,18 @@ class SigningKey(object):
             signature was computed. It needs to return an encoded signature.
             See `ecdsa.util.sigencode_string` and `ecdsa.util.sigencode_der`
             as examples of such functions.
+            Ignored for EdDSA
         :type sigencode: callable
         :param int k: a pre-selected nonce for calculating the signature.
             In typical use cases, it should be set to None (the default) to
             allow its generation from an entropy source.
+            Ignored for EdDSA.
         :param bool allow_truncate: if True, the provided digest can have
             bigger bit-size than the order of the curve, the extra bits (at
             the end of the digest) will be truncated. Use it when signing
             SHA-384 output using NIST256p or in similar situations. True by
             default.
+            Ignored for EdDSA.
 
         :raises RSZeroError: in the unlikely event when "r" parameter or
             "s" parameter of the created signature is equal 0, as that would
@@ -1391,6 +1493,8 @@ class SigningKey(object):
         """
         hashfunc = hashfunc or self.default_hashfunc
         data = normalise_bytes(data)
+        if isinstance(self.curve.curve, CurveEdTw):
+            return self.sign_deterministic(data)
         h = hashfunc(data).digest()
         return self.sign_digest(h, entropy, sigencode, k, allow_truncate)
 
@@ -1441,6 +1545,8 @@ class SigningKey(object):
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependant type
         """
+        if isinstance(self.curve.curve, CurveEdTw):
+            raise ValueError("Method unsupported for Edwards curves")
         digest = normalise_bytes(digest)
         number = _truncate_and_convert_digest(
             digest, self.curve, allow_truncate,
@@ -1471,6 +1577,8 @@ class SigningKey(object):
         :return: the "r" and "s" parameters of the signature
         :rtype: tuple of ints
         """
+        if isinstance(self.curve.curve, CurveEdTw):
+            raise ValueError("Method unsupported for Edwards curves")
         order = self.privkey.order
 
         if k is not None:

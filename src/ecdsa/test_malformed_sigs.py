@@ -32,6 +32,7 @@ from .der import (
     encode_sequence,
     encode_constructed,
 )
+from .ellipticcurve import CurveEdTw
 
 
 example_data = b"some data to sign"
@@ -333,11 +334,19 @@ keys_and_string_sigs = [
         ),
     )
     for name, verifying_key, sig in keys_and_sigs
+    if not isinstance(verifying_key.curve.curve, CurveEdTw)
 ]
 """
 Name of the curve+hash combination, VerifyingKey and signature as a
 byte string.
 """
+
+
+keys_and_string_sigs += [
+    (name, verifying_key, sig,)
+    for name, verifying_key, sig in keys_and_sigs
+    if isinstance(verifying_key.curve.curve, CurveEdTw)
+]
 
 
 @settings(**params)

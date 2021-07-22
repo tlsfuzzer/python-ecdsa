@@ -98,6 +98,8 @@ print(
 )
 
 for curve in [i.name for i in curves]:
+    if curve == "Ed25519" or curve == "Ed448":
+        continue
     S1 = "from ecdsa import SigningKey, ECDH, {0}".format(curve)
     S2 = "our = SigningKey.generate({0})".format(curve)
     S3 = "remote = SigningKey.generate({0}).verifying_key".format(curve)

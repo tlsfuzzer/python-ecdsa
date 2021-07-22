@@ -1,9 +1,9 @@
 from __future__ import division
 
 from six import PY2
-from . import der, ecdsa, ellipticcurve
+from . import der, ecdsa, ellipticcurve, eddsa
 from .util import orderlen, number_to_string, string_to_number
-from ._compat import normalise_bytes
+from ._compat import normalise_bytes, bit_length
 
 
 # orderlen was defined in this module previously, so keep it in __all__,
@@ -33,6 +33,8 @@ __all__ = [
     "BRAINPOOLP512r1",
     "PRIME_FIELD_OID",
     "CHARACTERISTIC_TWO_FIELD_OID",
+    "Ed25519",
+    "Ed448",
 ]
 
 
@@ -51,8 +53,16 @@ class Curve:
         self.curve = curve
         self.generator = generator
         self.order = generator.order()
-        self.baselen = orderlen(self.order)
-        self.verifying_key_length = 2 * orderlen(curve.p())
+        if isinstance(curve, ellipticcurve.CurveEdTw):
+            # EdDSA keys are special in that both private and public
+            # are the same size (as it's defined only with compressed points)
+
+            # +1 for the sign bit and then round up
+            self.baselen = (bit_length(curve.p()) + 1 + 7) // 8
+            self.verifying_key_length = self.baselen
+        else:
+            self.baselen = orderlen(self.order)
+            self.verifying_key_length = 2 * orderlen(curve.p())
         self.signature_length = 2 * self.baselen
         self.oid = oid
         if oid:
@@ -90,6 +100,11 @@ class Curve:
             else:
                 encoding = "explicit"
 
+        if encoding not in ("named_curve", "explicit"):
+            raise ValueError(
+                "Only 'named_curve' and 'explicit' encodings supported"
+            )
+
         if encoding == "named_curve":
             if not self.oid:
                 raise UnknownCurveError(
@@ -97,6 +112,11 @@ class Curve:
                     "associated curve OID"
                 )
             return der.encode_oid(*self.oid)
+        elif isinstance(self.curve, ellipticcurve.CurveEdTw):
+            assert encoding == "explicit"
+            raise UnknownCurveError(
+                "Twisted Edwards curves don't support explicit encoding"
+            )
 
         # encode the ECParameters sequence
         curve_p = self.curve.p()
@@ -408,6 +428,16 @@ BRAINPOOLP512r1 = Curve(
 )
 
 
+Ed25519 = Curve(
+    "Ed25519", eddsa.curve_ed25519, eddsa.generator_ed25519, (1, 3, 101, 112),
+)
+
+
+Ed448 = Curve(
+    "Ed448", eddsa.curve_ed448, eddsa.generator_ed448, (1, 3, 101, 113),
+)
+
+
 # no order in particular, but keep previously added curves first
 curves = [
     NIST192p,
@@ -427,6 +457,8 @@ curves = [
     SECP112r2,
     SECP128r1,
     SECP160r1,
+    Ed25519,
+    Ed448,
 ]
 
 
