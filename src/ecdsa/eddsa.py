@@ -167,7 +167,7 @@ class PrivateKey(object):
                     self.baselen
                 )
             )
-        self.__private_key = private_key
+        self.__private_key = bytes(private_key)
         self.__h = bytearray(self.curve.hash_func(private_key))
         self.__public_key = None
 
@@ -175,6 +175,10 @@ class PrivateKey(object):
         a = self._key_prune(a)
         scalar = bytes_to_int(a, "little")
         self.__s = scalar
+
+    @property
+    def private_key(self):
+        return self.__private_key
 
     def __eq__(self, other):
         if isinstance(other, PrivateKey):

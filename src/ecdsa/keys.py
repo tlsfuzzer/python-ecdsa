@@ -78,7 +78,7 @@ from . import ecdsa, eddsa
 from . import der
 from . import rfc6979
 from . import ellipticcurve
-from .curves import NIST192p, Curve
+from .curves import NIST192p, Curve, Ed25519, Ed448
 from .ecdsa import RSZeroError
 from .util import string_to_number, number_to_string, randrange
 from .util import sigencode_string, sigdecode_string, bit_length
@@ -437,6 +437,16 @@ class VerifyingKey(object):
         s2, point_str_bitstring = der.remove_sequence(s1)
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
+        if oid_pk in (Ed25519.oid, Ed448.oid):
+            if oid_pk == Ed25519.oid:
+                curve = Ed25519
+            else:
+                assert oid_pk == Ed448.oid
+                curve = Ed448
+            point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
+            if empty:
+                raise der.UnexpectedDER("trailing junk afer public key")
+            return cls.from_string(point_str, curve, None)
         if not oid_pk == oid_ecPublicKey:
             raise der.UnexpectedDER(
                 "Unexpected object identifier in DER "
@@ -647,6 +657,11 @@ class VerifyingKey(object):
         if point_encoding == "raw":
             raise ValueError("raw point_encoding not allowed in DER")
         point_str = self.to_string(point_encoding)
+        if isinstance(self.curve.curve, CurveEdTw):
+            return der.encode_sequence(
+                der.encode_sequence(der.encode_oid(*self.curve.oid)),
+                der.encode_bitstring(bytes(point_str), 0),
+            )
         return der.encode_sequence(
             der.encode_sequence(
                 encoded_oid_ecPublicKey,
@@ -1057,6 +1072,7 @@ class SigningKey(object):
         :param valid_curve_encodings: list of allowed encoding formats
             for curve parameters. By default (``None``) all are supported:
             ``named_curve`` and ``explicit``.
+            Ignored for EdDSA.
         :type valid_curve_encodings: :term:`set-like object`
 
         :raises MalformedPointError: if the length of encoding doesn't match
@@ -1092,12 +1108,38 @@ class SigningKey(object):
 
             sequence, s = der.remove_sequence(s)
             algorithm_oid, algorithm_identifier = der.remove_object(sequence)
-            curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
+
+            if algorithm_oid in (Ed25519.oid, Ed448.oid):
+                if algorithm_identifier:
+                    raise der.UnexpectedDER(
+                        "Non NULL parameters for a EdDSA key"
+                    )
+                key_str_der, s = der.remove_octet_string(s)
+                if s:
+                    raise der.UnexpectedDER(
+                        "trailing junk inside the privateKey"
+                    )
+                key_str, s = der.remove_octet_string(key_str_der)
+                if s:
+                    raise der.UnexpectedDER(
+                        "trailing junk after the encoded private key"
+                    )
+
+                if algorithm_oid == Ed25519.oid:
+                    curve = Ed25519
+                else:
+                    assert algorithm_oid == Ed448.oid
+                    curve = Ed448
+
+                return cls.from_string(key_str, curve, None)
 
             if algorithm_oid not in (oid_ecPublicKey, oid_ecDH, oid_ecMQV):
                 raise der.UnexpectedDER(
                     "unexpected algorithm identifier '%s'" % (algorithm_oid,)
                 )
+
+            curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
+
             if empty != b"":
                 raise der.UnexpectedDER(
                     "unexpected data after algorithm identifier: %s"
@@ -1166,6 +1208,8 @@ class SigningKey(object):
         :return: raw encoding of private key
         :rtype: bytes
         """
+        if isinstance(self.curve.curve, CurveEdTw):
+            return bytes(self.privkey.private_key)
         secexp = self.privkey.secret_multiplier
         s = number_to_string(secexp, self.privkey.order)
         return s
@@ -1209,6 +1253,15 @@ class SigningKey(object):
             header,
         )
 
+    def _encode_eddsa(self):
+        """Create a PKCS#8 encoding of EdDSA keys."""
+        ec_private_key = der.encode_octet_string(self.to_string())
+        return der.encode_sequence(
+            der.encode_integer(0),
+            der.encode_sequence(der.encode_oid(*self.curve.oid)),
+            der.encode_octet_string(ec_private_key),
+        )
+
     def to_der(
         self,
         point_encoding="uncompressed",
@@ -1224,12 +1277,15 @@ class SigningKey(object):
         The public key will be included in the generated string.
 
         :param str point_encoding: format to use for encoding public point
-        :param str format: either ``ssleay`` (default) or ``pkcs8``
+            Ignored for EdDSA
+        :param str format: either ``ssleay`` (default) or ``pkcs8``.
+            EdDSA keys require ``pkcs8``.
         :param str curve_parameters_encoding: format of encoded curve
             parameters, default depends on the curve, if the curve has
             an associated OID, ``named_curve`` format will be used,
             if no OID is associated with the curve, the fallback of
             ``explicit`` parameters will be used.
+            Ignored for EdDSA.
 
         :return: DER encoded private key
         :rtype: bytes
@@ -1239,6 +1295,10 @@ class SigningKey(object):
         if point_encoding == "raw":
             raise ValueError("raw encoding not allowed in DER")
         assert format in ("ssleay", "pkcs8")
+        if isinstance(self.curve.curve, CurveEdTw):
+            if format != "pkcs8":
+                raise ValueError("Only PKCS#8 format supported for EdDSA keys")
+            return self._encode_eddsa()
         encoded_vk = self.get_verifying_key().to_string(point_encoding)
         priv_key_elems = [
             der.encode_integer(1),
