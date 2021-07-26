@@ -259,17 +259,17 @@ jobs:
           MERGE_BASE=$(git merge-base origin/$BASE_REF HEAD)
           echo "MERGE_BASE:" $MERGE_BASE
           git checkout $MERGE_BASE
-          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa/test*.py
+          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat|.*_sha3' `which pytest` src/ecdsa/test*.py
           instrumental -f .instrumental.cov -s
           instrumental -f .instrumental.cov -s | python diff-instrumental.py --save .diff-instrumental
           git checkout $GITHUB_SHA
-          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa/test*.py
+          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat|.*_sha3' `which pytest` src/ecdsa/test*.py
           instrumental -f .instrumental.cov -sr
           instrumental -f .instrumental.cov -s | python diff-instrumental.py --read .diff-instrumental --fail-under 70 --max-difference -0.1
       - name: instrumental test coverage on push
         if: ${{ contains(matrix.opt-deps, 'instrumental') && !github.event.pull_request }}
         run: |
-          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat' `which pytest` src/ecdsa
+          instrumental -t ecdsa -i 'test.*|.*_version|.*_compat|.*_sha3' `which pytest` src/ecdsa
           instrumental -f .instrumental.cov -s
           # just log the values when merging
           instrumental -f .instrumental.cov -s | python diff-instrumental.py
