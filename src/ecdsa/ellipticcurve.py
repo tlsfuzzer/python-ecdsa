@@ -56,7 +56,7 @@ from .util import orderlen, string_to_number, number_to_string
 
 @python_2_unicode_compatible
 class CurveFp(object):
-    """Elliptic Curve over the field of integers modulo a prime."""
+    """Short Weierstrass Elliptic Curve over a prime field."""
 
     if GMPY:  # pragma: no branch
 
@@ -138,6 +138,77 @@ class CurveFp(object):
             self.__a,
             self.__b,
             self.__h,
+        )
+
+
+class CurveEdTw(object):
+    """Parameters for a Twisted Edwards Elliptic Curve"""
+
+    if GMPY:  # pragma: no branch
+
+        def __init__(self, p, a, d, h=None):
+            """
+            The curve of points satisfying a*x^2 + y^2 = 1 + d*x^2*y^2 (mod p).
+
+            h is the cofactor of the curve.
+            """
+            self.__p = mpz(p)
+            self.__a = mpz(a)
+            self.__d = mpz(d)
+            self.__h = h
+
+    else:
+
+        def __init__(self, p, a, d, h=None):
+            """
+            The curve of points satisfying a*x^2 + y^2 = 1 + d*x^2*y^2 (mod p).
+
+            h is the cofactor of the curve.
+            """
+            self.__p = p
+            self.__a = a
+            self.__d = d
+            self.__h = h
+
+    def __eq__(self, other):
+        """Returns True if other is an identical curve."""
+        if isinstance(other, CurveEdTw):
+            p = self.__p
+            return (
+                self.__p == other.__p
+                and self.__a % p == other.__a % p
+                and self.__d % p == other.__d % p
+            )
+        return NotImplemented
+
+    def __ne__(self, other):
+        """Return False if the other is an identical curve, True otherwise."""
+        return not self == other
+
+    def __hash__(self):
+        return hash((self.__p, self.__a, self.__d))
+
+    def contains_point(self, x, y):
+        """Is the point (x, y) on this curve?"""
+        return (
+            self.__a * x * x + y * y - 1 - self.__d * x * x * y * y
+        ) % self.__p == 0
+
+    def p(self):
+        return self.__p
+
+    def a(self):
+        return self.__a
+
+    def d(self):
+        return self.__d
+
+    def cofactor(self):
+        return self.__h
+
+    def __str__(self):
+        return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
+            self.__p, self.__a, self.__d, self.__h,
         )
 
 
@@ -331,10 +402,26 @@ class AbstractPoint(object):
         else:
             return self._compressed_encode()
 
+    @staticmethod
+    def _naf(mult):
+        """Calculate non-adjacent form of number."""
+        ret = []
+        while mult:
+            if mult % 2:
+                nd = mult % 4
+                if nd >= 2:
+                    nd -= 4
+                ret.append(nd)
+                mult -= nd
+            else:
+                ret.append(0)
+            mult //= 2
+        return ret
+
 
 class PointJacobi(AbstractPoint):
     """
-    Point on an elliptic curve. Uses Jacobi coordinates.
+    Point on a short Weierstrass elliptic curve. Uses Jacobi coordinates.
 
     In Jacobian coordinates, there are three parameters, X, Y and Z.
     They correspond to affine parameters 'x' and 'y' like so:
@@ -773,22 +860,6 @@ class PointJacobi(AbstractPoint):
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
-    @staticmethod
-    def _naf(mult):
-        """Calculate non-adjacent form of number."""
-        ret = []
-        while mult:
-            if mult % 2:
-                nd = mult % 4
-                if nd >= 2:
-                    nd -= 4
-                ret.append(nd)
-                mult -= nd
-            else:
-                ret.append(0)
-            mult //= 2
-        return ret
-
     def __mul__(self, other):
         """Multiply point by an integer."""
         if not self.__coords[1] or not other:
@@ -927,8 +998,8 @@ class PointJacobi(AbstractPoint):
 
 
 class Point(AbstractPoint):
-    """A point on an elliptic curve. Altering x and y is forbidden,
-     but they can be read by the x() and y() methods."""
+    """A point on a short Weierstrass elliptic curve. Altering x and y is
+    forbidden, but they can be read by the x() and y() methods."""
 
     def __init__(self, curve, x, y, order=None):
         """curve, x, y, order; order (optional) is the order of this point."""
@@ -1122,6 +1193,210 @@ class Point(AbstractPoint):
 
     def order(self):
         return self.__order
+
+
+class PointEdwards(AbstractPoint):
+    """Point on Twisted Edwards curve.
+
+    Internally represents the coordinates on the curve using four parameters,
+    X, Y, Z, T. They correspond to affine parameters 'x' and 'y' like so:
+
+    x = X / Z
+    y = Y / Z
+    x*y = T / Z
+    """
+
+    def __init__(self, curve, x, y, z, t, order=None):
+        """
+        Initialise a point that uses the extended coordinates interanlly.
+        """
+        super(PointEdwards, self).__init__()
+        self.__curve = curve
+        if GMPY:  # pragma: no branch
+            self.__coords = (mpz(x), mpz(y), mpz(z), mpz(t))
+            self.__order = order and mpz(order)
+        else:  # pragma: no branch
+            self.__coords = (x, y, z, t)
+            self.__order = order
+
+    def x(self):
+        """Return affine x coordinate."""
+        X1, _, Z1, _ = self.__coords
+        if Z1 == 1:
+            return X1
+        p = self.__curve.p()
+        z_inv = numbertheory.inverse_mod(Z1, p)
+        return X1 * z_inv % p
+
+    def y(self):
+        """Return affine y coordinate."""
+        _, Y1, Z1, _ = self.__coords
+        if Z1 == 1:
+            return Y1
+        p = self.__curve.p()
+        z_inv = numbertheory.inverse_mod(Z1, p)
+        return Y1 * z_inv % p
+
+    def curve(self):
+        """Return the curve of the point."""
+        return self.__curve
+
+    def order(self):
+        return self.__order
+
+    def scale(self):
+        """
+        Return point scaled so that z == 1.
+
+        Modifies point in place, returns self.
+        """
+        X1, Y1, Z1, _ = self.__coords
+        if Z1 == 1:
+            return self
+
+        p = self.__curve.p()
+        z_inv = numbertheory.inverse_mod(Z1, p)
+        x = X1 * z_inv % p
+        y = Y1 * z_inv % p
+        t = x * y % p
+        self.__coords = (x, y, 1, t)
+        return self
+
+    def __eq__(self, other):
+        """Compare for equality two points with each-other.
+
+        Note: only points on the same curve can be equal.
+        """
+        x1, y1, z1, t1 = self.__coords
+        if other is INFINITY:
+            return not x1 or not t1
+        if isinstance(other, PointEdwards):
+            x2, y2, z2, t2 = other.__coords
+        else:
+            return NotImplemented
+        if self.__curve != other.curve():
+            return False
+        p = self.__curve.p()
+
+        # cross multiply to eliminate divisions
+        xn1 = x1 * z2 % p
+        xn2 = x2 * z1 % p
+        yn1 = y1 * z2 % p
+        yn2 = y2 * z1 % p
+        return xn1 == xn2 and yn1 == yn2
+
+    def __ne__(self, other):
+        """Compare for inequality two points with each-other."""
+        return not self == other
+
+    def _add(self, X1, Y1, Z1, T1, X2, Y2, Z2, T2, p, a):
+        """add two points, assume sane parameters."""
+        # after add-2008-hwcd-2
+        # from https://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html
+        # NOTE: there are more efficient formulas for Z1 or Z2 == 1
+        A = X1 * X2 % p
+        B = Y1 * Y2 % p
+        C = Z1 * T2 % p
+        D = T1 * Z2 % p
+        E = D + C
+        F = ((X1 - Y1) * (X2 + Y2) + B - A) % p
+        G = B + a * A
+        H = D - C
+        if not H:
+            return self._double(X1, Y1, Z1, T1, p, a)
+        X3 = E * F % p
+        Y3 = G * H % p
+        T3 = E * H % p
+        Z3 = F * G % p
+
+        return X3, Y3, Z3, T3
+
+    def __add__(self, other):
+        """Add point to another."""
+        if other == INFINITY:
+            return self
+        if (
+            not isinstance(other, PointEdwards)
+            or self.__curve != other.__curve
+        ):
+            raise ValueError("The other point is on a different curve.")
+
+        p, a = self.__curve.p(), self.__curve.a()
+        X1, Y1, Z1, T1 = self.__coords
+        X2, Y2, Z2, T2 = other.__coords
+
+        X3, Y3, Z3, T3 = self._add(X1, Y1, Z1, T1, X2, Y2, Z2, T2, p, a)
+
+        if not X3 or not T3:
+            return INFINITY
+        return PointEdwards(self.__curve, X3, Y3, Z3, T3, self.__order)
+
+    def __radd__(self, other):
+        """Add other to self."""
+        return self + other
+
+    def _double(self, X1, Y1, Z1, T1, p, a):
+        """Double the point, assume sane parameters."""
+        # after "dbl-2008-hwcd"
+        # from https://hyperelliptic.org/EFD/g1p/auto-twisted-extended.html
+        # NOTE: there are more efficient formulas for Z1 == 1
+        A = X1 * X1 % p
+        B = Y1 * Y1 % p
+        C = 2 * Z1 * Z1 % p
+        D = a * A % p
+        E = ((X1 + Y1) * (X1 + Y1) - A - B) % p
+        G = D + B
+        F = G - C
+        H = D - B
+        X3 = E * F % p
+        Y3 = G * H % p
+        T3 = E * H % p
+        Z3 = F * G % p
+
+        return X3, Y3, Z3, T3
+
+    def double(self):
+        """Return point added to itself."""
+        X1, Y1, Z1, T1 = self.__coords
+
+        if not X1 or not T1:
+            return INFINITY
+
+        p, a = self.__curve.p(), self.__curve.a()
+
+        X3, Y3, Z3, T3 = self._double(X1, Y1, Z1, T1, p, a)
+
+        if not X3 or not T3:
+            return INFINITY
+        return PointEdwards(self.__curve, X3, Y3, Z3, T3, self.__order)
+
+    def __mul__(self, other):
+        """Multiply point by an integer."""
+        X2, Y2, Z2, T2 = self.__coords
+        if not X2 or not T2 or not other:
+            return INFINITY
+        if other == 1:
+            return self
+        if self.__order:
+            # order*2 as a protection for Minerva
+            other = other % (self.__order * 2)
+
+        X3, Y3, Z3, T3 = 0, 1, 1, 0  # INFINITY in extended coordinates
+        p, a = self.__curve.p(), self.__curve.a()
+        _double = self._double
+        _add = self._add
+
+        for i in reversed(self._naf(other)):
+            X3, Y3, Z3, T3 = _double(X3, Y3, Z3, T3, p, a)
+            if i < 0:
+                X3, Y3, Z3, T3 = _add(X3, Y3, Z3, T3, -X2, Y2, Z2, -T2, p, a)
+            elif i > 0:
+                X3, Y3, Z3, T3 = _add(X3, Y3, Z3, T3, X2, Y2, Z2, T2, p, a)
+
+        if not X3 or not T3:
+            return INFINITY
+
+        return PointEdwards(self.__curve, X3, Y3, Z3, T3, self.__order)
 
 
 # This one point is the Point At Infinity for all purposes:
