@@ -49,7 +49,7 @@ except ImportError:  # pragma: no branch
 
 from six import python_2_unicode_compatible
 from . import numbertheory
-from ._compat import normalise_bytes
+from ._compat import normalise_bytes, int_to_bytes, bit_length, bytes_to_int
 from .errors import MalformedPointError
 from .util import orderlen, string_to_number, number_to_string
 
@@ -146,29 +146,35 @@ class CurveEdTw(object):
 
     if GMPY:  # pragma: no branch
 
-        def __init__(self, p, a, d, h=None):
+        def __init__(self, p, a, d, h=None, hash_func=None):
             """
             The curve of points satisfying a*x^2 + y^2 = 1 + d*x^2*y^2 (mod p).
 
             h is the cofactor of the curve.
+            hash_func is the hash function associated with the curve
+             (like SHA-512 for Ed25519)
             """
             self.__p = mpz(p)
             self.__a = mpz(a)
             self.__d = mpz(d)
             self.__h = h
+            self.__hash_func = hash_func
 
     else:
 
-        def __init__(self, p, a, d, h=None):
+        def __init__(self, p, a, d, h=None, hash_func=None):
             """
             The curve of points satisfying a*x^2 + y^2 = 1 + d*x^2*y^2 (mod p).
 
             h is the cofactor of the curve.
+            hash_func is the hash function associated with the curve
+             (like SHA-512 for Ed25519)
             """
             self.__p = p
             self.__a = a
             self.__d = d
             self.__h = h
+            self.__hash_func = hash_func
 
     def __eq__(self, other):
         """Returns True if other is an identical curve."""
@@ -202,6 +208,9 @@ class CurveEdTw(object):
 
     def d(self):
         return self.__d
+
+    def hash_func(self, data):
+        return self.__hash_func(data)
 
     def cofactor(self):
         return self.__h
@@ -279,6 +288,41 @@ class AbstractPoint(object):
         return x, y
 
     @classmethod
+    def _from_edwards(cls, curve, data):
+        """Decode a point on an Edwards curve."""
+        data = bytearray(data)
+        p = curve.p()
+        # add 1 for the sign bit and then round up
+        exp_len = (bit_length(p) + 1 + 7) // 8
+        if len(data) != exp_len:
+            raise MalformedPointError("Point length doesn't match the curve.")
+        x_0 = (data[-1] & 0x80) >> 7
+
+        data[-1] &= 0x80 - 1
+
+        y = bytes_to_int(data, "little")
+        if GMPY:
+            y = mpz(y)
+
+        x2 = (
+            (y * y - 1)
+            * numbertheory.inverse_mod(curve.d() * y * y - curve.a(), p)
+            % p
+        )
+
+        try:
+            x = numbertheory.square_root_mod_prime(x2, p)
+        except numbertheory.SquareRootError as e:
+            raise MalformedPointError(
+                "Encoding does not correspond to a point on curve", e
+            )
+
+        if x % 2 != x_0:
+            x = -x % p
+
+        return x, y
+
+    @classmethod
     def from_bytes(
         cls, curve, data, validate_encoding=True, valid_encodings=None
     ):
@@ -325,6 +369,10 @@ class AbstractPoint(object):
                 "supported."
             )
         data = normalise_bytes(data)
+
+        if isinstance(curve, CurveEdTw):
+            return cls._from_edwards(curve, data)
+
         key_len = len(data)
         raw_encoding_length = 2 * orderlen(curve.p())
         if key_len == raw_encoding_length and "raw" in valid_encodings:
@@ -381,6 +429,18 @@ class AbstractPoint(object):
             return b"\x07" + raw_enc
         return b"\x06" + raw_enc
 
+    def _edwards_encode(self):
+        """Encode the point according to RFC8032 encoding."""
+        self.scale()
+        x, y, p = self.x(), self.y(), self.curve().p()
+
+        # add 1 for the sign bit and then round up
+        enc_len = (bit_length(p) + 1 + 7) // 8
+        y_str = int_to_bytes(y, enc_len, "little")
+        if x % 2:
+            y_str[-1] |= 0x80
+        return y_str
+
     def to_bytes(self, encoding="raw"):
         """
         Convert the point to a byte string.
@@ -389,11 +449,17 @@ class AbstractPoint(object):
         by `encoding="raw"`. It can also output points in :term:`uncompressed`,
         :term:`compressed`, and :term:`hybrid` formats.
 
+        For points on Edwards curves `encoding` is ignored and only the
+        encoding defined in RFC 8032 is supported.
+
         :return: :term:`raw encoding` of a public on the curve
         :rtype: bytes
         """
         assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
-        if encoding == "raw":
+        curve = self.curve()
+        if isinstance(curve, CurveEdTw):
+            return self._edwards_encode()
+        elif encoding == "raw":
             return self._raw_encode()
         elif encoding == "uncompressed":
             return b"\x04" + self._raw_encode()
@@ -1218,6 +1284,48 @@ class PointEdwards(AbstractPoint):
         else:  # pragma: no branch
             self.__coords = (x, y, z, t)
             self.__order = order
+
+    @classmethod
+    def from_bytes(
+        cls,
+        curve,
+        data,
+        validate_encoding=None,
+        valid_encodings=None,
+        order=None,
+        generator=False,
+    ):
+        """
+        Initialise the object from byte encoding of a point.
+
+        `validate_encoding` and `valid_encodings` are provided for
+        compatibility with Weierstrass curves, they are ignored for Edwards
+        points.
+
+        :param data: single point encoding of the public key
+        :type data: :term:`bytes-like object`
+        :param curve: the curve on which the public key is expected to lay
+        :type curve: ecdsa.ellipticcurve.CurveEdTw
+        :param None validate_encoding: Ignored, encoding is always validated
+        :param None valid_encodings: Ignored, there is just one encoding
+            supported
+        :param int order: the point order, must be non zero when using
+            generator=True
+        :param bool generator: Ignored, may be used in the future
+            to precompute point multiplication table.
+
+        :raises MalformedPointError: if the public point does not lay on the
+            curve or the encoding is invalid
+
+        :return: Initialised point on an Edwards curve
+        :rtype: PointEdwards
+        """
+        coord_x, coord_y = super(PointEdwards, cls).from_bytes(
+            curve, data, validate_encoding, valid_encodings
+        )
+        return PointEdwards(
+            curve, coord_x, coord_y, 1, coord_x * coord_y, order
+        )
 
     def x(self):
         """Return affine x coordinate."""
