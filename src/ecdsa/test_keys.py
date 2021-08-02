@@ -14,7 +14,13 @@ import pytest
 import hashlib
 
 from .keys import VerifyingKey, SigningKey, MalformedPointError
-from .der import unpem, UnexpectedDER
+from .der import (
+    unpem,
+    UnexpectedDER,
+    encode_sequence,
+    encode_oid,
+    encode_bitstring,
+)
 from .util import (
     sigencode_string,
     sigencode_der,
@@ -23,7 +29,7 @@ from .util import (
     sigdecode_der,
     sigdecode_strings,
 )
-from .curves import NIST256p, Curve, BRAINPOOLP160r1
+from .curves import NIST256p, Curve, BRAINPOOLP160r1, Ed25519, Ed448
 from .ellipticcurve import Point, PointJacobi, CurveFp, INFINITY
 from .ecdsa import generator_brainpoolp160r1
 
@@ -268,6 +274,195 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         self.assertEqual(vk, self.vk)
 
+    def test_ed25519_VerifyingKey_repr__(self):
+        sk = SigningKey.from_string(Ed25519.generator.to_bytes(), Ed25519)
+        string = repr(sk.verifying_key)
+
+        self.assertEqual(
+            "VerifyingKey.from_string("
+            "bytearray(b'K\\x0c\\xfbZH\\x8e\\x8c\\x8c\\x07\\xee\\xda\\xfb"
+            "\\xe1\\x97\\xcd\\x90\\x18\\x02\\x15h]\\xfe\\xbe\\xcbB\\xba\\xe6r"
+            "\\x10\\xae\\xf1P'), Ed25519, None)",
+            string,
+        )
+
+    def test_edwards_from_public_point(self):
+        point = Ed25519.generator
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_public_point(point, Ed25519)
+
+        self.assertIn("incompatible with Edwards", str(e.exception))
+
+    def test_edwards_precompute_no_side_effect(self):
+        sk = SigningKey.from_string(Ed25519.generator.to_bytes(), Ed25519)
+        vk = sk.verifying_key
+        vk2 = VerifyingKey.from_string(vk.to_string(), Ed25519)
+        vk.precompute()
+
+        self.assertEqual(vk, vk2)
+
+    def test_parse_malfomed_eddsa_der_pubkey(self):
+        der_str = encode_sequence(
+            encode_sequence(encode_oid(*Ed25519.oid)),
+            encode_bitstring(bytes(Ed25519.generator.to_bytes()), 0),
+            encode_bitstring(b"\x00", 0),
+        )
+
+        with self.assertRaises(UnexpectedDER) as e:
+            VerifyingKey.from_der(der_str)
+
+        self.assertIn("trailing junk afer public key", str(e.exception))
+
+    def test_edwards_from_public_key_recovery(self):
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_public_key_recovery(b"", b"", Ed25519)
+
+        self.assertIn("unsupported for Edwards", str(e.exception))
+
+    def test_edwards_from_public_key_recovery_with_digest(self):
+        with self.assertRaises(ValueError) as e:
+            VerifyingKey.from_public_key_recovery_with_digest(
+                b"", b"", Ed25519
+            )
+
+        self.assertIn("unsupported for Edwards", str(e.exception))
+
+    def test_load_ed25519_from_pem(self):
+        vk_pem = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MCowBQYDK2VwAyEAIwBQ0NZkIiiO41WJfm5BV42u3kQm7lYnvIXmCy8qy2U=\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+
+        vk = VerifyingKey.from_pem(vk_pem)
+
+        vk_str = (
+            b"\x23\x00\x50\xd0\xd6\x64\x22\x28\x8e\xe3\x55\x89\x7e\x6e\x41\x57"
+            b"\x8d\xae\xde\x44\x26\xee\x56\x27\xbc\x85\xe6\x0b\x2f\x2a\xcb\x65"
+        )
+
+        vk_2 = VerifyingKey.from_string(vk_str, Ed25519)
+
+        self.assertEqual(vk, vk_2)
+
+    def test_export_ed255_to_pem(self):
+        vk_str = (
+            b"\x23\x00\x50\xd0\xd6\x64\x22\x28\x8e\xe3\x55\x89\x7e\x6e\x41\x57"
+            b"\x8d\xae\xde\x44\x26\xee\x56\x27\xbc\x85\xe6\x0b\x2f\x2a\xcb\x65"
+        )
+
+        vk = VerifyingKey.from_string(vk_str, Ed25519)
+
+        vk_pem = (
+            b"-----BEGIN PUBLIC KEY-----\n"
+            b"MCowBQYDK2VwAyEAIwBQ0NZkIiiO41WJfm5BV42u3kQm7lYnvIXmCy8qy2U=\n"
+            b"-----END PUBLIC KEY-----\n"
+        )
+
+        self.assertEqual(vk_pem, vk.to_pem())
+
+    def test_ed25519_export_import(self):
+        sk = SigningKey.generate(Ed25519)
+        vk = sk.verifying_key
+
+        vk2 = VerifyingKey.from_pem(vk.to_pem())
+
+        self.assertEqual(vk, vk2)
+
+    def test_ed25519_sig_verify(self):
+        vk_pem = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MCowBQYDK2VwAyEAIwBQ0NZkIiiO41WJfm5BV42u3kQm7lYnvIXmCy8qy2U=\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+
+        vk = VerifyingKey.from_pem(vk_pem)
+
+        data = b"data\n"
+
+        # signature created by OpenSSL 3.0.0 beta1
+        sig = (
+            b"\x64\x47\xab\x6a\x33\xcd\x79\x45\xad\x98\x11\x6c\xb9\xf2\x20\xeb"
+            b"\x90\xd6\x50\xe3\xc7\x8f\x9f\x60\x10\xec\x75\xe0\x2f\x27\xd3\x96"
+            b"\xda\xe8\x58\x7f\xe0\xfe\x46\x5c\x81\xef\x50\xec\x29\x9f\xae\xd5"
+            b"\xad\x46\x3c\x91\x68\x83\x4d\xea\x8d\xa8\x19\x04\x04\x79\x03\x0b"
+        )
+
+        self.assertTrue(vk.verify(sig, data))
+
+    def test_ed448_from_pem(self):
+        pem_str = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MEMwBQYDK2VxAzoAeQtetSu7CMEzE+XWB10Bg47LCA0giNikOxHzdp+tZ/eK/En0\n"
+            "dTdYD2ll94g58MhSnBiBQB9A1MMA\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+
+        vk = VerifyingKey.from_pem(pem_str)
+
+        vk_str = (
+            b"\x79\x0b\x5e\xb5\x2b\xbb\x08\xc1\x33\x13\xe5\xd6\x07\x5d\x01\x83"
+            b"\x8e\xcb\x08\x0d\x20\x88\xd8\xa4\x3b\x11\xf3\x76\x9f\xad\x67\xf7"
+            b"\x8a\xfc\x49\xf4\x75\x37\x58\x0f\x69\x65\xf7\x88\x39\xf0\xc8\x52"
+            b"\x9c\x18\x81\x40\x1f\x40\xd4\xc3\x00"
+        )
+
+        vk2 = VerifyingKey.from_string(vk_str, Ed448)
+
+        self.assertEqual(vk, vk2)
+
+    def test_ed448_to_pem(self):
+        vk_str = (
+            b"\x79\x0b\x5e\xb5\x2b\xbb\x08\xc1\x33\x13\xe5\xd6\x07\x5d\x01\x83"
+            b"\x8e\xcb\x08\x0d\x20\x88\xd8\xa4\x3b\x11\xf3\x76\x9f\xad\x67\xf7"
+            b"\x8a\xfc\x49\xf4\x75\x37\x58\x0f\x69\x65\xf7\x88\x39\xf0\xc8\x52"
+            b"\x9c\x18\x81\x40\x1f\x40\xd4\xc3\x00"
+        )
+        vk = VerifyingKey.from_string(vk_str, Ed448)
+
+        vk_pem = (
+            b"-----BEGIN PUBLIC KEY-----\n"
+            b"MEMwBQYDK2VxAzoAeQtetSu7CMEzE+XWB10Bg47LCA0giNikOxHzdp+tZ/eK/En0\n"
+            b"dTdYD2ll94g58MhSnBiBQB9A1MMA\n"
+            b"-----END PUBLIC KEY-----\n"
+        )
+
+        self.assertEqual(vk_pem, vk.to_pem())
+
+    def test_ed448_export_import(self):
+        sk = SigningKey.generate(Ed448)
+        vk = sk.verifying_key
+
+        vk2 = VerifyingKey.from_pem(vk.to_pem())
+
+        self.assertEqual(vk, vk2)
+
+    def test_ed448_sig_verify(self):
+        pem_str = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MEMwBQYDK2VxAzoAeQtetSu7CMEzE+XWB10Bg47LCA0giNikOxHzdp+tZ/eK/En0\n"
+            "dTdYD2ll94g58MhSnBiBQB9A1MMA\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+
+        vk = VerifyingKey.from_pem(pem_str)
+
+        data = b"data\n"
+
+        # signature created by OpenSSL 3.0.0 beta1
+        sig = (
+            b"\x68\xed\x2c\x70\x35\x22\xca\x1c\x35\x03\xf3\xaa\x51\x33\x3d\x00"
+            b"\xc0\xae\xb0\x54\xc5\xdc\x7f\x6f\x30\x57\xb4\x1d\xcb\xe9\xec\xfa"
+            b"\xc8\x45\x3e\x51\xc1\xcb\x60\x02\x6a\xd0\x43\x11\x0b\x5f\x9b\xfa"
+            b"\x32\x88\xb2\x38\x6b\xed\xac\x09\x00\x78\xb1\x7b\x5d\x7e\xf8\x16"
+            b"\x31\xdd\x1b\x3f\x98\xa0\xce\x19\xe7\xd8\x1c\x9f\x30\xac\x2f\xd4"
+            b"\x1e\x55\xbf\x21\x98\xf6\x4c\x8c\xbe\x81\xa5\x2d\x80\x4c\x62\x53"
+            b"\x91\xd5\xee\x03\x30\xc6\x17\x66\x4b\x9e\x0c\x8d\x40\xd0\xad\xae"
+            b"\x0a\x00"
+        )
+
+        self.assertTrue(vk.verify(sig, data))
+
 
 class TestSigningKey(unittest.TestCase):
     """
@@ -386,6 +581,88 @@ class TestSigningKey(unittest.TestCase):
 
     def test_inequality_on_signing_keys_not_implemented(self):
         self.assertNotEqual(self.sk1, None)
+
+    def test_ed25519_from_pem(self):
+        pem_str = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MC4CAQAwBQYDK2VwBCIEIDS6x9FO1PG8T4xIPg8Zd0z8uL6sVGZFEZrX17gHC/XU\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+
+        sk = SigningKey.from_pem(pem_str)
+
+        sk_str = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+
+        self.assertEqual(sk, sk_str)
+
+    def test_ed25519_to_pem(self):
+        sk = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+
+        pem_str = (
+            b"-----BEGIN PRIVATE KEY-----\n"
+            b"MC4CAQAwBQYDK2VwBCIEIDS6x9FO1PG8T4xIPg8Zd0z8uL6sVGZFEZrX17gHC/XU\n"
+            b"-----END PRIVATE KEY-----\n"
+        )
+
+        self.assertEqual(sk.to_pem(format="pkcs8"), pem_str)
+
+    def test_ed25519_to_and_from_pem(self):
+        sk = SigningKey.generate(Ed25519)
+
+        decoded = SigningKey.from_pem(sk.to_pem(format="pkcs8"))
+
+        self.assertEqual(sk, decoded)
+
+    def test_ed448_from_pem(self):
+        pem_str = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MEcCAQAwBQYDK2VxBDsEOTyFuXqFLXgJlV8uDqcOw9nG4IqzLiZ/i5NfBDoHPzmP\n"
+            "OP0JMYaLGlTzwovmvCDJ2zLaezu9NLz9aQ==\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+        sk = SigningKey.from_pem(pem_str)
+
+        sk_str = SigningKey.from_string(
+            b"\x3C\x85\xB9\x7A\x85\x2D\x78\x09\x95\x5F\x2E\x0E\xA7\x0E\xC3\xD9"
+            b"\xC6\xE0\x8A\xB3\x2E\x26\x7F\x8B\x93\x5F\x04\x3A\x07\x3F\x39\x8F"
+            b"\x38\xFD\x09\x31\x86\x8B\x1A\x54\xF3\xC2\x8B\xE6\xBC\x20\xC9\xDB"
+            b"\x32\xDA\x7B\x3B\xBD\x34\xBC\xFD\x69",
+            Ed448,
+        )
+
+        self.assertEqual(sk, sk_str)
+
+    def test_ed448_to_pem(self):
+        sk = SigningKey.from_string(
+            b"\x3C\x85\xB9\x7A\x85\x2D\x78\x09\x95\x5F\x2E\x0E\xA7\x0E\xC3\xD9"
+            b"\xC6\xE0\x8A\xB3\x2E\x26\x7F\x8B\x93\x5F\x04\x3A\x07\x3F\x39\x8F"
+            b"\x38\xFD\x09\x31\x86\x8B\x1A\x54\xF3\xC2\x8B\xE6\xBC\x20\xC9\xDB"
+            b"\x32\xDA\x7B\x3B\xBD\x34\xBC\xFD\x69",
+            Ed448,
+        )
+        pem_str = (
+            b"-----BEGIN PRIVATE KEY-----\n"
+            b"MEcCAQAwBQYDK2VxBDsEOTyFuXqFLXgJlV8uDqcOw9nG4IqzLiZ/i5NfBDoHPzmP\n"
+            b"OP0JMYaLGlTzwovmvCDJ2zLaezu9NLz9aQ==\n"
+            b"-----END PRIVATE KEY-----\n"
+        )
+
+        self.assertEqual(sk.to_pem(format="pkcs8"), pem_str)
+
+    def test_ed448_encode_decode(self):
+        sk = SigningKey.generate(Ed448)
+
+        decoded = SigningKey.from_pem(sk.to_pem(format="pkcs8"))
+
+        self.assertEqual(decoded, sk)
 
 
 class TestTrivialCurve(unittest.TestCase):

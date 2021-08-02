@@ -26,6 +26,8 @@ from .curves import (
     SECP112r2,
     SECP128r1,
     SECP160r1,
+    Ed25519,
+    Ed448,
 )
 from .ecdh import (
     ECDH,
@@ -83,6 +85,8 @@ _hush_pyflakes = [
     SECP112r2,
     SECP128r1,
     SECP160r1,
+    Ed25519,
+    Ed448,
     six.b(""),
 ]
 del _hush_pyflakes

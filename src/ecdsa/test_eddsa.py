@@ -494,6 +494,60 @@ def test_ed448_decode():
     assert a == generator_ed448
 
 
+class TestEdDSAEquality(unittest.TestCase):
+    def test_equal_public_points(self):
+        key1 = PublicKey(generator_ed25519, b"\x01" * 32)
+        key2 = PublicKey(generator_ed25519, b"\x01" * 32)
+
+        self.assertEqual(key1, key2)
+        self.assertFalse(key1 != key2)
+
+    def test_unequal_public_points(self):
+        key1 = PublicKey(generator_ed25519, b"\x01" * 32)
+        key2 = PublicKey(generator_ed25519, b"\x03" * 32)
+
+        self.assertNotEqual(key1, key2)
+
+    def test_unequal_to_string(self):
+        key1 = PublicKey(generator_ed25519, b"\x01" * 32)
+        key2 = b"\x01" * 32
+
+        self.assertNotEqual(key1, key2)
+
+    def test_unequal_publickey_curves(self):
+        key1 = PublicKey(generator_ed25519, b"\x01" * 32)
+        key2 = PublicKey(generator_ed448, b"\x03" * 56 + b"\x00")
+
+        self.assertNotEqual(key1, key2)
+        self.assertTrue(key1 != key2)
+
+    def test_equal_private_keys(self):
+        key1 = PrivateKey(generator_ed25519, b"\x01" * 32)
+        key2 = PrivateKey(generator_ed25519, b"\x01" * 32)
+
+        self.assertEqual(key1, key2)
+        self.assertFalse(key1 != key2)
+
+    def test_unequal_private_keys(self):
+        key1 = PrivateKey(generator_ed25519, b"\x01" * 32)
+        key2 = PrivateKey(generator_ed25519, b"\x02" * 32)
+
+        self.assertNotEqual(key1, key2)
+        self.assertTrue(key1 != key2)
+
+    def test_unequal_privatekey_to_string(self):
+        key1 = PrivateKey(generator_ed25519, b"\x01" * 32)
+        key2 = b"\x01" * 32
+
+        self.assertNotEqual(key1, key2)
+
+    def test_unequal_privatekey_curves(self):
+        key1 = PrivateKey(generator_ed25519, b"\x01" * 32)
+        key2 = PrivateKey(generator_ed448, b"\x01" * 57)
+
+        self.assertNotEqual(key1, key2)
+
+
 class TestInvalidEdDSAInputs(unittest.TestCase):
     def test_wrong_length_of_private_key(self):
         with self.assertRaises(ValueError):

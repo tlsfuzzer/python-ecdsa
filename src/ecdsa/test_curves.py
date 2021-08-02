@@ -6,7 +6,7 @@ except ImportError:
 import base64
 import pytest
 from .curves import Curve, NIST256p, curves, UnknownCurveError, PRIME_FIELD_OID
-from .ellipticcurve import CurveFp, PointJacobi
+from .ellipticcurve import CurveFp, PointJacobi, CurveEdTw
 from . import der
 from .util import number_to_string
 
@@ -108,6 +108,12 @@ class TestParameterEncoding(unittest.TestCase):
         encoded = NIST256p.to_der("explicit")
 
         self.assertEqual(encoded, bytes(base64.b64decode(self.base64_params)))
+
+    def test_encoding_to_unsupported_type(self):
+        with self.assertRaises(ValueError) as e:
+            NIST256p.to_der("unsupported")
+
+        self.assertIn("Only 'named_curve'", str(e.exception))
 
     def test_encoding_to_explicit_compressed_params(self):
         encoded = NIST256p.to_der("explicit", "compressed")
@@ -291,9 +297,13 @@ def test_curve_params_encode_decode_named(curve):
 
 @pytest.mark.parametrize("curve", curves, ids=[i.name for i in curves])
 def test_curve_params_encode_decode_explicit(curve):
-    ret = Curve.from_der(curve.to_der("explicit"))
+    if isinstance(curve.curve, CurveEdTw):
+        with pytest.raises(UnknownCurveError):
+            curve.to_der("explicit")
+    else:
+        ret = Curve.from_der(curve.to_der("explicit"))
 
-    assert curve == ret
+        assert curve == ret
 
 
 @pytest.mark.parametrize("curve", curves, ids=[i.name for i in curves])
@@ -305,6 +315,10 @@ def test_curve_params_encode_decode_default(curve):
 
 @pytest.mark.parametrize("curve", curves, ids=[i.name for i in curves])
 def test_curve_params_encode_decode_explicit_compressed(curve):
-    ret = Curve.from_der(curve.to_der("explicit", "compressed"))
+    if isinstance(curve.curve, CurveEdTw):
+        with pytest.raises(UnknownCurveError):
+            curve.to_der("explicit", "compressed")
+    else:
+        ret = Curve.from_der(curve.to_der("explicit", "compressed"))
 
-    assert curve == ret
+        assert curve == ret

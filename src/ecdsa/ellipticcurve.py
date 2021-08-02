@@ -1478,6 +1478,10 @@ class PointEdwards(AbstractPoint):
             return INFINITY
         return PointEdwards(self.__curve, X3, Y3, Z3, T3, self.__order)
 
+    def __rmul__(self, other):
+        """Multiply point by an integer."""
+        return self * other
+
     def __mul__(self, other):
         """Multiply point by an integer."""
         X2, Y2, Z2, T2 = self.__coords

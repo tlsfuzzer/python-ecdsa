@@ -26,12 +26,15 @@ from .ecdh import (
     NoCurveError,
 )
 from .keys import SigningKey, VerifyingKey
+from .ellipticcurve import CurveEdTw
 
 
 @pytest.mark.parametrize(
-    "vcurve", curves, ids=[curve.name for curve in curves]
+    "vcurve", curves, ids=[curve.name for curve in curves],
 )
 def test_ecdh_each(vcurve):
+    if isinstance(vcurve.curve, CurveEdTw):
+        pytest.skip("ECDH is not supported for Edwards curves")
     ecdh1 = ECDH(curve=vcurve)
     ecdh2 = ECDH(curve=vcurve)
 
@@ -362,9 +365,12 @@ OPENSSL_SUPPORTED_CURVES = set(
 
 
 @pytest.mark.parametrize(
-    "vcurve", curves, ids=[curve.name for curve in curves]
+    "vcurve", curves, ids=[curve.name for curve in curves],
 )
 def test_ecdh_with_openssl(vcurve):
+    if isinstance(vcurve.curve, CurveEdTw):
+        pytest.skip("Edwards curves are not supported for ECDH")
+
     assert vcurve.openssl_name
 
     if vcurve.openssl_name not in OPENSSL_SUPPORTED_CURVES:
