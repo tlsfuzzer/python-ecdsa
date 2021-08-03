@@ -1,3 +1,14 @@
+* Release 0.18.0-beta1 (03 Aug 2021)
+
+New features:
+* Support for EdDSA (Ed25519, Ed448) signature creation and verification.
+* Support for Ed25519 and Ed448 in PKCS#8 and public key files.
+
+New API:
+* CurveEdTw class to represent the Twisted Edwards curve parameters.
+* PointEdwards class to represent points on Twisted Edwards curve and
+  provide point arithmetic on it.
+
 * Release 0.17.0 (27 May 2021)
 
 New API:
