@@ -580,6 +580,25 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
         self.assertIn("length", str(e.exception))
 
+    def test_changing_public_key(self):
+        key = PublicKey(generator_ed25519, b"\x01" * 32)
+
+        g = key.point
+
+        new_g = PointEdwards(curve_ed25519, g.x(), g.y(), 1, g.x() * g.y())
+
+        key.point = new_g
+
+        self.assertEqual(g, key.point)
+
+    def test_changing_public_key_to_different_point(self):
+        key = PublicKey(generator_ed25519, b"\x01" * 32)
+
+        with self.assertRaises(ValueError) as e:
+            key.point = generator_ed25519
+
+        self.assertIn("coordinates", str(e.exception))
+
     def test_invalid_s_value(self):
         key = PublicKey(
             generator_ed25519,
@@ -649,6 +668,18 @@ def test_ed448_encode_decode(multiple):
     b = PointEdwards.from_bytes(curve_ed448, a.to_bytes())
 
     assert a == b
+
+
+@settings(**HYP_SETTINGS)
+@example(1)
+@example(2)
+@given(st.integers(min_value=1, max_value=int(generator_ed25519.order()) - 1))
+def test_ed25519_mul_precompute_vs_naf(multiple):
+    """Compare multiplication with and without precomputation."""
+    g = generator_ed25519
+    new_g = PointEdwards(curve_ed25519, g.x(), g.y(), 1, g.x() * g.y())
+
+    assert g * multiple == multiple * new_g
 
 
 # Test vectors from RFC 8032
