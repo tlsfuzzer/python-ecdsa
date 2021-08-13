@@ -110,6 +110,8 @@ On an Intel Core i7 4790K @ 4.0GHz I'm getting the following performance:
        SECP112r2:     28   0.00015s   6697.11   0.00015s   6479.98   0.00028s   3524.72       0.00058s        1716.16
        SECP128r1:     32   0.00018s   5497.65   0.00019s   5272.89   0.00036s   2747.39       0.00072s        1396.16
        SECP160r1:     42   0.00025s   3949.32   0.00026s   3894.45   0.00046s   2153.85       0.00102s         985.07
+         Ed25519:     64   0.00166s    600.71   0.00131s    761.86   0.00432s    231.37       0.00445s         224.59
+           Ed448:    114   0.00473s    211.38   0.00406s    246.25   0.01299s     76.96       0.01293s          77.32
 
                        ecdh     ecdh/s
         NIST192p:   0.00104s    964.89
@@ -152,6 +154,8 @@ On the same machine I'm getting the following performance with `gmpy2`:
        SECP112r2:     28   0.00009s  11322.97   0.00009s  10857.71   0.00017s   5748.77       0.00032s        3094.28
        SECP128r1:     32   0.00010s  10078.39   0.00010s   9665.27   0.00019s   5200.58       0.00036s        2760.88
        SECP160r1:     42   0.00015s   6875.51   0.00015s   6647.35   0.00029s   3422.41       0.00057s        1768.35
+         Ed25519:     64   0.00070s   1423.69   0.00057s   1756.70   0.00195s    511.92       0.00194s         516.64
+           Ed448:    114   0.00149s    670.07   0.00126s    790.52   0.00434s    230.58       0.00438s         228.50
 
                        ecdh     ecdh/s
         NIST192p:   0.00050s   1985.70
@@ -189,6 +193,10 @@ Run `openssl speed ecdsa` and `openssl speed ecdh` to reproduce it:
  256 bits ecdsa (brainpoolP256r1)   0.0003s   0.0003s   2983.5   3333.2
  384 bits ecdsa (brainpoolP384r1)   0.0008s   0.0007s   1258.8   1528.1
  512 bits ecdsa (brainpoolP512r1)   0.0015s   0.0012s    675.1    860.1
+
+                              sign    verify    sign/s verify/s
+ 253 bits EdDSA (Ed25519)   0.0000s   0.0001s  28217.9  10897.7
+ 456 bits EdDSA (Ed448)     0.0003s   0.0005s   3926.5   2147.7
 
                                op      op/s
  192 bits ecdh (nistp192)   0.0002s   4853.4
