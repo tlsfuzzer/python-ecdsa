@@ -174,7 +174,7 @@ def st_random_der_ecdsa_sig_value(draw):
     note("Configuration: {0}".format(name))
     order = int(verifying_key.curve.order)
 
-    # the encode_integer doesn't suport negative numbers, would be nice
+    # the encode_integer doesn't support negative numbers, would be nice
     # to generate them too, but we have coverage for remove_integer()
     # verifying that it doesn't accept them, so meh.
     # Test all numbers around the ones that can show up (around order)

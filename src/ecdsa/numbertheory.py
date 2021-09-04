@@ -7,7 +7,7 @@
 # Written in 2005 and 2006 by Peter Pearson and placed in the public domain.
 # Revision history:
 #   2008.11.14: Use pow(base, exponent, modulus) for modular_exp.
-#               Make gcd and lcm accept arbitrarly many arguments.
+#               Make gcd and lcm accept arbitrarily many arguments.
 
 from __future__ import division
 
