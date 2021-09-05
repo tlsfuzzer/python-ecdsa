@@ -1274,7 +1274,7 @@ class PointEdwards(AbstractPoint):
 
     def __init__(self, curve, x, y, z, t, order=None):
         """
-        Initialise a point that uses the extended coordinates interanlly.
+        Initialise a point that uses the extended coordinates internally.
         """
         super(PointEdwards, self).__init__()
         self.__curve = curve
