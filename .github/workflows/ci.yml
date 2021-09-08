@@ -19,27 +19,27 @@ jobs:
             container: centos:6
             python-version: 2.6
           - name: py2.7
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             tox-env: py27
           - name: py2.7 with old gmpy
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             tox-env: py27_old_gmpy
           - name: py2.7 with old gmpy2
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             tox-env: py27_old_gmpy2
           - name: py2.7 with old six
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             tox-env: py27_old_six
           - name: py2.7 with gmpy
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             tox-env: gmpypy27
           - name: py2.7 with gmpy2
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             tox-env: gmpy2py27
           - name: py3.3
@@ -88,7 +88,7 @@ jobs:
             tox-env: pypy3
           # special configurations
           - name: py2.7 with instrumental
-            os: ubuntu-16.04
+            os: ubuntu-18.04
             python-version: 2.7
             opt-deps: ['instrumental']
           - name: code checks
