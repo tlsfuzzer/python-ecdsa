@@ -311,7 +311,7 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         with self.assertRaises(UnexpectedDER) as e:
             VerifyingKey.from_der(der_str)
 
-        self.assertIn("trailing junk afer public key", str(e.exception))
+        self.assertIn("trailing junk after public key", str(e.exception))
 
     def test_edwards_from_public_key_recovery(self):
         with self.assertRaises(ValueError) as e:

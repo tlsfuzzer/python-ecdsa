@@ -63,7 +63,7 @@ Performance:
   single-shot verify (i.e. without precomputation) by about 4 to 5%.
 * Use native Python 3.8 support for calculating multiplicative inverses.
 
-Maintenace:
+Maintenance:
 * Include Python 3.9 in PyPI keywords.
 * More realistic branch coverage counting (ignore Python version-specific
   branches).
