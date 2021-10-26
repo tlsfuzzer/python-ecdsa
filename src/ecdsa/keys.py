@@ -263,10 +263,20 @@ class VerifyingKey(object):
            use (when set to True)
         """
         if isinstance(self.curve.curve, CurveEdTw):
-            return
-        self.pubkey.point = ellipticcurve.PointJacobi.from_affine(
-            self.pubkey.point, True
-        )
+            pt = self.pubkey.point
+            self.pubkey.point = ellipticcurve.PointEdwards(
+                pt.curve(),
+                pt.x(),
+                pt.y(),
+                1,
+                pt.x() * pt.y(),
+                self.curve.order,
+                generator=True,
+            )
+        else:
+            self.pubkey.point = ellipticcurve.PointJacobi.from_affine(
+                self.pubkey.point, True
+            )
         # as precomputation in now delayed to the time of first use of the
         # point and we were asked specifically to precompute now, make
         # sure the precomputation is performed now to preserve the behaviour
