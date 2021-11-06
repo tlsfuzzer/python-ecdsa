@@ -57,13 +57,12 @@ Primary classes for performing signing and verification operations.
         portable and cross-platform way.
 
     bytes-like object
-        All the types that implement the buffer protocol. That includes
-        ``str`` (only on python2), ``bytes``, ``bytesarray``, ``array.array`
-        and ``memoryview`` of those objects.
-        Please note that ``array.array` serialisation (converting it to byte
-        string) is endianness dependent! Signature computed over ``array.array``
-        of integers on a big-endian system will not be verified on a
-        little-endian system and vice-versa.
+        All the types that implement the buffer protocol. That includes ``str``
+        (only on python2), ``bytes``, ``bytesarray``, ``array.array` and
+        ``memoryview`` of those objects.  Please note that ``array.array`
+        serialisation (converting it to byte string) is endianness dependent!
+        Signature computed over ``array.array`` of integers on a big-endian
+        system will not be verified on a little-endian system and vice-versa.
 
     set-like object
         All the types that support the ``in`` operator, like ``list``,
