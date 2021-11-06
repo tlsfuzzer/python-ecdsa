@@ -12,7 +12,7 @@
 This is an easy-to-use implementation of ECC (Elliptic Curve Cryptography)
 with support for ECDSA (Elliptic Curve Digital Signature Algorithm) and ECDH
 (Elliptic Curve Diffie-Hellman), implemented purely in Python, released under
-the MIT license. With this library, you can quickly create keypairs (signing
+the MIT license. With this library, you can quickly create key pairs (signing
 key and verifying key), sign messages, and verify the signatures. You can
 also agree on a shared secret key based on exchanged public keys.
 The keys and signatures are very short, making them easy to handle and
@@ -75,7 +75,7 @@ pip install ecdsa[gmpy]
 
 ## Speed
 
-The following table shows how long this library takes to generate keypairs
+The following table shows how long this library takes to generate key pairs
 (`keygen`), to sign data (`sign`), to verify those signatures (`verify`),
 to derive a shared secret (`ecdh`), and
 to verify the signatures with no key-specific precomputation (`no PC verify`).
@@ -257,14 +257,14 @@ interoperability testing and as a teaching tool.
 
 **This library does not protect against side-channel attacks.**
 
-Do not allow attackers to measure how long it takes you to generate a keypair
+Do not allow attackers to measure how long it takes you to generate a key pair
 or sign a message. Do not allow attackers to run code on the same physical
-machine when keypair generation or signing is taking place (this includes
+machine when key pair generation or signing is taking place (this includes
 virtual machines). Do not allow attackers to measure how much power your
-computer uses while generating the keypair or signing a message. Do not allow
+computer uses while generating the key pair or signing a message. Do not allow
 attackers to measure RF interference coming from your computer while generating
-a keypair or signing a message. Note: just loading the private key will cause
-keypair generation. Other operations or attack vectors may also be
+a key pair or signing a message. Note: just loading the private key will cause
+key pair generation. Other operations or attack vectors may also be
 vulnerable to attacks. **For a sophisticated attacker observing just one
 operation with a private key will be sufficient to completely
 reconstruct the private key**.
@@ -529,7 +529,7 @@ failures of the entropy source.
 
 ## Examples
 
-Create a NIST192p keypair and immediately save both to disk:
+Create a NIST192p key pair and immediately save both to disk:
 
 ```python
 from ecdsa import SigningKey
@@ -572,7 +572,7 @@ except BadSignatureError:
     print "BAD SIGNATURE"
 ```
 
-Create a NIST521p keypair:
+Create a NIST521p key pair:
 
 ```python
 from ecdsa import SigningKey, NIST521p

@@ -57,13 +57,12 @@ Primary classes for performing signing and verification operations.
         portable and cross-platform way.
 
     bytes-like object
-        All the types that implement the buffer protocol. That includes
-        ``str`` (only on python2), ``bytes``, ``bytesarray``, ``array.array`
-        and ``memoryview`` of those objects.
-        Please note that ``array.array` serialisation (converting it to byte
-        string) is endianess dependant! Signature computed over ``array.array``
-        of integers on a big-endian system will not be verified on a
-        little-endian system and vice-versa.
+        All the types that implement the buffer protocol. That includes ``str``
+        (only on python2), ``bytes``, ``bytesarray``, ``array.array` and
+        ``memoryview`` of those objects.  Please note that ``array.array`
+        serialisation (converting it to byte string) is endianness dependent!
+        Signature computed over ``array.array`` of integers on a big-endian
+        system will not be verified on a little-endian system and vice-versa.
 
     set-like object
         All the types that support the ``in`` operator, like ``list``,
@@ -455,7 +454,7 @@ class VerifyingKey(object):
                 curve = Ed448
             point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
             if empty:
-                raise der.UnexpectedDER("trailing junk afer public key")
+                raise der.UnexpectedDER("trailing junk after public key")
             return cls.from_string(point_str, curve, None)
         if not oid_pk == oid_ecPublicKey:
             raise der.UnexpectedDER(
@@ -701,7 +700,7 @@ class VerifyingKey(object):
         as the `sigdecode` parameter.
 
         :param signature: encoding of the signature
-        :type signature: sigdecode method dependant
+        :type signature: sigdecode method dependent
         :param data: data signed by the `signature`, will be hashed using
             `hashfunc`, if specified, or default hash function
         :type data: bytes like object
@@ -756,7 +755,7 @@ class VerifyingKey(object):
         as the `sigdecode` parameter.
 
         :param signature: encoding of the signature
-        :type signature: sigdecode method dependant
+        :type signature: sigdecode method dependent
         :param digest: raw hash value that the signature authenticates.
         :type digest: bytes like object
         :param sigdecode: Callable to define the way the signature needs to
@@ -1397,7 +1396,7 @@ class SigningKey(object):
         :type extra_entropy: bytes like object
 
         :return: encoded signature over `data`
-        :rtype: bytes or sigencode function dependant type
+        :rtype: bytes or sigencode function dependent type
         """
         hashfunc = hashfunc or self.default_hashfunc
         data = normalise_bytes(data)
@@ -1458,7 +1457,7 @@ class SigningKey(object):
             SHA-384 output using NIST256p or in similar situations.
 
         :return: encoded signature for the `digest` hash
-        :rtype: bytes or sigencode function dependant type
+        :rtype: bytes or sigencode function dependent type
         """
         if isinstance(self.curve.curve, CurveEdTw):
             raise ValueError("Method unsupported for Edwards curves")
@@ -1559,7 +1558,7 @@ class SigningKey(object):
             :func:`~SigningKey.sign_deterministic` in such case.
 
         :return: encoded signature of the hash of `data`
-        :rtype: bytes or sigencode function dependant type
+        :rtype: bytes or sigencode function dependent type
         """
         hashfunc = hashfunc or self.default_hashfunc
         data = normalise_bytes(data)
@@ -1613,7 +1612,7 @@ class SigningKey(object):
             :func:`~SigningKey.sign_digest_deterministic` in such case.
 
         :return: encoded signature for the `digest` hash
-        :rtype: bytes or sigencode function dependant type
+        :rtype: bytes or sigencode function dependent type
         """
         if isinstance(self.curve.curve, CurveEdTw):
             raise ValueError("Method unsupported for Edwards curves")
