@@ -3,6 +3,9 @@
 """
 Implementation of Elliptic-Curve Digital Signatures.
 
+NOTE: This a low level implementation of ECDSA, for normal applications
+you should be looking at the keys.py module.
+
 Classes and methods for elliptic-curve signatures:
 private keys, public keys, signatures,
 NIST prime-modulus curves with modulus lengths of
