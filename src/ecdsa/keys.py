@@ -1124,10 +1124,16 @@ class SigningKey(object):
                         "Non NULL parameters for a EdDSA key"
                     )
                 key_str_der, s = der.remove_octet_string(s)
-                if s:
-                    raise der.UnexpectedDER(
-                        "trailing junk inside the privateKey"
-                    )
+                
+                # As RFC5958 describe, there are may be optional Attributes 
+                # and Publickey. Don't raise error if something after 
+                # Privatekey
+                
+                # TODO parse attributes or validate publickey
+                # if s:
+                #     raise der.UnexpectedDER(
+                #         "trailing junk inside the privateKey"
+                #     )
                 key_str, s = der.remove_octet_string(key_str_der)
                 if s:
                     raise der.UnexpectedDER(
