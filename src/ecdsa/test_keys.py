@@ -928,11 +928,12 @@ def test_VerifyingKey_inequality_with_different_secret_points():
 
     assert sk1.verifying_key != sk2.verifying_key
 
-def test_SigningKey_from_pem_pkcs8v2():
+def test_SigningKey_from_pem_pkcs8v2_EdDSA():
     pem = """-----BEGIN PRIVATE KEY-----
     MFMCAQEwBQYDK2VwBCIEICc2F2ag1n1QP0jY+g9qWx5sDkx0s/HdNi3cSRHw+zsI
     oSMDIQA+HQ2xCif8a/LMWR2m5HaCm5I2pKe/cc8OiRANMHxjKQ==
     -----END PRIVATE KEY-----"""
     
     sk = SigningKey.from_pem(pem)
+    assert sk.curve == Ed25519
     
