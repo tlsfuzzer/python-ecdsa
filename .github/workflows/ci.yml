@@ -70,14 +70,18 @@ jobs:
             os: ubuntu-latest
             python-version: 3.9
             tox-env: py39
-          - name: py3.9 with gmpy
+          - name: py3.10
             os: ubuntu-latest
-            python-version: 3.9
-            tox-env: gmpypy39
-          - name: py3.9 with gmpy2
+            python-version: '3.10'
+            tox-env: py310
+          - name: py3.10 with gmpy
             os: ubuntu-latest
-            python-version: 3.9
-            tox-env: gmpy2py39
+            python-version: '3.10'
+            tox-env: gmpypy310
+          - name: py3.10 with gmpy2
+            os: ubuntu-latest
+            python-version: '3.10'
+            tox-env: gmpy2py310
           - name: pypy
             os: ubuntu-latest
             python-version: pypy-2.7
