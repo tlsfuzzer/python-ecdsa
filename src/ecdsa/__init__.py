@@ -37,13 +37,9 @@ from .ecdh import (
     InvalidSharedSecretError,
 )
 from .der import UnexpectedDER
+from . import _version
 
 # This code comes from http://github.com/tlsfuzzer/python-ecdsa
-from ._version import get_versions
-
-__version__ = get_versions()["version"]
-del get_versions
-
 __all__ = [
     "curves",
     "der",
@@ -90,3 +86,5 @@ _hush_pyflakes = [
     six.b(""),
 ]
 del _hush_pyflakes
+
+__version__ = _version.get_versions()["version"]
