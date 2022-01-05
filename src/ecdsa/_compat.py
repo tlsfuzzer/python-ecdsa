@@ -100,17 +100,23 @@ else:
                 return bytes(data)
             return data
 
+        def normalise_bytes(buffer_object):
+            """Cast the input into array of bytes."""
+            if not buffer_object:
+                return b""
+            return memoryview(buffer_object).cast("B")
+
     else:
 
         def hmac_compat(data):
             return data
 
+        def normalise_bytes(buffer_object):
+            """Cast the input into array of bytes."""
+            return memoryview(buffer_object).cast("B")
+
     def compat26_str(val):
         return val
-
-    def normalise_bytes(buffer_object):
-        """Cast the input into array of bytes."""
-        return memoryview(buffer_object).cast("B")
 
     def remove_whitespace(text):
         """Removes all whitespace from passed in string"""

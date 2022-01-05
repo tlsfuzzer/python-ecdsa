@@ -550,6 +550,15 @@ class TestSigningKey(unittest.TestCase):
         self.assertEqual(self.sk1, sk)
         self.assertEqual(self.sk1_pkcs8, sk)
 
+    def test_verify_with_empty_message(self):
+        sig = self.sk1.sign(b"")
+
+        self.assertTrue(sig)
+
+        vk = self.sk1.verifying_key
+
+        self.assertTrue(vk.verify(sig, b""))
+
     def test_verify_with_precompute(self):
         sig = self.sk1.sign(b"message")
 
