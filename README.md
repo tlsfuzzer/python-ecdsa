@@ -18,7 +18,7 @@ also agree on a shared secret key based on exchanged public keys.
 The keys and signatures are very short, making them easy to handle and
 incorporate into other protocols.
 
-**NOTE: This library should not be used in production settings, see [Security](#Security) for more details**
+**NOTE: This library should not be used in production settings, see [Security](#Security) for more details.**
 
 ## Features
 
