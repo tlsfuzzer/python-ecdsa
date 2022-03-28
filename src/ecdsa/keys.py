@@ -674,7 +674,7 @@ class VerifyingKey(object):
         return der.encode_sequence(
             der.encode_sequence(
                 encoded_oid_ecPublicKey,
-                self.curve.to_der(curve_parameters_encoding),
+                self.curve.to_der(curve_parameters_encoding, point_encoding),
             ),
             # 0 is the number of unused bits in the
             # bit string
