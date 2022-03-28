@@ -260,7 +260,7 @@ class AbstractPoint(object):
         alpha = (pow(x, 3, p) + (curve.a() * x) + curve.b()) % p
         try:
             beta = numbertheory.square_root_mod_prime(alpha, p)
-        except numbertheory.SquareRootError as e:
+        except numbertheory.Error as e:
             raise MalformedPointError(
                 "Encoding does not correspond to a point on curve", e
             )
@@ -315,7 +315,7 @@ class AbstractPoint(object):
 
         try:
             x = numbertheory.square_root_mod_prime(x2, p)
-        except numbertheory.SquareRootError as e:
+        except numbertheory.Error as e:
             raise MalformedPointError(
                 "Encoding does not correspond to a point on curve", e
             )
