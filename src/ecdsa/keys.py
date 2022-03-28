@@ -629,7 +629,7 @@ class VerifyingKey(object):
             implementations, it is as big as "uncompressed".
         :param str curve_parameters_encoding: the encoding for curve parameters
             to use, by default tries to use ``named_curve`` encoding,
-            if that is not possible, falls back to ``named_curve`` encoding.
+            if that is not possible, falls back to ``explicit`` encoding.
 
         :return: portable encoding of the public key
         :rtype: bytes
@@ -658,7 +658,7 @@ class VerifyingKey(object):
             implementations, it is as big as "uncompressed".
         :param str curve_parameters_encoding: the encoding for curve parameters
             to use, by default tries to use ``named_curve`` encoding,
-            if that is not possible, falls back to ``named_curve`` encoding.
+            if that is not possible, falls back to ``explicit`` encoding.
 
         :return: DER encoding of the public key
         :rtype: bytes
