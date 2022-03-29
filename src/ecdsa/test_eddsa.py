@@ -1058,7 +1058,8 @@ TEST_VECTORS = [
 
 
 @pytest.mark.parametrize(
-    "generator,private_key,public_key,message,signature", TEST_VECTORS,
+    "generator,private_key,public_key,message,signature",
+    TEST_VECTORS,
 )
 def test_vectors(generator, private_key, public_key, message, signature):
     private_key = a2b_hex(private_key)

@@ -10,7 +10,6 @@ try:
     def shake_256(msg, outlen):
         return hashlib.new("shake256", msg).digest(outlen)
 
-
 except (TypeError, ValueError):
 
     from ._compat import bytes_to_int, int_to_bytes
@@ -21,7 +20,7 @@ except (TypeError, ValueError):
 
     # Rotate a word x by b places to the left.
     def _rol(x, b):
-        return ((x << b) | (x >> (64 - b))) & (2 ** 64 - 1)
+        return ((x << b) | (x >> (64 - b))) & (2**64 - 1)
 
     # Do the SHA-3 state transform on state s.
     def _sha3_transform(s):

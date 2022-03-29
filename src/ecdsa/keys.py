@@ -781,7 +781,9 @@ class VerifyingKey(object):
         # it, the decoders will do that
         digest = normalise_bytes(digest)
         number = _truncate_and_convert_digest(
-            digest, self.curve, allow_truncate,
+            digest,
+            self.curve,
+            allow_truncate,
         )
 
         try:
@@ -1624,7 +1626,9 @@ class SigningKey(object):
             raise ValueError("Method unsupported for Edwards curves")
         digest = normalise_bytes(digest)
         number = _truncate_and_convert_digest(
-            digest, self.curve, allow_truncate,
+            digest,
+            self.curve,
+            allow_truncate,
         )
         r, s = self.sign_number(number, entropy, k)
         return sigencode(r, s, self.privkey.order)

@@ -448,7 +448,7 @@ class TestRemoveSequence(unittest.TestCase):
 
 
 @st.composite
-def st_oid(draw, max_value=2 ** 512, max_size=50):
+def st_oid(draw, max_value=2**512, max_size=50):
     """
     Hypothesis strategy that returns valid OBJECT IDENTIFIERs as tuples
 

@@ -1470,13 +1470,13 @@ class Util(unittest.TestCase):
         for i in range(1000):
             seed = "seed-%d" % i
             for order in (
-                2 ** 8 - 2,
-                2 ** 8 - 1,
-                2 ** 8,
-                2 ** 8 + 1,
-                2 ** 8 + 2,
-                2 ** 16 - 1,
-                2 ** 16 + 1,
+                2**8 - 2,
+                2**8 - 1,
+                2**8,
+                2**8 + 1,
+                2**8 + 2,
+                2**16 - 1,
+                2**16 + 1,
             ):
                 n = tta(seed, order)
                 self.assertTrue(1 <= n < order, (1, n, order))
@@ -1488,7 +1488,7 @@ class Util(unittest.TestCase):
 
     def test_trytryagain_single(self):
         tta = util.randrange_from_seed__trytryagain
-        order = 2 ** 8 - 2
+        order = 2**8 - 2
         seed = b"text"
         n = tta(seed, order)
         # known issue: https://github.com/warner/python-ecdsa/issues/221
@@ -1497,24 +1497,24 @@ class Util(unittest.TestCase):
         else:
             self.assertEqual(n, 18)
 
-    @given(st.integers(min_value=0, max_value=10 ** 200))
+    @given(st.integers(min_value=0, max_value=10**200))
     def test_randrange(self, i):
         # util.randrange does not provide long-term stability: we might
         # change the algorithm in the future.
         entropy = util.PRNG("seed-%d" % i)
         for order in (
-            2 ** 8 - 2,
-            2 ** 8 - 1,
-            2 ** 8,
-            2 ** 16 - 1,
-            2 ** 16 + 1,
+            2**8 - 2,
+            2**8 - 1,
+            2**8,
+            2**16 - 1,
+            2**16 + 1,
         ):
             # that oddball 2**16+1 takes half our runtime
             n = util.randrange(order, entropy=entropy)
             self.assertTrue(1 <= n < order, (1, n, order))
 
     def OFF_test_prove_uniformity(self):  # pragma: no cover
-        order = 2 ** 8 - 2
+        order = 2**8 - 2
         counts = dict([(i, 0) for i in range(1, order)])
         assert 0 not in counts
         assert order not in counts

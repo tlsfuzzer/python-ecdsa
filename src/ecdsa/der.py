@@ -87,7 +87,7 @@ def encode_bitstring(s, unused=_sentry):
             if not s:
                 raise ValueError("unused is non-zero but s is empty")
             last = str_idx_as_int(s, -1)
-            if last & (2 ** unused - 1):
+            if last & (2**unused - 1):
                 raise ValueError("unused bits must be zeros in DER")
         encoded_unused = int2byte(unused)
         len_extra = 1
@@ -348,7 +348,7 @@ def remove_bitstring(string, expect_unused=_sentry):
                 raise UnexpectedDER("Invalid encoding of empty bit string")
             last = str_idx_as_int(body, -1)
             # verify that all the unused bits are set to zero (DER requirement)
-            if last & (2 ** unused - 1):
+            if last & (2**unused - 1):
                 raise UnexpectedDER("Non zero padding bits in bit string")
         if expect_unused is None:
             body = (body, unused)

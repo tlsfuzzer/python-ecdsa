@@ -217,7 +217,10 @@ class CurveEdTw(object):
 
     def __str__(self):
         return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
-            self.__p, self.__a, self.__d, self.__h,
+            self.__p,
+            self.__a,
+            self.__d,
+            self.__h,
         )
 
 
@@ -665,7 +668,7 @@ class PointJacobi(AbstractPoint):
             return x
         p = self.__curve.p()
         z = numbertheory.inverse_mod(z, p)
-        return x * z ** 2 % p
+        return x * z**2 % p
 
     def y(self):
         """
@@ -681,7 +684,7 @@ class PointJacobi(AbstractPoint):
             return y
         p = self.__curve.p()
         z = numbertheory.inverse_mod(z, p)
-        return y * z ** 3 % p
+        return y * z**3 % p
 
     def scale(self):
         """
@@ -800,7 +803,7 @@ class PointJacobi(AbstractPoint):
         if not H and not r:
             return self._double_with_z_1(X1, Y1, p, self.__curve.a())
         V = X1 * I
-        X3 = (r ** 2 - J - 2 * V) % p
+        X3 = (r**2 - J - 2 * V) % p
         Y3 = (r * (V - X3) - 2 * Y1 * J) % p
         Z3 = 2 * H % p
         return X3, Y3, Z3

@@ -333,14 +333,14 @@ class TestJacobi(unittest.TestCase):
         z1 = 13
         x = PointJacobi(
             curve_brainpoolp160r1,
-            a.x() * z1 ** 2 % p,
-            a.y() * z1 ** 3 % p,
+            a.x() * z1**2 % p,
+            a.y() * z1**3 % p,
             z1,
         )
         y = PointJacobi(
             curve_brainpoolp160r1,
-            a.x() * z1 ** 2 % p,
-            a.y() * z1 ** 3 % p,
+            a.x() * z1**2 % p,
+            a.y() * z1**3 % p,
             z1,
         )
 
@@ -407,15 +407,15 @@ class TestJacobi(unittest.TestCase):
         z1 = 13
         x = PointJacobi(
             curve_brainpoolp160r1,
-            a.x() * z1 ** 2 % p,
-            a.y() * z1 ** 3 % p,
+            a.x() * z1**2 % p,
+            a.y() * z1**3 % p,
             z1,
         )
         z2 = 29
         y = PointJacobi(
             curve_brainpoolp160r1,
-            a.x() * z2 ** 2 % p,
-            a.y() * z2 ** 3 % p,
+            a.x() * z2**2 % p,
+            a.y() * z2**3 % p,
             z2,
         )
 

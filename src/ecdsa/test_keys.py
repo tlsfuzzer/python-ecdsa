@@ -688,7 +688,9 @@ class TestTrivialCurve(unittest.TestCase):
         cls.toy_curve = Curve("toy_p8", curve, gen, (1, 2, 0))
 
         cls.sk = SigningKey.from_secret_exponent(
-            140, cls.toy_curve, hashfunc=hashlib.sha1,
+            140,
+            cls.toy_curve,
+            hashfunc=hashlib.sha1,
         )
 
     def test_generator_sanity(self):
@@ -907,7 +909,10 @@ def test_SigningKey_with_unlikely_value():
 def test_SigningKey_with_custom_curve_old_point():
     generator = generator_brainpoolp160r1
     generator = Point(
-        generator.curve(), generator.x(), generator.y(), generator.order(),
+        generator.curve(),
+        generator.x(),
+        generator.y(),
+        generator.order(),
     )
 
     curve = Curve(

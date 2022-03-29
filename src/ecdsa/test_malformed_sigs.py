@@ -227,7 +227,7 @@ def st_der_bit_string(draw, *args, **kwargs):
     if data:
         unused = draw(st.integers(min_value=0, max_value=7))
         data = bytearray(data)
-        data[-1] &= -(2 ** unused)
+        data[-1] &= -(2**unused)
         data = bytes(data)
     else:
         unused = 0
@@ -258,9 +258,9 @@ def st_der_oid(draw):
     if first < 2:
         second = draw(st.integers(min_value=0, max_value=39))
     else:
-        second = draw(st.integers(min_value=0, max_value=2 ** 512))
+        second = draw(st.integers(min_value=0, max_value=2**512))
     rest = draw(
-        st.lists(st.integers(min_value=0, max_value=2 ** 512), max_size=50)
+        st.lists(st.integers(min_value=0, max_value=2**512), max_size=50)
     )
     return encode_oid(first, second, *rest)
 
@@ -275,9 +275,9 @@ def st_der():
     """
     return st.recursive(
         st.just(b"")
-        | st_der_integer(max_value=2 ** 4096)
-        | st_der_bit_string(max_size=1024 ** 2)
-        | st_der_octet_string(max_size=1024 ** 2)
+        | st_der_integer(max_value=2**4096)
+        | st_der_bit_string(max_size=1024**2)
+        | st_der_octet_string(max_size=1024**2)
         | st_der_null()
         | st_der_oid(),
         lambda children: st.builds(
@@ -307,7 +307,7 @@ def test_random_der_as_signature(params, der):
 
 
 @settings(**params)
-@given(st.sampled_from(keys_and_sigs), st.binary(max_size=1024 ** 2))
+@given(st.sampled_from(keys_and_sigs), st.binary(max_size=1024**2))
 @example(
     keys_and_sigs[0], encode_sequence(encode_integer(0), encode_integer(0))
 )
@@ -343,7 +343,11 @@ byte string.
 
 
 keys_and_string_sigs += [
-    (name, verifying_key, sig,)
+    (
+        name,
+        verifying_key,
+        sig,
+    )
     for name, verifying_key, sig in keys_and_sigs
     if isinstance(verifying_key.curve.curve, CurveEdTw)
 ]

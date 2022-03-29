@@ -8,7 +8,7 @@ def do(setup_statements, statement):
     t = timeit.Timer(stmt=statement, setup="\n".join(setup_statements))
     # determine number so that 0.2 <= total time < 2.0
     for i in range(1, 10):
-        number = 10 ** i
+        number = 10**i
         x = t.timeit(number)
         if x >= 0.2:
             break
