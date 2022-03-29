@@ -39,7 +39,6 @@ if sys.version_info >= (3,):  # pragma: no branch
         """Convert a bytestring to string of 0's and 1's"""
         return bin(int.from_bytes(ent_256, "big"))[2:].zfill(len(ent_256) * 8)
 
-
 else:
 
     def entropy_to_bits(ent_256):
@@ -51,7 +50,6 @@ if sys.version_info < (2, 7):  # pragma: no branch
     # Can't add a method to a built-in type so we are stuck with this
     def bit_length(x):
         return len(bin(x)) - 2
-
 
 else:
 

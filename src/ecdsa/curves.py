@@ -429,12 +429,18 @@ BRAINPOOLP512r1 = Curve(
 
 
 Ed25519 = Curve(
-    "Ed25519", eddsa.curve_ed25519, eddsa.generator_ed25519, (1, 3, 101, 112),
+    "Ed25519",
+    eddsa.curve_ed25519,
+    eddsa.generator_ed25519,
+    (1, 3, 101, 112),
 )
 
 
 Ed448 = Curve(
-    "Ed448", eddsa.curve_ed448, eddsa.generator_ed448, (1, 3, 101, 113),
+    "Ed448",
+    eddsa.curve_ed448,
+    eddsa.generator_ed448,
+    (1, 3, 101, 113),
 )
 
 

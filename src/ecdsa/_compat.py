@@ -90,7 +90,6 @@ if sys.version_info < (3, 0):  # pragma: no branch
             )
         raise ValueError("Only 'big' or 'little' endian supported")
 
-
 else:
     if sys.version_info < (3, 4):  # pragma: no branch
         # on python 3.3 hmac.hmac.update() accepts only bytes, on newer
