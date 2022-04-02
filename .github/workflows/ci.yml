@@ -18,6 +18,11 @@ jobs:
             os: ubuntu-latest
             container: centos:6
             python-version: 2.6
+          - name: py3.10 with ossl3.0
+            os: ubuntu-latest
+            container: ubuntu:22.04
+            python-version: "3.10"
+            tox-env: py310
           - name: py2.7
             os: ubuntu-18.04
             python-version: 2.7
@@ -115,7 +120,7 @@ jobs:
         with:
           fetch-depth: 50
       - name: Ensure dependencies on CentOS
-        if: ${{ matrix.container }}
+        if: ${{ matrix.container == 'centos:6' }}
         run: |
           ls /etc/yum.repos.d/
           cat /etc/yum.repos.d/CentOS-Base.repo
@@ -144,6 +149,11 @@ jobs:
           yum clean all
           yum repolist all
           yum install -y git make python curl gcc libffi-devel python-devel glibc-devel openssl-devel wget
+      - name: Ensure dependencies on Ubuntu 22.04
+        if: ${{ matrix.container == 'ubuntu:22.04' }}
+        run: |
+          apt-get update
+          apt-get install -y git make python-is-python3 python3 curl wget python3-distutils python3-pip
       - name: Verify git status
         run: |
           git status
