@@ -17,6 +17,7 @@ except ImportError:  # pragma: no cover
     HC_PRESENT = False
 from .numbertheory import (
     SquareRootError,
+    JacobiError,
     factorization,
     gcd,
     lcm,
@@ -106,6 +107,30 @@ def test_square_root_mod_prime_for_p_congruent_5_large_d():
 
     root = square_root_mod_prime(4, p)
     assert root * root % p == 4
+
+
+class TestSquareRootModPrime(unittest.TestCase):
+    def test_power_of_2_p(self):
+        with self.assertRaises(JacobiError):
+            square_root_mod_prime(12, 32)
+
+    def test_no_square(self):
+        with self.assertRaises(SquareRootError) as e:
+            square_root_mod_prime(12, 31)
+
+        self.assertIn("no square root", str(e.exception))
+
+    def test_non_prime(self):
+        with self.assertRaises(SquareRootError) as e:
+            square_root_mod_prime(12, 33)
+
+        self.assertIn("p is not prime", str(e.exception))
+
+    def test_non_prime_with_negative(self):
+        with self.assertRaises(SquareRootError) as e:
+            square_root_mod_prime(697 - 1, 697)
+
+        self.assertIn("p is not prime", str(e.exception))
 
 
 @st.composite
