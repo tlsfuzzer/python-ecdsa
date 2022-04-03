@@ -19,15 +19,33 @@ in
 or
 `SSH <https://en.wikipedia.org/wiki/Secure_Shell_Protocol>`_.
 
+This library provides key generation, signing, verifying, and shared secret
+derivation for five
+popular NIST "Suite B" GF(p) (*prime field*) curves, with key lengths of 192,
+224, 256, 384, and 521 bits. The "short names" for these curves, as known by
+the OpenSSL tool (``openssl ecparam -list_curves``), are: ``prime192v1``,
+``secp224r1``, ``prime256v1``, ``secp384r1``, and ``secp521r1``. It includes
+the
+256-bit curve ``secp256k1`` used by Bitcoin. There is also support for the
+regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
+"short names" of those curves are: ``brainpoolP160r1``, ``brainpoolP192r1``,
+``brainpoolP224r1``, ``brainpoolP256r1``, ``brainpoolP320r1``,
+``brainpoolP384r1``,
+``brainpoolP512r1``. Few of the small curves from SEC standard are also
+included (mainly to speed-up testing of the library), those are:
+``secp112r1``, ``secp112r2``, ``secp128r1``, and ``secp160r1``.
+No other curves are included, but it is not too hard to add support for more
+curves over prime fields.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
    :hidden:
 
+   quickstart
+   basics
    glossary
    modules
-
 
 
 Indices and tables
