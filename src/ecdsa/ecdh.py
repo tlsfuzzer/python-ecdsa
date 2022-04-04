@@ -116,7 +116,7 @@ class ECDH(object):
         :raises NoCurveError: Curve must be set before key generation.
 
         :return: public (verifying) key from this private key.
-        :rtype: VerifyingKey object
+        :rtype: VerifyingKey
         """
         if not self.curve:
             raise NoCurveError("Curve must be set prior to key generation.")
@@ -135,7 +135,7 @@ class ECDH(object):
         :raises InvalidCurveError: private_key curve not the same as self.curve
 
         :return: public (verifying) key from this private key.
-        :rtype: VerifyingKey object
+        :rtype: VerifyingKey
         """
         if not self.curve:
             self.curve = private_key.curve
@@ -158,7 +158,7 @@ class ECDH(object):
         :raises NoCurveError: Curve must be set before loading.
 
         :return: public (verifying) key from this private key.
-        :rtype: VerifyingKey object
+        :rtype: VerifyingKey
         """
         if not self.curve:
             raise NoCurveError("Curve must be set prior to key load.")
@@ -183,7 +183,7 @@ class ECDH(object):
         :raises InvalidCurveError: private_key curve not the same as self.curve
 
         :return: public (verifying) key from this private key.
-        :rtype: VerifyingKey object
+        :rtype: VerifyingKey
         """
         return self.load_private_key(SigningKey.from_der(private_key_der))
 
@@ -204,7 +204,7 @@ class ECDH(object):
         :raises InvalidCurveError: private_key curve not the same as self.curve
 
         :return: public (verifying) key from this private key.
-        :rtype: VerifyingKey object
+        :rtype: VerifyingKey
         """
         return self.load_private_key(SigningKey.from_pem(private_key_pem))
 
@@ -215,7 +215,7 @@ class ECDH(object):
         Needs to be sent to the remote party.
 
         :return: public (verifying) key from local private key.
-        :rtype: VerifyingKey object
+        :rtype: VerifyingKey
         """
         return self.private_key.get_verifying_key()
 
@@ -310,7 +310,7 @@ class ECDH(object):
         :raises NoKeyError: public_key or private_key is not set
 
         :return: shared secret
-        :rtype: byte string
+        :rtype: bytes
         """
         return number_to_string(
             self.generate_sharedsecret(), self.private_key.curve.curve.p()
@@ -323,9 +323,9 @@ class ECDH(object):
         The objects needs to have both private key and received public key
         before generation is allowed.
 
-        It's the same for local and remote party.
-        shared secret(local private key, remote public key ) ==
-                shared secret (local public key, remote private key)
+        It's the same for local and remote party,
+        shared secret(local private key, remote public key) ==
+        shared secret(local public key, remote private key)
 
         :raises InvalidCurveError: public_key curve not the same as self.curve
         :raises NoKeyError: public_key or private_key is not set

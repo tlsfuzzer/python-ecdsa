@@ -342,7 +342,7 @@ class AbstractPoint(object):
         :param data: single point encoding of the public key
         :type data: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.ellipticcurve.CurveFp
+        :type curve: ~ecdsa.ellipticcurve.CurveFp
         :param validate_encoding: whether to verify that the encoding of the
             point is self-consistent, defaults to True, has effect only
             on ``hybrid`` encoding
@@ -353,8 +353,8 @@ class AbstractPoint(object):
             name). All formats by default (specified with ``None``).
         :type valid_encodings: :term:`set-like object`
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: x and y coordinates of the encoded point
         :rtype: tuple(int, int)
@@ -547,7 +547,7 @@ class PointJacobi(AbstractPoint):
         :param data: single point encoding of the public key
         :type data: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.ellipticcurve.CurveFp
+        :type curve: ~ecdsa.ellipticcurve.CurveFp
         :param validate_encoding: whether to verify that the encoding of the
             point is self-consistent, defaults to True, has effect only
             on ``hybrid`` encoding
@@ -563,8 +563,8 @@ class PointJacobi(AbstractPoint):
             such, it will be commonly used with scalar multiplication. This
             will cause to precompute multiplication table generation for it
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: Point on curve
         :rtype: PointJacobi
@@ -1110,7 +1110,7 @@ class Point(AbstractPoint):
         :param data: single point encoding of the public key
         :type data: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.ellipticcurve.CurveFp
+        :type curve: ~ecdsa.ellipticcurve.CurveFp
         :param validate_encoding: whether to verify that the encoding of the
             point is self-consistent, defaults to True, has effect only
             on ``hybrid`` encoding
@@ -1123,8 +1123,8 @@ class Point(AbstractPoint):
         :param int order: the point order, must be non zero when using
             generator=True
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: Point on curve
         :rtype: Point
@@ -1320,8 +1320,8 @@ class PointEdwards(AbstractPoint):
             this will cause the library to pre-compute some values to
             make repeated usages of the point much faster
 
-        :raises MalformedPointError: if the public point does not lay on the
-            curve or the encoding is invalid
+        :raises `~ecdsa.errors.MalformedPointError`: if the public point does
+            not lay on the curve or the encoding is invalid
 
         :return: Initialised point on an Edwards curve
         :rtype: PointEdwards

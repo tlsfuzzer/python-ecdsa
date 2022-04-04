@@ -128,7 +128,7 @@ else:
             raise ValueError("base16 error: %s" % e)
 
     # pylint: disable=invalid-name
-    # pylint is stupid here and deson't notice it's a function, not
+    # pylint is stupid here and doesn't notice it's a function, not
     # constant
     bytes_to_int = int.from_bytes
     # pylint: enable=invalid-name

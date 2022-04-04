@@ -57,12 +57,13 @@ Primary classes for performing signing and verification operations.
         portable and cross-platform way.
 
     bytes-like object
-        All the types that implement the buffer protocol. That includes ``str``
-        (only on python2), ``bytes``, ``bytesarray``, ``array.array` and
-        ``memoryview`` of those objects.  Please note that ``array.array`
-        serialisation (converting it to byte string) is endianness dependent!
-        Signature computed over ``array.array`` of integers on a big-endian
-        system will not be verified on a little-endian system and vice-versa.
+        All the types that implement the buffer protocol. That includes
+        ``str`` (only on python2), ``bytes``, ``bytesarray``, ``array.array``
+        and ``memoryview`` of those objects.
+        Please note that ``array.array`` serialisation (converting it to byte
+        string) is endianess dependant! Signature computed over ``array.array``
+        of integers on a big-endian system will not be verified on a
+        little-endian system and vice-versa.
 
     set-like object
         All the types that support the ``in`` operator, like ``list``,
@@ -159,13 +160,13 @@ class VerifyingKey(object):
     """
     Class for handling keys that can verify signatures (public keys).
 
-    :ivar ecdsa.curves.Curve curve: The Curve over which all the cryptographic
-        operations will take place
+    :ivar `~ecdsa.curves.Curve` ~.curve: The Curve over which all the
+        cryptographic operations will take place
     :ivar default_hashfunc: the function that will be used for hashing the
         data. Should implement the same API as hashlib.sha1
     :vartype default_hashfunc: callable
     :ivar pubkey: the actual public key
-    :vartype pubkey: ecdsa.ecdsa.Public_key
+    :vartype pubkey: ~ecdsa.ecdsa.Public_key
     """
 
     def __init__(self, _error__please_use_generate=None):
@@ -208,13 +209,13 @@ class VerifyingKey(object):
         This is a low-level method, generally you will not want to use it.
 
         :param point: The point to wrap around, the actual public key
-        :type point: ecdsa.ellipticcurve.Point
+        :type point: ~ecdsa.ellipticcurve.AbstractPoint
         :param curve: The curve on which the point needs to reside, defaults
             to NIST192p
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface
-            as hashlib.sha1
+            as :py:class:`hashlib.sha1`
         :type hashfunc: callable
         :type bool validate_point: whether to check if the point lays on curve
             should always be used if the public point is not a result
@@ -308,7 +309,7 @@ class VerifyingKey(object):
         :param string: single point encoding of the public key
         :type string: :term:`bytes-like object`
         :param curve: the curve on which the public key is expected to lay
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as
             hashlib.sha1. Ignored for EdDSA.
@@ -372,7 +373,7 @@ class VerifyingKey(object):
             By default :term:`uncompressed`, :term:`compressed`, and
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
-        :type valid_encodings: :term:`set-like object
+        :type valid_encodings: :term:`set-like object`
         :param valid_curve_encodings: list of allowed encoding formats
             for curve parameters. By default (``None``) all are supported:
             ``named_curve`` and ``explicit``.
@@ -425,7 +426,7 @@ class VerifyingKey(object):
             By default :term:`uncompressed`, :term:`compressed`, and
             :term:`hybrid`. To read malformed files, include
             :term:`raw encoding` with ``raw`` in the list.
-        :type valid_encodings: :term:`set-like object
+        :type valid_encodings: :term:`set-like object`
         :param valid_curve_encodings: list of allowed encoding formats
             for curve parameters. By default (``None``) all are supported:
             ``named_curve`` and ``explicit``.
@@ -499,7 +500,7 @@ class VerifyingKey(object):
         :param data: the data to be hashed for signature verification
         :type data: bytes-like object
         :param curve: the curve over which the signature was performed
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as hashlib.sha1
         :type hashfunc: callable
@@ -551,7 +552,7 @@ class VerifyingKey(object):
         :param digest: the hash value of the message signed by the signature
         :type digest: bytes-like object
         :param curve: the curve over which the signature was performed
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             verification, needs to implement the same interface as hashlib.sha1
         :type hashfunc: callable
@@ -800,14 +801,14 @@ class SigningKey(object):
     """
     Class for handling keys that can create signatures (private keys).
 
-    :ivar ecdsa.curves.Curve curve: The Curve over which all the cryptographic
-        operations will take place
+    :ivar `~ecdsa.curves.Curve` ~.curve: The Curve over which all the
+        cryptographic operations will take place
     :ivar default_hashfunc: the function that will be used for hashing the
-        data. Should implement the same API as hashlib.sha1
+        data. Should implement the same API as :py:class:`hashlib.sha1`
     :ivar int baselen: the length of a :term:`raw encoding` of private key
-    :ivar ecdsa.keys.VerifyingKey verifying_key: the public key
+    :ivar `~ecdsa.keys.VerifyingKey` verifying_key: the public key
         associated with this private key
-    :ivar ecdsa.ecdsa.Private_key privkey: the actual private key
+    :ivar `~ecdsa.ecdsa.Private_key` privkey: the actual private key
     """
 
     def __init__(self, _error__please_use_generate=None):
@@ -868,7 +869,7 @@ class SigningKey(object):
 
         :param curve: The curve on which the point needs to reside, defaults
             to NIST192p
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param entropy: Source of randomness for generating the private keys,
             should provide cryptographically secure random numbers if the keys
             need to be secure. Uses os.urandom() by default.
@@ -896,7 +897,7 @@ class SigningKey(object):
         :param int secexp: secret multiplier (the actual private key in ECDSA).
             Needs to be an integer between 1 and the curve order.
         :param curve: The curve on which the point needs to reside
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             signing, needs to implement the same interface
             as hashlib.sha1
@@ -948,7 +949,7 @@ class SigningKey(object):
         :param string: the raw encoding of the private key
         :type string: bytes like object
         :param curve: The curve on which the point needs to reside
-        :type curve: ecdsa.curves.Curve
+        :type curve: ~ecdsa.curves.Curve
         :param hashfunc: The default hash function that will be used for
             signing, needs to implement the same interface
             as hashlib.sha1
@@ -1063,7 +1064,7 @@ class SigningKey(object):
         is part of the PrivateKeyAlgorithmIdentifier.
 
         The PKCS #8 format includes an ECPrivateKey object as the `privateKey`
-        field within a larger structure:
+        field within a larger structure::
 
             OneAsymmetricKey ::= SEQUENCE {
                 version                   Version,
