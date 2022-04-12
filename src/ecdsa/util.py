@@ -5,7 +5,6 @@ import math
 import binascii
 import sys
 from hashlib import sha256
-from six import PY2, int2byte, b, next
 from . import der
 from ._compat import normalise_bytes
 
@@ -97,10 +96,7 @@ class PRNG:
     def __call__(self, numbytes):
         a = [next(self.generator) for i in range(numbytes)]
 
-        if PY2:  # pragma: no branch
-            return "".join(a)
-        else:
-            return bytes(a)
+        return bytes(a)
 
     def block_generator(self, seed):
         counter = 0
@@ -171,7 +167,7 @@ def randrange_from_seed__truncate_bits(seed, order, hashmod=sha256):
     base = "\x00" * (maxbytes - len(base)) + base
     topbits = 8 * maxbytes - bits
     if topbits:
-        base = int2byte(ord(base[0]) & lsb_of_ones(topbits)) + base[1:]
+        base = bytes((ord(base[0]) & lsb_of_ones(topbits),)) + base[1:]
     number = 1 + int(binascii.hexlify(base), 16)
     assert 1 <= number < order
     return number
@@ -188,9 +184,9 @@ def randrange_from_seed__trytryagain(seed, order):
     bits, bytes, extrabits = bits_and_bytes(order)
     generate = PRNG(seed)
     while True:
-        extrabyte = b("")
+        extrabyte = b""
         if extrabits:
-            extrabyte = int2byte(ord(generate(1)) & lsb_of_ones(extrabits))
+            extrabyte = bytes((ord(generate(1)) & lsb_of_ones(extrabits),))
         guess = string_to_number(extrabyte + generate(bytes)) + 1
         if 1 <= guess < order:
             return guess

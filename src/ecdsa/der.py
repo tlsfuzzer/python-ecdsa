@@ -4,7 +4,6 @@ import binascii
 import base64
 import warnings
 from itertools import chain
-from six import int2byte, b, text_type
 from ._compat import str_idx_as_int
 
 
@@ -13,23 +12,23 @@ class UnexpectedDER(Exception):
 
 
 def encode_constructed(tag, value):
-    return int2byte(0xA0 + tag) + encode_length(len(value)) + value
+    return bytes((0xA0 + tag,)) + encode_length(len(value)) + value
 
 
 def encode_integer(r):
     assert r >= 0  # can't support negative numbers yet
     h = ("%x" % r).encode()
     if len(h) % 2:
-        h = b("0") + h
+        h = b"0" + h
     s = binascii.unhexlify(h)
     num = str_idx_as_int(s, 0)
     if num <= 0x7F:
-        return b("\x02") + encode_length(len(s)) + s
+        return b"\x02" + encode_length(len(s)) + s
     else:
         # DER integers are two's complement, so if the first byte is
         # 0x80-0xff then we need an extra 0x00 byte to prevent it from
         # looking negative.
-        return b("\x02") + encode_length(len(s) + 1) + b("\x00") + s
+        return b"\x02" + encode_length(len(s) + 1) + b"\x00" + s
 
 
 # sentry object to check if an argument was specified (used to detect
@@ -89,13 +88,13 @@ def encode_bitstring(s, unused=_sentry):
             last = str_idx_as_int(s, -1)
             if last & (2**unused - 1):
                 raise ValueError("unused bits must be zeros in DER")
-        encoded_unused = int2byte(unused)
+        encoded_unused = bytes((unused,))
         len_extra = 1
-    return b("\x03") + encode_length(len(s) + len_extra) + encoded_unused + s
+    return b"\x03" + encode_length(len(s) + len_extra) + encoded_unused + s
 
 
 def encode_octet_string(s):
-    return b("\x04") + encode_length(len(s)) + s
+    return b"\x04" + encode_length(len(s)) + s
 
 
 def encode_oid(first, second, *pieces):
@@ -111,7 +110,7 @@ def encode_oid(first, second, *pieces):
 
 def encode_sequence(*encoded_pieces):
     total_len = sum([len(p) for p in encoded_pieces])
-    return b("\x30") + encode_length(total_len) + b("").join(encoded_pieces)
+    return b"\x30" + encode_length(total_len) + b"".join(encoded_pieces)
 
 
 def encode_number(n):
@@ -122,7 +121,7 @@ def encode_number(n):
     if not b128_digits:
         b128_digits.append(0)
     b128_digits[-1] &= 0x7F
-    return b("").join([int2byte(d) for d in b128_digits])
+    return b"".join([bytes((d,)) for d in b128_digits])
 
 
 def is_sequence(string):
@@ -251,13 +250,13 @@ def read_number(string):
 def encode_length(l):
     assert l >= 0
     if l < 0x80:
-        return int2byte(l)
+        return bytes((l,))
     s = ("%x" % l).encode()
     if len(s) % 2:
-        s = b("0") + s
+        s = b"0" + s
     s = binascii.unhexlify(s)
     llen = len(s)
-    return int2byte(0x80 | llen) + s
+    return bytes((0x80 | llen,)) + s
 
 
 def read_length(string):
@@ -386,14 +385,14 @@ def remove_bitstring(string, expect_unused=_sentry):
 
 
 def unpem(pem):
-    if isinstance(pem, text_type):  # pragma: no branch
+    if isinstance(pem, str):  # pragma: no branch
         pem = pem.encode()
 
-    d = b("").join(
+    d = b"".join(
         [
             l.strip()
-            for l in pem.split(b("\n"))
-            if l and not l.startswith(b("-----"))
+            for l in pem.split(b"\n")
+            if l and not l.startswith(b"-----")
         ]
     )
     return base64.b64decode(d)
@@ -403,7 +402,7 @@ def topem(der, name):
     b64 = base64.b64encode(der)
     lines = [("-----BEGIN %s-----\n" % name).encode()]
     lines.extend(
-        [b64[start : start + 64] + b("\n") for start in range(0, len(b64), 64)]
+        [b64[start : start + 64] + b"\n" for start in range(0, len(b64), 64)]
     )
     lines.append(("-----END %s-----\n" % name).encode())
-    return b("").join(lines)
+    return b"".join(lines)

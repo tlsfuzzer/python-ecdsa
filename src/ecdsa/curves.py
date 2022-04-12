@@ -1,6 +1,5 @@
 from __future__ import division
 
-from six import PY2
 from . import der, ecdsa, ellipticcurve, eddsa
 from .util import orderlen, number_to_string, string_to_number
 from ._compat import normalise_bytes, bit_length
@@ -261,7 +260,7 @@ class Curve:
             and ``explicit``
         :type valid_encodings: :term:`set-like object`
         """
-        if not PY2 and isinstance(string, str):  # pragma: no branch
+        if isinstance(string, str):  # pragma: no branch
             string = string.encode()
 
         ec_param_index = string.find(b"-----BEGIN EC PARAMETERS-----")

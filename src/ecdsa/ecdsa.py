@@ -64,7 +64,6 @@ Originally written in 2005 by Peter Pearson and placed in the public domain,
 modified as part of the python-ecdsa package.
 """
 
-from six import int2byte, b
 from . import ellipticcurve
 from . import numbertheory
 from .util import bit_length
@@ -273,15 +272,15 @@ def int_to_string(x):
     """Convert integer x into a string of bytes, as per X9.62."""
     assert x >= 0
     if x == 0:
-        return b("\0")
+        return b"\0"
     result = []
     while x:
         ordinal = x & 0xFF
-        result.append(int2byte(ordinal))
+        result.append(bytes((ordinal,)))
         x >>= 8
 
     result.reverse()
-    return b("").join(result)
+    return b"".join(result)
 
 
 def string_to_int(s):

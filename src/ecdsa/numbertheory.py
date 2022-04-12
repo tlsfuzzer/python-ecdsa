@@ -12,8 +12,7 @@
 from __future__ import division
 
 import sys
-from six import integer_types, PY2
-from six.moves import reduce
+from functools import reduce
 
 try:
     xrange
@@ -211,11 +210,7 @@ def square_root_mod_prime(a, p):
         assert d == p - 1
         return (2 * a * pow(4 * a, (p - 5) // 8, p)) % p
 
-    if PY2:
-        # xrange on python2 can take integers representable as C long only
-        range_top = min(0x7FFFFFFF, p)
-    else:
-        range_top = p
+    range_top = p
     for b in xrange(2, range_top):
         if jacobi(b * b - 4 * a, p) == -1:
             f = (a, -b, 1)
@@ -331,7 +326,7 @@ def lcm(*a):
 def factorization(n):
     """Decompose n into a list of (prime,exponent) pairs."""
 
-    assert isinstance(n, integer_types)
+    assert isinstance(n, int)
 
     if n < 2:
         return []
@@ -393,7 +388,7 @@ def phi(n):  # pragma: no cover
         DeprecationWarning,
     )
 
-    assert isinstance(n, integer_types)
+    assert isinstance(n, int)
 
     if n < 3:
         return 1

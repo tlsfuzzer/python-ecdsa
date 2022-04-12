@@ -47,14 +47,12 @@ except ImportError:  # pragma: no branch
         GMPY = False
 
 
-from six import python_2_unicode_compatible
 from . import numbertheory
 from ._compat import normalise_bytes, int_to_bytes, bit_length, bytes_to_int
 from .errors import MalformedPointError
 from .util import orderlen, string_to_number, number_to_string
 
 
-@python_2_unicode_compatible
 class CurveFp(object):
     """Short Weierstrass Elliptic Curve over a prime field."""
 

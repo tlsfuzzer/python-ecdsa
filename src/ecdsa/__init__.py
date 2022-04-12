@@ -1,6 +1,3 @@
-# while we don't use six in this file, we did bundle it for a long time, so
-# keep as part of module in a virtual way (through __all__)
-import six
 from .keys import (
     SigningKey,
     VerifyingKey,
@@ -49,7 +46,6 @@ __all__ = [
     "numbertheory",
     "test_pyecdsa",
     "util",
-    "six",
 ]
 
 _hush_pyflakes = [
@@ -83,7 +79,6 @@ _hush_pyflakes = [
     SECP160r1,
     Ed25519,
     Ed448,
-    six.b(""),
 ]
 del _hush_pyflakes
 

@@ -42,6 +42,6 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
-    install_requires=["six>=1.9.0"],
+    install_requires=[],
     extras_require={"gmpy2": "gmpy2", "gmpy": "gmpy"},
 )
