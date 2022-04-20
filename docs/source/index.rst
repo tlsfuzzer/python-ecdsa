@@ -44,6 +44,7 @@ curves over prime fields.
 
    quickstart
    basics
+   ec_arithmetic
    glossary
    modules
 
