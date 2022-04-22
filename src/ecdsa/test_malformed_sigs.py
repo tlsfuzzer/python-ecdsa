@@ -13,6 +13,14 @@ except ImportError:  # pragma: no cover
         "sha384",
         "sha512",
     ]
+# skip algorithms broken by change to OpenSSL 3.0 and early versions
+# of hashlib that list algorithms that require the legacy provider to work
+# https://bugs.python.org/issue38820
+algorithms_available = [
+    i
+    for i in algorithms_available
+    if i not in ("mdc2", "md2", "md4", "whirlpool", "ripemd160")
+]
 from functools import partial
 import pytest
 import sys

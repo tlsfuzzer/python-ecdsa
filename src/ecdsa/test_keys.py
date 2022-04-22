@@ -336,6 +336,9 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         vk = VerifyingKey.from_pem(vk_pem)
 
+        self.assertIsInstance(vk.curve, Curve)
+        self.assertIs(vk.curve, Ed25519)
+
         vk_str = (
             b"\x23\x00\x50\xd0\xd6\x64\x22\x28\x8e\xe3\x55\x89\x7e\x6e\x41\x57"
             b"\x8d\xae\xde\x44\x26\xee\x56\x27\xbc\x85\xe6\x0b\x2f\x2a\xcb\x65"
@@ -399,6 +402,9 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         )
 
         vk = VerifyingKey.from_pem(pem_str)
+
+        self.assertIsInstance(vk.curve, Curve)
+        self.assertIs(vk.curve, Ed448)
 
         vk_str = (
             b"\x79\x0b\x5e\xb5\x2b\xbb\x08\xc1\x33\x13\xe5\xd6\x07\x5d\x01\x83"
