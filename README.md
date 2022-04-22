@@ -11,7 +11,8 @@
 
 
 This is an easy-to-use implementation of ECC (Elliptic Curve Cryptography)
-with support for ECDSA (Elliptic Curve Digital Signature Algorithm) and ECDH
+with support for ECDSA (Elliptic Curve Digital Signature Algorithm),
+EdDSA (Edwards-curve Digital Signature Algorithm) and ECDH
 (Elliptic Curve Diffie-Hellman), implemented purely in Python, released under
 the MIT license. With this library, you can quickly create key pairs (signing
 key and verifying key), sign messages, and verify the signatures. You can
@@ -36,6 +37,8 @@ regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
 `brainpoolP512r1`. Few of the small curves from SEC standard are also
 included (mainly to speed-up testing of the library), those are:
 `secp112r1`, `secp112r2`, `secp128r1`, and `secp160r1`.
+Key generation, siging and verifying is also supported for Ed25519 and
+Ed448 curves.
 No other curves are included, but it is not too hard to add support for more
 curves over prime fields.
 
@@ -53,7 +56,7 @@ You should prefer `gmpy2` on Python3 for optimal performance.
 
 To run the OpenSSL compatibility tests, the 'openssl' tool must be in your
 `PATH`. This release has been tested successfully against OpenSSL 0.9.8o,
-1.0.0a, 1.0.2f and 1.1.1d (among others).
+1.0.0a, 1.0.2f, 1.1.1d and 3.0.1 (among others).
 
 
 ## Installation
