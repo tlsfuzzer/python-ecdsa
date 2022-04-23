@@ -9,11 +9,12 @@ Welcome to python-ecdsa's documentation!
 ``ecdsa`` implements
 `elliptic-curve cryptography (ECC) <https://en.wikipedia.org/wiki/Elliptic-curve_cryptography>`_,
 more specifically the
-`Elliptic Curve Digital Signature Algorithm (ECDSA) <https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm>`_
+`Elliptic Curve Digital Signature Algorithm (ECDSA) <https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm>`_,
+`Edwards-curve Digital Signature Algorithm (EdDSA) <https://en.wikipedia.org/wiki/EdDSA>`_
 and the
 `Elliptic Curve Diffie-Hellman (ECDH) <https://en.wikipedia.org/wiki/Elliptic-curve_Diffie%E2%80%93Hellman>`_
 algorithms.
-Both of those algorithms are used in many protocols in practice, like
+All of those algorithms are used in many protocols in practice, like
 in
 `TLS <https://en.wikipedia.org/wiki/Transport_Layer_Security>`_
 or
@@ -34,6 +35,8 @@ regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
 ``brainpoolP512r1``. Few of the small curves from SEC standard are also
 included (mainly to speed-up testing of the library), those are:
 ``secp112r1``, ``secp112r2``, ``secp128r1``, and ``secp160r1``.
+Key generation, siging and verifying is also supported for Ed25519 and Ed448
+curves.
 No other curves are included, but it is not too hard to add support for more
 curves over prime fields.
 
