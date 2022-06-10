@@ -470,6 +470,16 @@ curves = [
 
 
 def find_curve(oid_curve):
+    """Select a curve based on its OID
+
+    :param tuple[int,...] oid_curve: ASN.1 Object Identifier of the
+        curve to return, like ``(1, 2, 840, 10045, 3, 1, 7)`` for ``NIST256p``.
+
+    :raises UnknownCurveError: When the oid doesn't match any of the supported
+        curves
+
+    :rtype: ~ecdsa.curves.Curve
+    """
     for c in curves:
         if c.oid == oid_curve:
             return c
