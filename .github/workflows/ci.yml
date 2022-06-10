@@ -154,6 +154,9 @@ jobs:
         run: |
           apt-get update
           apt-get install -y git make python-is-python3 python3 curl wget python3-distutils python3-pip
+      - name: workaround git failures with py3.10
+        run: |
+          git config --global --add safe.directory /__w/python-ecdsa/python-ecdsa
       - name: Verify git status
         run: |
           git status
