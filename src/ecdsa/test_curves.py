@@ -5,7 +5,14 @@ except ImportError:
 
 import base64
 import pytest
-from .curves import Curve, NIST256p, curves, UnknownCurveError, PRIME_FIELD_OID
+from .curves import (
+    Curve,
+    NIST256p,
+    curves,
+    UnknownCurveError,
+    PRIME_FIELD_OID,
+    curve_by_name,
+)
 from .ellipticcurve import CurveFp, PointJacobi, CurveEdTw
 from . import der
 from .util import number_to_string
@@ -286,6 +293,36 @@ class TestParameterEncoding(unittest.TestCase):
             Curve.from_der(bad_der)
 
         self.assertIn("Prime-p element", str(e.exception))
+
+
+class TestCurveSearching(unittest.TestCase):
+    def test_correct_name(self):
+        c = curve_by_name("NIST256p")
+        self.assertIs(c, NIST256p)
+
+    def test_openssl_name(self):
+        c = curve_by_name("prime256v1")
+        self.assertIs(c, NIST256p)
+
+    def test_unknown_curve(self):
+        with self.assertRaises(UnknownCurveError) as e:
+            curve_by_name("foo bar")
+
+        self.assertIn(
+            "name 'foo bar' unknown, only curves supported: "
+            "['NIST192p', 'NIST224p'",
+            str(e.exception),
+        )
+
+    def test_with_None_as_parameter(self):
+        with self.assertRaises(UnknownCurveError) as e:
+            curve_by_name(None)
+
+        self.assertIn(
+            "name None unknown, only curves supported: "
+            "['NIST192p', 'NIST224p'",
+            str(e.exception),
+        )
 
 
 @pytest.mark.parametrize("curve", curves, ids=[i.name for i in curves])

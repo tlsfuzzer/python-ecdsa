@@ -23,6 +23,7 @@ __all__ = [
     "NIST521p",
     "curves",
     "find_curve",
+    "curve_by_name",
     "SECP256k1",
     "BRAINPOOLP160r1",
     "BRAINPOOLP192r1",
@@ -475,4 +476,28 @@ def find_curve(oid_curve):
     raise UnknownCurveError(
         "I don't know about the curve with oid %s."
         "I only know about these: %s" % (oid_curve, [c.name for c in curves])
+    )
+
+
+def curve_by_name(name):
+    """Select a curve based on its name.
+
+    Returns a :py:class:`~ecdsa.curves.Curve` object with a ``name`` name.
+    Note that ``name`` is case-sensitve.
+
+    :param str name: Name of the curve to return, like ``NIST256p`` or
+        ``prime256v1``
+
+    :raises UnknownCurveError: When the name doesn't match any of the supported
+        curves
+
+    :rtype: ~ecdsa.curves.Curve
+    """
+    for c in curves:
+        if name == c.name or (c.openssl_name and name == c.openssl_name):
+            return c
+    raise UnknownCurveError(
+        "Curve with name {0!r} unknown, only curves supported: {1}".format(
+            name, [c.name for c in curves]
+        )
     )
