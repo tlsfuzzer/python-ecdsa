@@ -6,11 +6,12 @@ fail_under = None
 max_difference = 0
 read_location = None
 save_location = None
+raw = False
 
 argv = sys.argv[1:]
 
 opts, args = getopt.getopt(
-    argv, "s:r:", ["fail-under=", "max-difference=", "save=", "read="]
+    argv, "s:r:", ["fail-under=", "max-difference=", "save=", "read=", "raw"]
 )
 if args:
     raise ValueError("Unexpected parameters: {0}".format(args))
@@ -23,6 +24,8 @@ for opt, arg in opts:
         fail_under = float(arg) / 100.0
     elif opt == "--max-difference":
         max_difference = float(arg) / 100.0
+    elif opt == "--raw":
+        raw = True
     else:
         raise ValueError("Unknown option: {0}".format(opt))
 
@@ -49,7 +52,10 @@ if save_location:
     with open(save_location, "w") as f:
         f.write("{0:1.40f}".format(coverage))
 
-print("Coverage: {0:6.2f}%".format(coverage * 100))
+if raw:
+    print("{0:6.2f}".format(coverage * 100))
+else:
+    print("Coverage: {0:6.2f}%".format(coverage * 100))
 
 if read_location:
     print("Difference: {0:6.2f}%".format((old_coverage - coverage) * 100))

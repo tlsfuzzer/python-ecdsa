@@ -292,6 +292,19 @@ jobs:
           instrumental -f .instrumental.cov -s
           # just log the values when merging
           instrumental -f .instrumental.cov -s | python diff-instrumental.py
+          echo "COND_COV=$(instrumental -f .instrumental.cov -s | python diff-instrumental.py --raw)" >> $GITHUB_ENV
+      - name: Create condition coverage badge
+        uses: schneegans/dynamic-badges-action@v1.4.0
+        if: ${{ contains(matrix.opt-deps, 'instrumental') && !github.event.pull_request }}
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 9b6ca1f3410207fbeca785a178781651
+          filename: python-ecdsa-condition-coverage.json
+          label: condition coverage
+          message: ${{ env.COND_COV }}%
+          valColorRange: ${{ env.COND_COV }}
+          maxColorRange: 100
+          minColorRange: 0
       - name: Publish coverage to Coveralls
         if: ${{ !matrix.opt-deps && matrix.tox-env != 'codechecks' }}
         env:
