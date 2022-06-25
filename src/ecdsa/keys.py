@@ -733,7 +733,7 @@ class SigningKey(object):
     """
     Class for handling keys that can create signatures (private keys).
 
-    :ivar `~ecdsa.curves.Curve` ~.curve: The Curve over which all the
+    :ivar `~ecdsa.curves.Curve` curve: The Curve over which all the
         cryptographic operations will take place
     :ivar default_hashfunc: the function that will be used for hashing the
         data. Should implement the same API as :py:class:`hashlib.sha1`
