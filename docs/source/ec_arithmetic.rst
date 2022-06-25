@@ -47,9 +47,15 @@ code:
 .. tip::
 
     You can also use :py:class:`~ecdsa.curves.Curve` to get the curve
-    parameters from a PEM or DER file. Or use the
+    parameters from a PEM or DER file. You can also use
+    :py:func:`~ecdsa.curves.curve_by_name` to get a curve by specifying its
+    name.
+    Or use the
     :py:func:`~ecdsa.curves.find_curve` to get a curve by specifying its
     ASN.1 object identifier (OID).
+
+Affine coordinates
+------------------
 
 After taking hold of curve parameters you can create a point on the
 curve. The :py:class:`~ecdsa.ellipticcurve.Point` uses affine coordinates,
@@ -82,6 +88,8 @@ methods of the object:
 
     print("x: {0}, y: {1}".format(point_c.x(), point_c.y()))
 
+Projective coordinates
+----------------------
 
 When using the Jacobi coordinates, the point is defined by 3 integers,
 which are related to the :math:`x` and :math:`y` in the following way:
@@ -123,3 +131,7 @@ the regular implementation:
 
     point_c = point_a + point_b
     print("x: {0}, y: {1}".format(point_c.x(), point_c.y()))
+
+All the other operations, like scalar multiplication or point addition work
+on projective points the same as with affine representation, but they
+are much more effective computationally.
