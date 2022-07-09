@@ -1,3 +1,28 @@
+* Release 0.18.0 (09 Jul 2022)
+
+New API:
+* `curve_by_name` in `curves` module to get a `Curve` object by providing curve
+  name.
+
+Bug fix:
+* Make the `VerifyingKey` encoded with explicit parameters use the same
+  kind of point encoding for public key and curve generator.
+* Better handling of malformed curve parameters (as in CVE-2022-0778);
+  make python-ecdsa raise `MalformedPointError` instead of `AssertionError`.
+
+Doc fix:
+* Publish the documentation on https://ecdsa.readthedocs.io/,
+  include explanation of basics of handling of ECC data formats and how to use
+  the library for elliptic curve arithmetic.
+* Make object names more consistent, make them into hyperlinks on the
+  readthedocs documentation.
+* Make security note more explicit (Ian Rodney)
+* Fix the `explicit` vs `named_curve` confusion in `VerifyingKey` docs.
+
+Maintenance:
+* Updated black version; slight changes to formatting
+* Include interoperability tests for Ed25519 and Ed448 with OpenSSL.
+
 * Release 0.18.0-beta2 (05 Jan 2022)
 
 New features:
