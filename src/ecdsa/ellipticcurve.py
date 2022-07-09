@@ -56,7 +56,10 @@ from .util import orderlen, string_to_number, number_to_string
 
 @python_2_unicode_compatible
 class CurveFp(object):
-    """Short Weierstrass Elliptic Curve over a prime field."""
+    """
+    :term:`Short Weierstrass Elliptic Curve <short Weierstrass curve>` over a
+    prime field.
+    """
 
     if GMPY:  # pragma: no branch
 
