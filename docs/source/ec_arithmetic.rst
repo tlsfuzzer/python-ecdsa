@@ -24,7 +24,7 @@ Both of them use the curves specified using the
 
 You can either provide your own curve parameters or use one of the predefined
 curves.
-For example, to define a curve :math:`x^2 = x^3 + x + 4 \text{ mod } 5` use
+For example, to define a curve :math:`y^2 = x^3 + 1 * x + 4 \text{ mod } 5` use
 code like this:
 
 .. code:: python
