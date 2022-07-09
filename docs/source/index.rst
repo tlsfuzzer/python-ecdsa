@@ -35,7 +35,7 @@ regular (non-twisted) variants of Brainpool curves from 160 to 512 bits. The
 ``brainpoolP512r1``. Few of the small curves from SEC standard are also
 included (mainly to speed-up testing of the library), those are:
 ``secp112r1``, ``secp112r2``, ``secp128r1``, and ``secp160r1``.
-Key generation, siging and verifying is also supported for Ed25519 and Ed448
+Key generation, signing and verifying is also supported for Ed25519 and Ed448
 curves.
 No other curves are included, but it is not too hard to add support for more
 curves over prime fields.
