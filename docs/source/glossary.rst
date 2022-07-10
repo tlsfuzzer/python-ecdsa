@@ -88,5 +88,5 @@ Glossary
        ``tuple``, ``set``, ``frozenset``, etc.
 
    short Weierstrass curve
-       A curve with the curve equation: :math:`x^2=y^3+ax+b`. Most popular
+       A curve with the curve equation: :math:`y^2=x^3+ax+b`. Most popular
        curves use equation of this format (e.g. NIST256p).
