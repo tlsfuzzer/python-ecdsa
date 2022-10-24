@@ -622,12 +622,12 @@ def st_random_gen_key_msg_nonce(draw):
     name = draw(st.sampled_from(sorted(name_gen.keys())))
     note("Generator used: {0}".format(name))
     generator = name_gen[name]
-    order = int(generator.order())
+    order = int(generator.order()) - 1
 
     key = draw(st.integers(min_value=1, max_value=order))
     msg = draw(st.integers(min_value=1, max_value=order))
     nonce = draw(
-        st.integers(min_value=1, max_value=order + 1)
+        st.integers(min_value=1, max_value=order)
         | st.integers(min_value=order >> 1, max_value=order)
     )
     return generator, key, msg, nonce
