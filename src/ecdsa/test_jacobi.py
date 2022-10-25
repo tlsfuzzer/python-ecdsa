@@ -202,7 +202,7 @@ class TestJacobi(unittest.TestCase):
     @settings(max_examples=10)
     @given(
         st.integers(
-            min_value=0, max_value=int(generator_brainpoolp160r1.order())
+            min_value=0, max_value=int(generator_brainpoolp160r1.order() - 1)
         )
     )
     def test_multiplications(self, mul):
@@ -217,7 +217,7 @@ class TestJacobi(unittest.TestCase):
     @settings(max_examples=10)
     @given(
         st.integers(
-            min_value=0, max_value=int(generator_brainpoolp160r1.order())
+            min_value=0, max_value=int(generator_brainpoolp160r1.order() - 1)
         )
     )
     @example(0)
@@ -235,10 +235,10 @@ class TestJacobi(unittest.TestCase):
     @settings(max_examples=10)
     @given(
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
     )
     @example(3, 3)
@@ -254,10 +254,10 @@ class TestJacobi(unittest.TestCase):
     @settings(max_examples=10)
     @given(
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.integers(min_value=1, max_value=int(curve_brainpoolp160r1.p() - 1)),
     )
@@ -286,10 +286,10 @@ class TestJacobi(unittest.TestCase):
     @settings(max_examples=10)
     @given(
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.integers(min_value=1, max_value=int(curve_brainpoolp160r1.p() - 1)),
     )
@@ -351,10 +351,10 @@ class TestJacobi(unittest.TestCase):
     @settings(max_examples=14)
     @given(
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.integers(
-            min_value=1, max_value=int(generator_brainpoolp160r1.order())
+            min_value=1, max_value=int(generator_brainpoolp160r1.order() - 1)
         ),
         st.lists(
             st.integers(
