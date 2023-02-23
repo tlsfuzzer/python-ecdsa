@@ -45,7 +45,7 @@ curves over prime fields.
 ## Dependencies
 
 This library uses only Python and the 'six' package. It is compatible with
-Python 2.6, 2.7, and 3.3+. It also supports execution on alternative
+Python 2.6, 2.7, and 3.5+. It also supports execution on alternative
 implementations like pypy and pypy3.
 
 If `gmpy2` or `gmpy` is installed, they will be used for faster arithmetic.

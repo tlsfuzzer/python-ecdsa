@@ -1,9 +1,0 @@
-git+https://github.com/tomato42/coveralls-python.git@add-py26#egg=coveralls
-pluggy<0.6
-tox<3
-wheel<0.30
-virtualenv==15.2.0
-enum34
-hypothesis<3.44
-coverage<5.0
-urllib3<=1.25.8
