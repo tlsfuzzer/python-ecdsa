@@ -558,8 +558,12 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)
 
     @settings(**NO_OLD_SETTINGS)
+    @pytest.mark.skipif(
+        platform.python_implementation() == "PyPy",
+        reason="threading on PyPy breaks coverage",
+    )
     @given(st.integers(min_value=1, max_value=10))
-    def test_multithreading(self, thread_num):
+    def test_multithreading(self, thread_num):  # pragma: no cover
         # ensure that generator's precomputation table is filled
         generator_112r2 * 2
 
@@ -592,10 +596,12 @@ class TestJacobi(unittest.TestCase):
         )
 
     @pytest.mark.skipif(
-        platform.system() == "Windows",
-        reason="there are no signals on Windows",
+        platform.system() == "Windows"
+        or platform.python_implementation() == "PyPy",
+        reason="there are no signals on Windows, and threading breaks coverage"
+        " on PyPy",
     )
-    def test_multithreading_with_interrupts(self):
+    def test_multithreading_with_interrupts(self):  # pragma: no cover
         thread_num = 10
         # ensure that generator's precomputation table is filled
         generator_112r2 * 2
