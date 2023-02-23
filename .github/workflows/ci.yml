@@ -81,7 +81,7 @@ jobs:
             tox-env: gmpy2py310
           - name: py3.11
             os: ubuntu-latest
-            python-version: '3.11.0-beta.3'
+            python-version: '3.11'
             tox-env: py311
           - name: pypy
             os: ubuntu-latest
