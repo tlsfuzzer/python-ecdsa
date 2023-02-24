@@ -1359,12 +1359,12 @@ class OpenSSL(unittest.TestCase):
     OPENSSL_SUPPORTED_TYPES = set()
     try:
         if "-rawin" in run_openssl("pkeyutl -help"):
-            OPENSSL_SUPPORTED_TYPES = set(
+            OPENSSL_SUPPORTED_TYPES = set(  # pragma: no branch
                 c.lower()
                 for c in ("ED25519", "ED448")
                 if c in run_openssl("list -public-key-methods")
             )
-    except SubprocessError:
+    except SubprocessError:  # pragma: no cover
         pass
 
     def do_eddsa_test_to_openssl(self, curve):
