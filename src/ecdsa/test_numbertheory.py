@@ -182,7 +182,7 @@ def st_comp_with_com_fac(draw):
     # select at most 20 lists (returned numbers),
     # each having at most 30 primes (factors) including none (then the number
     # will be 1)
-    comp_primes = draw(
+    comp_primes = draw(  # pragma: no branch
         st.integers(min_value=1, max_value=20).flatmap(
             lambda n: st.lists(
                 st.lists(st.sampled_from(primes), max_size=30),
@@ -225,7 +225,7 @@ def st_comp_no_com_fac(draw):
 
     # select at most 20 lists, each having at most 30 primes
     # selected from the leftover_primes list
-    number_primes = draw(
+    number_primes = draw(  # pragma: no branch
         st.integers(min_value=1, max_value=20).flatmap(
             lambda n: st.lists(
                 st.lists(st.sampled_from(leftover_primes), max_size=30),
