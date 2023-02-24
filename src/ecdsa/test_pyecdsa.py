@@ -1378,8 +1378,6 @@ class OpenSSL(unittest.TestCase):
         pass
 
     def do_eddsa_test_to_openssl(self, curve):
-        curvename = curve.name.upper()
-
         if os.path.isdir("t"):
             shutil.rmtree("t")
         os.mkdir("t")
