@@ -111,6 +111,7 @@ def st_fuzzed_sig(draw, keys_and_sigs):
     note("Remove bytes: {0}".format(to_remove))
 
     # decide which bytes of the original signature should be changed
+    xors = None
     if sig:  # pragma: no branch
         xors = draw(
             st.dictionaries(
