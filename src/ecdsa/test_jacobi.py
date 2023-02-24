@@ -50,7 +50,7 @@ class TestJacobi(unittest.TestCase):
         p_a = PointJacobi.from_affine(generator_256)
         p_b = PointJacobi.from_affine(generator_224)
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(ValueError):  # pragma: no branch
             p_a + p_b
 
     def test_compare_different_curves(self):
