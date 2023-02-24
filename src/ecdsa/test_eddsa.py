@@ -500,6 +500,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PublicKey(generator_ed25519, b"\x01" * 32)
 
         self.assertEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertFalse(key1 != key2)
 
     def test_unequal_public_points(self):
@@ -519,6 +520,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PublicKey(generator_ed448, b"\x03" * 56 + b"\x00")
 
         self.assertNotEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertTrue(key1 != key2)
 
     def test_equal_private_keys(self):
@@ -526,6 +528,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PrivateKey(generator_ed25519, b"\x01" * 32)
 
         self.assertEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertFalse(key1 != key2)
 
     def test_unequal_private_keys(self):
@@ -533,6 +536,7 @@ class TestEdDSAEquality(unittest.TestCase):
         key2 = PrivateKey(generator_ed25519, b"\x02" * 32)
 
         self.assertNotEqual(key1, key2)
+        # verify that `__ne__` works as expected
         self.assertTrue(key1 != key2)
 
     def test_unequal_privatekey_to_string(self):
