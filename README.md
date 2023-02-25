@@ -4,8 +4,7 @@
 [![Documentation Status](https://readthedocs.org/projects/ecdsa/badge/?version=latest)](https://ecdsa.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/tlsfuzzer/python-ecdsa/badge.svg?branch=master)](https://coveralls.io/github/tlsfuzzer/python-ecdsa?branch=master)
 ![condition coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tomato42/9b6ca1f3410207fbeca785a178781651/raw/python-ecdsa-condition-coverage.json)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/context:python)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/tlsfuzzer/python-ecdsa.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tlsfuzzer/python-ecdsa/alerts/)
+[![CodeQL](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/codeql.yml/badge.svg)](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/codeql.yml)
 [![Latest Version](https://img.shields.io/pypi/v/ecdsa.svg?style=flat)](https://pypi.python.org/pypi/ecdsa/)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat)
 
