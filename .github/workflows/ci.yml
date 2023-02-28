@@ -24,43 +24,35 @@ jobs:
             python-version: "3.10"
             tox-env: py310
           - name: py2.7
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             tox-env: py27
           - name: py2.7 with old gmpy
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             tox-env: py27_old_gmpy
           - name: py2.7 with old gmpy2
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             tox-env: py27_old_gmpy2
           - name: py2.7 with old six
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             tox-env: py27_old_six
           - name: py2.7 with gmpy
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             tox-env: gmpypy27
           - name: py2.7 with gmpy2
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             tox-env: gmpy2py27
-          - name: py3.3
-            os: ubuntu-18.04
-            python-version: 3.3
-            tox-env: py33
-          - name: py3.4
-            os: ubuntu-18.04
-            python-version: 3.4
-            tox-env: py34
           - name: py3.5
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 3.5
             tox-env: py35
           - name: py3.6
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 3.6
             tox-env: py36
           - name: py3.7
@@ -89,8 +81,12 @@ jobs:
             tox-env: gmpy2py310
           - name: py3.11
             os: ubuntu-latest
-            python-version: '3.11.0-beta.3'
+            python-version: '3.11'
             tox-env: py311
+          - name: py3.12
+            os: ubuntu-latest
+            python-version: '3.12.0-alpha.5'
+            tox-env: py312
           - name: pypy
             os: ubuntu-latest
             python-version: pypy-2.7
@@ -101,7 +97,7 @@ jobs:
             tox-env: pypy3
           # special configurations
           - name: py2.7 with instrumental
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             python-version: 2.7
             opt-deps: ['instrumental']
           - name: code checks

@@ -144,12 +144,10 @@ class TestEncodeBitstring(unittest.TestCase):
 
     def test_new_call_convention(self):
         """This is how it should be called now."""
-        warnings.simplefilter("always")
-        with pytest.warns(None) as warns:
+        # make sure no warnings are raised
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             der = encode_bitstring(b"\xff", 0)
-
-        # verify that new call convention doesn't raise Warnings
-        self.assertEqual(len(warns), 0)
 
         self.assertEqual(der, b"\x03\x02\x00\xff")
 
@@ -157,12 +155,10 @@ class TestEncodeBitstring(unittest.TestCase):
         """
         Writing bit string with already included the number of unused bits.
         """
-        warnings.simplefilter("always")
-        with pytest.warns(None) as warns:
+        # make sure no warnings are raised
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             der = encode_bitstring(b"\x00\xff", None)
-
-        # verify that new call convention doesn't raise Warnings
-        self.assertEqual(len(warns), 0)
 
         self.assertEqual(der, b"\x03\x02\x00\xff")
 
@@ -203,21 +199,19 @@ class TestRemoveBitstring(unittest.TestCase):
         self.assertEqual(rest, b"")
 
     def test_new_call_convention(self):
-        warnings.simplefilter("always")
-        with pytest.warns(None) as warns:
+        # make sure no warnings are raised
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             bits, rest = remove_bitstring(b"\x03\x02\x00\xff", 0)
-
-        self.assertEqual(len(warns), 0)
 
         self.assertEqual(bits, b"\xff")
         self.assertEqual(rest, b"")
 
     def test_implicit_unexpected_unused(self):
-        warnings.simplefilter("always")
-        with pytest.warns(None) as warns:
+        # make sure no warnings are raised
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
             bits, rest = remove_bitstring(b"\x03\x02\x00\xff", None)
-
-        self.assertEqual(len(warns), 0)
 
         self.assertEqual(bits, (b"\xff", 0))
         self.assertEqual(rest, b"")
