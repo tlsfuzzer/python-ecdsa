@@ -769,8 +769,8 @@ assert isinstance(sig_strings[0], bytes)
 verifiers = []
 for modifier, fun in [
     ("bytes", lambda x: x),
-    ("bytes memoryview", lambda x: buffer(x)),
-    ("bytearray", lambda x: bytearray(x)),
+    ("bytes memoryview", buffer),
+    ("bytearray", bytearray),
     ("bytearray memoryview", lambda x: buffer(bytearray(x))),
     ("array.array of bytes", lambda x: array.array("B", x)),
     ("array.array of bytes memoryview", lambda x: buffer(array.array("B", x))),

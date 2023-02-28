@@ -68,5 +68,3 @@ autodoc_default_options = {
     "undoc-members": True,
     "inherited-members": True,
 }
-
-intersphinx_mapping = {"https://docs.python.org/": None}

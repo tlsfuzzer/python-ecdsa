@@ -111,6 +111,7 @@ def st_fuzzed_sig(draw, keys_and_sigs):
     note("Remove bytes: {0}".format(to_remove))
 
     # decide which bytes of the original signature should be changed
+    xors = None
     if sig:  # pragma: no branch
         xors = draw(
             st.dictionaries(
@@ -288,15 +289,13 @@ def st_der():
         | st_der_octet_string(max_size=1024**2)
         | st_der_null()
         | st_der_oid(),
-        lambda children: st.builds(
-            lambda x: encode_octet_string(x), st.one_of(children)
-        )
+        lambda children: st.builds(encode_octet_string, st.one_of(children))
         | st.builds(lambda x: encode_bitstring(x, 0), st.one_of(children))
         | st.builds(
             lambda x: encode_sequence(*x), st.lists(children, max_size=200)
         )
         | st.builds(
-            lambda tag, x: encode_constructed(tag, x),
+            encode_constructed,
             st.integers(min_value=0, max_value=0x3F),
             st.one_of(children),
         ),
