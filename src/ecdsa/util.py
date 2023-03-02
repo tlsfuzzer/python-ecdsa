@@ -1,3 +1,16 @@
+"""
+This module includes some utility functions.
+
+The methods most typically used are the sigencode and sigdecode functions
+to be used with :func:`~ecdsa.keys.SigningKey.sign` and
+:func:`~ecdsa.keys.VerifyingKey.verify`
+respectively. See the :func:`sigencode_strings`, :func:`sigdecode_string`,
+:func:`sigencode_der`, :func:`sigencode_strings_canonize`,
+:func:`sigencode_string_canonize`, :func:`sigencode_der_canonize`,
+:func:`sigdecode_strings`, :func:`sigdecode_string`, and
+:func:`sigdecode_der` functions.
+"""
+
 from __future__ import division
 
 import os
@@ -8,6 +21,7 @@ from hashlib import sha256
 from six import PY2, int2byte, b, next
 from . import der
 from ._compat import normalise_bytes
+
 
 # RFC5480:
 #   The "unrestricted" algorithm identifier is:
@@ -221,12 +235,24 @@ def string_to_number_fixedlen(string, order):
     return int(binascii.hexlify(string), 16)
 
 
-# these methods are useful for the sigencode= argument to SK.sign() and the
-# sigdecode= argument to VK.verify(), and control how the signature is packed
-# or unpacked.
-
-
 def sigencode_strings(r, s, order):
+    """
+    Encode the signature to a pair of strings in a tuple
+
+    Encodes signature into raw encoding (:term:`raw encoding`) with the
+    ``r`` and ``s`` parts of the signature encoded separately.
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: raw encoding of ECDSA signature
+    :rtype: tuple(bytes, bytes)
+    """
     r_str = number_to_string(r, order)
     s_str = number_to_string(s, order)
     return (r_str, s_str)
@@ -236,7 +262,7 @@ def sigencode_string(r, s, order):
     """
     Encode the signature to raw format (:term:`raw encoding`)
 
-    It's expected that this function will be used as a `sigencode=` parameter
+    It's expected that this function will be used as a ``sigencode=`` parameter
     in :func:`ecdsa.keys.SigningKey.sign` method.
 
     :param int r: first parameter of the signature
@@ -264,7 +290,7 @@ def sigencode_der(r, s, order):
             s       INTEGER
         }
 
-    It's expected that this function will be used as a `sigencode=` parameter
+    It's expected that this function will be used as a ``sigencode=`` parameter
     in :func:`ecdsa.keys.SigningKey.sign` method.
 
     :param int r: first parameter of the signature
@@ -278,23 +304,83 @@ def sigencode_der(r, s, order):
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
 
 
-# canonical versions of sigencode methods
-# these enforce low S values, by negating the value (modulo the order) if
-# above order/2 see CECKey::Sign()
-# https://github.com/bitcoin/bitcoin/blob/master/src/key.cpp#L214
 def sigencode_strings_canonize(r, s, order):
+    """
+    Encode the signature to a pair of strings in a tuple
+
+    Encodes signature into raw encoding (:term:`raw encoding`) with the
+    ``r`` and ``s`` parts of the signature encoded separately.
+
+    Makes sure that the signature is encoded in the canonical format, where
+    the ``s`` parameter is always smaller than ``order / 2``.
+    Most commonly used in bitcoin.
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: raw encoding of ECDSA signature
+    :rtype: tuple(bytes, bytes)
+    """
     if s > order / 2:
         s = order - s
     return sigencode_strings(r, s, order)
 
 
 def sigencode_string_canonize(r, s, order):
+    """
+    Encode the signature to raw format (:term:`raw encoding`)
+
+    Makes sure that the signature is encoded in the canonical format, where
+    the ``s`` parameter is always smaller than ``order / 2``.
+    Most commonly used in bitcoin.
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: raw encoding of ECDSA signature
+    :rtype: bytes
+    """
     if s > order / 2:
         s = order - s
     return sigencode_string(r, s, order)
 
 
 def sigencode_der_canonize(r, s, order):
+    """
+    Encode the signature into the ECDSA-Sig-Value structure using :term:`DER`.
+
+    Makes sure that the signature is encoded in the canonical format, where
+    the ``s`` parameter is always smaller than ``order / 2``.
+    Most commonly used in bitcoin.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        Ecdsa-Sig-Value ::= SEQUENCE {
+            r       INTEGER,
+            s       INTEGER
+        }
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: DER encoding of ECDSA signature
+    :rtype: bytes
+    """
     if s > order / 2:
         s = order - s
     return sigencode_der(r, s, order)
@@ -321,7 +407,7 @@ def sigdecode_string(signature, order):
     the signature, with each encoded using the same amount of bytes depending
     on curve size/order.
 
-    It's expected that this function will be used as the `sigdecode=`
+    It's expected that this function will be used as the ``sigdecode=``
     parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
 
     :param signature: encoded signature
@@ -331,7 +417,7 @@ def sigdecode_string(signature, order):
 
     :raises MalformedSignature: when the encoding of the signature is invalid
 
-    :return: tuple with decoded 'r' and 's' values of signature
+    :return: tuple with decoded ``r`` and ``s`` values of signature
     :rtype: tuple of ints
     """
     signature = normalise_bytes(signature)
@@ -350,10 +436,10 @@ def sigdecode_strings(rs_strings, order):
     """
     Decode the signature from two strings.
 
-    First string needs to be a big endian encoding of 'r', second needs to
-    be a big endian encoding of the 's' parameter of an ECDSA signature.
+    First string needs to be a big endian encoding of ``r``, second needs to
+    be a big endian encoding of the ``s`` parameter of an ECDSA signature.
 
-    It's expected that this function will be used as the `sigdecode=`
+    It's expected that this function will be used as the ``sigdecode=``
     parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
 
     :param list rs_strings: list of two bytes-like objects, each encoding one
@@ -362,7 +448,7 @@ def sigdecode_strings(rs_strings, order):
 
     :raises MalformedSignature: when the encoding of the signature is invalid
 
-    :return: tuple with decoded 'r' and 's' values of signature
+    :return: tuple with decoded ``r`` and ``s`` values of signature
     :rtype: tuple of ints
     """
     if not len(rs_strings) == 2:
@@ -404,7 +490,7 @@ def sigdecode_der(sig_der, order):
             s       INTEGER
         }
 
-    It's expected that this function will be used as as the `sigdecode=`
+    It's expected that this function will be used as as the ``sigdecode=``
     parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
 
     :param sig_der: encoded signature
@@ -414,7 +500,7 @@ def sigdecode_der(sig_der, order):
 
     :raises UnexpectedDER: when the encoding of signature is invalid
 
-    :return: tuple with decoded 'r' and 's' values of signature
+    :return: tuple with decoded ``r`` and ``s`` values of signature
     :rtype: tuple of ints
     """
     sig_der = normalise_bytes(sig_der)
