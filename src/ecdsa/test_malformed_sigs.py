@@ -282,7 +282,7 @@ def st_der():
     of a valid DER structure, sequence of valid DER objects or a constructed
     encoding of any of the above.
     """
-    return st.recursive(
+    return st.recursive(  # pragma: no branch
         st.just(b"")
         | st_der_integer(max_value=2**4096)
         | st_der_bit_string(max_size=1024**2)
