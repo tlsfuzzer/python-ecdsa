@@ -20,8 +20,14 @@ from six import b, print_, binary_type
 from .keys import SigningKey, VerifyingKey
 from .keys import BadSignatureError, MalformedPointError, BadDigestError
 from . import util
-from .util import sigencode_der, sigencode_strings
-from .util import sigdecode_der, sigdecode_strings
+from .util import (
+    sigencode_der,
+    sigencode_strings,
+    sigencode_strings_canonize,
+    sigencode_string_canonize,
+    sigencode_der_canonize,
+)
+from .util import sigdecode_der, sigdecode_strings, sigdecode_string
 from .util import number_to_string, encoded_oid_ecPublicKey, MalformedSignature
 from .curves import Curve, UnknownCurveError
 from .curves import (
@@ -450,6 +456,78 @@ class ECDSA(unittest.TestCase):
         sig_der = priv1.sign(data, sigencode=sigencode_der)
         self.assertEqual(type(sig_der), binary_type)
         self.assertTrue(pub1.verify(sig_der, data, sigdecode=sigdecode_der))
+
+    def test_sigencode_string_canonize_no_change(self):
+        r = 12
+        s = 400
+        order = SECP112r1.order
+
+        new_r, new_s = sigdecode_string(
+            sigencode_string_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(s, new_s)
+
+    def test_sigencode_string_canonize(self):
+        r = 12
+        order = SECP112r1.order
+        s = order - 10
+
+        new_r, new_s = sigdecode_string(
+            sigencode_string_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
+
+    def test_sigencode_strings_canonize_no_change(self):
+        r = 12
+        s = 400
+        order = SECP112r1.order
+
+        new_r, new_s = sigdecode_strings(
+            sigencode_strings_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(s, new_s)
+
+    def test_sigencode_strings_canonize(self):
+        r = 12
+        order = SECP112r1.order
+        s = order - 10
+
+        new_r, new_s = sigdecode_strings(
+            sigencode_strings_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
+
+    def test_sigencode_der_canonize_no_change(self):
+        r = 13
+        s = 200
+        order = SECP112r1.order
+
+        new_r, new_s = sigdecode_der(
+            sigencode_der_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(s, new_s)
+
+    def test_sigencode_der_canonize(self):
+        r = 13
+        order = SECP112r1.order
+        s = order - 14
+
+        new_r, new_s = sigdecode_der(
+            sigencode_der_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
 
     def test_sig_decode_strings_with_invalid_count(self):
         with self.assertRaises(MalformedSignature):
