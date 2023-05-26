@@ -48,6 +48,13 @@ from .curves import (
     BRAINPOOLP320r1,
     BRAINPOOLP384r1,
     BRAINPOOLP512r1,
+    BRAINPOOLP160t1,
+    BRAINPOOLP192t1,
+    BRAINPOOLP224t1,
+    BRAINPOOLP256t1,
+    BRAINPOOLP320t1,
+    BRAINPOOLP384t1,
+    BRAINPOOLP512t1,
     Ed25519,
     Ed448,
     curves,
@@ -151,6 +158,13 @@ class ECDSA(unittest.TestCase):
             BRAINPOOLP320r1,
             BRAINPOOLP384r1,
             BRAINPOOLP512r1,
+            BRAINPOOLP160t1,
+            BRAINPOOLP192t1,
+            BRAINPOOLP224t1,
+            BRAINPOOLP256t1,
+            BRAINPOOLP320t1,
+            BRAINPOOLP384t1,
+            BRAINPOOLP512t1,
         ):
             priv = SigningKey.generate(curve=curve)
             pub1 = priv.get_verifying_key()
@@ -1167,6 +1181,55 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp512r1(self):
         return self.do_test_from_openssl(BRAINPOOLP512r1)
 
+    @pytest.mark.skipif(
+        "brainpoolP160t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP160t1",
+    )
+    def test_from_openssl_brainpoolp160t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP160t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP192t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP192t1",
+    )
+    def test_from_openssl_brainpoolp192t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP192t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP224t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP224t1",
+    )
+    def test_from_openssl_brainpoolp224t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP224t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP256t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP256t1",
+    )
+    def test_from_openssl_brainpoolp256t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP256t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP320t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP320t1",
+    )
+    def test_from_openssl_brainpoolp320t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP320t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP384t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP384t1",
+    )
+    def test_from_openssl_brainpoolp384t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP384t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP512t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP512t1",
+    )
+    def test_from_openssl_brainpoolp512t1(self):
+        return self.do_test_from_openssl(BRAINPOOLP512t1)
+
     def do_test_from_openssl(self, curve, hash_name="SHA1"):
         curvename = curve.openssl_name
         assert curvename
@@ -1358,6 +1421,55 @@ class OpenSSL(unittest.TestCase):
     )
     def test_to_openssl_brainpoolp512r1(self):
         self.do_test_to_openssl(BRAINPOOLP512r1)
+
+    @pytest.mark.skipif(
+        "brainpoolP160t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP160t1",
+    )
+    def test_to_openssl_brainpoolp160t1(self):
+        self.do_test_to_openssl(BRAINPOOLP160t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP192t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP192t1",
+    )
+    def test_to_openssl_brainpoolp192t1(self):
+        self.do_test_to_openssl(BRAINPOOLP192t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP224t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP224t1",
+    )
+    def test_to_openssl_brainpoolp224t1(self):
+        self.do_test_to_openssl(BRAINPOOLP224t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP256t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP256t1",
+    )
+    def test_to_openssl_brainpoolp256t1(self):
+        self.do_test_to_openssl(BRAINPOOLP256t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP320t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP320t1",
+    )
+    def test_to_openssl_brainpoolp320t1(self):
+        self.do_test_to_openssl(BRAINPOOLP320t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP384t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP384t1",
+    )
+    def test_to_openssl_brainpoolp384t1(self):
+        self.do_test_to_openssl(BRAINPOOLP384t1)
+
+    @pytest.mark.skipif(
+        "brainpoolP512t1" not in OPENSSL_SUPPORTED_CURVES,
+        reason="system openssl does not support brainpoolP512t1",
+    )
+    def test_to_openssl_brainpoolp512t1(self):
+        self.do_test_to_openssl(BRAINPOOLP512t1)
 
     def do_test_to_openssl(self, curve, hash_name="SHA1"):
         curvename = curve.openssl_name

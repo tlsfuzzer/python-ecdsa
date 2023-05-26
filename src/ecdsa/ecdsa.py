@@ -654,6 +654,18 @@ generator_brainpoolp160r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp160r1, _Gx, _Gy, 1, _q, generator=True
 )
 
+# Brainpool P-160-t1
+_a = 0xE95E4A5F737059DC60DFC7AD95B3D8139515620C
+_b = 0x7A556B6DAE535B7B51ED2C4D7DAA7A0B5C55F380
+# _z = 0x24DBFF5DEC9B986BBFE5295A29BFBAE45E0F5D0B
+_Gx = 0xB199B13B9B34EFC1397E64BAEB05ACC265FF2378
+_Gy = 0xADD6718B7C7C1961F0991B842443772152C9E0AD
+_q = 0xE95E4A5F737059DC60DF5991D45029409E60FC09
+curve_brainpoolp160t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp160t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp160t1, _Gx, _Gy, 1, _q, generator=True
+)
+
 # Brainpool P-192-r1
 _a = 0x6A91174076B1E0E19C39C031FE8685C1CAE040E5C69A28EF
 _b = 0x469A28EF7C28CCA3DC721D044F4496BCCA7EF4146FBF25C9
@@ -665,6 +677,19 @@ _q = 0xC302F41D932A36CDA7A3462F9E9E916B5BE8F1029AC4ACC1
 curve_brainpoolp192r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp192r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp192r1, _Gx, _Gy, 1, _q, generator=True
+)
+
+# Brainpool P-192-t1
+_a = 0xC302F41D932A36CDA7A3463093D18DB78FCE476DE1A86294
+_b = 0x13D56FFAEC78681E68F9DEB43B35BEC2FB68542E27897B79
+# _z = 0x1B6F5CC8DB4DC7AF19458A9CB80DC2295E5EB9C3732104CB
+_Gx = 0x3AE9E58C82F63C30282E1FE7BBF43FA72C446AF6F4618129
+_Gy = 0x097E2C5667C2223A902AB5CA449D0084B7E5B3DE7CCC01C9
+_q = 0xC302F41D932A36CDA7A3462F9E9E916B5BE8F1029AC4ACC1
+
+curve_brainpoolp192t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp192t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp192t1, _Gx, _Gy, 1, _q, generator=True
 )
 
 # Brainpool P-224-r1
@@ -680,6 +705,19 @@ generator_brainpoolp224r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp224r1, _Gx, _Gy, 1, _q, generator=True
 )
 
+# Brainpool P-224-t1
+_a = 0xD7C134AA264366862A18302575D1D787B09F075797DA89F57EC8C0FC
+_b = 0x4B337D934104CD7BEF271BF60CED1ED20DA14C08B3BB64F18A60888D
+# _z = 0x2DF271E14427A346910CF7A2E6CFA7B3F484E5C2CCE1C8B730E28B3F
+_Gx = 0x6AB1E344CE25FF3896424E7FFE14762ECB49F8928AC0C76029B4D580
+_Gy = 0x0374E9F5143E568CD23F3F4D7C0D4B1E41C8CC0D1C6ABD5F1A46DB4C
+_q = 0xD7C134AA264366862A18302575D0FB98D116BC4B6DDEBCA3A5A7939F
+
+curve_brainpoolp224t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp224t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp224t1, _Gx, _Gy, 1, _q, generator=True
+)
+
 # Brainpool P-256-r1
 _a = 0x7D5A0975FC2C3057EEF67530417AFFE7FB8055C126DC5C6CE94A4B44F330B5D9
 _b = 0x26DC5C6CE94A4B44F330B5D9BBD77CBF958416295CF7E1CE6BCCDC18FF8C07B6
@@ -691,6 +729,19 @@ _q = 0xA9FB57DBA1EEA9BC3E660A909D838D718C397AA3B561A6F7901E0E82974856A7
 curve_brainpoolp256r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp256r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp256r1, _Gx, _Gy, 1, _q, generator=True
+)
+
+# Brainpool P-256-t1
+_a = 0xA9FB57DBA1EEA9BC3E660A909D838D726E3BF623D52620282013481D1F6E5374
+_b = 0x662C61C430D84EA4FE66A7733D0B76B7BF93EBC4AF2F49256AE58101FEE92B04
+# _z = 0x3E2D4BD9597B58639AE7AA669CAB9837CF5CF20A2C852D10F655668DFC150EF0
+_Gx = 0xA3E8EB3CC1CFE7B7732213B23A656149AFA142C47AAFBC2B79A191562E1305F4
+_Gy = 0x2D996C823439C56D7F7B22E14644417E69BCB6DE39D027001DABE8F35B25C9BE
+_q = 0xA9FB57DBA1EEA9BC3E660A909D838D718C397AA3B561A6F7901E0E82974856A7
+
+curve_brainpoolp256t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp256t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp256t1, _Gx, _Gy, 1, _q, generator=True
 )
 
 # Brainpool P-320-r1
@@ -748,6 +799,61 @@ generator_brainpoolp320r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp320r1, _Gx, _Gy, 1, _q, generator=True
 )
 
+# Brainpool P-320-t1
+_a = int(
+    remove_whitespace(
+        """
+    D35E472036BC4FB7E13C785ED201E065F98FCFA6F6F40DEF4F92B9EC7893EC
+    28FCD412B1F1B32E24"""
+    ),
+    16,
+)
+_b = int(
+    remove_whitespace(
+        """
+    A7F561E038EB1ED560B3D147DB782013064C19F27ED27C6780AAF77FB8A547
+    CEB5B4FEF422340353"""
+    ),
+    16,
+)
+# _z = int(
+#    remove_whitespace(
+#        """
+#    15F75CAF668077F7E85B42EB01F0A81FF56ECD6191D55CB82B7D861458A18F
+#    EFC3E5AB7496F3C7B1"""
+#    ),
+#    16,
+# )
+_Gx = int(
+    remove_whitespace(
+        """
+    925BE9FB01AFC6FB4D3E7D4990010F813408AB106C4F09CB7EE07868CC136F
+    FF3357F624A21BED52"""
+    ),
+    16,
+)
+_Gy = int(
+    remove_whitespace(
+        """
+    63BA3A7A27483EBF6671DBEF7ABB30EBEE084E58A0B077AD42A5A0989D1EE7
+    1B1B9BC0455FB0D2C3"""
+    ),
+    16,
+)
+_q = int(
+    remove_whitespace(
+        """
+    D35E472036BC4FB7E13C785ED201E065F98FCFA5B68F12A32D482EC7EE8658
+    E98691555B44C59311"""
+    ),
+    16,
+)
+
+curve_brainpoolp320t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp320t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp320t1, _Gx, _Gy, 1, _q, generator=True
+)
+
 # Brainpool P-384-r1
 _a = int(
     remove_whitespace(
@@ -803,6 +909,60 @@ generator_brainpoolp384r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp384r1, _Gx, _Gy, 1, _q, generator=True
 )
 
+_a = int(
+    remove_whitespace(
+        """
+    8CB91E82A3386D280F5D6F7E50E641DF152F7109ED5456B412B1DA197FB711
+    23ACD3A729901D1A71874700133107EC50"""
+    ),
+    16,
+)
+_b = int(
+    remove_whitespace(
+        """
+    7F519EADA7BDA81BD826DBA647910F8C4B9346ED8CCDC64E4B1ABD11756DCE
+    1D2074AA263B88805CED70355A33B471EE"""
+    ),
+    16,
+)
+# _z = int(
+#    remove_whitespace(
+#        """
+#    41DFE8DD399331F7166A66076734A89CD0D2BCDB7D068E44E1F378F41ECBAE
+#    97D2D63DBC87BCCDDCCC5DA39E8589291C"""
+#    ),
+#    16,
+# )
+_Gx = int(
+    remove_whitespace(
+        """
+    18DE98B02DB9A306F2AFCD7235F72A819B80AB12EBD653172476FECD462AAB
+    FFC4FF191B946A5F54D8D0AA2F418808CC"""
+    ),
+    16,
+)
+_Gy = int(
+    remove_whitespace(
+        """
+    25AB056962D30651A114AFD2755AD336747F93475B7A1FCA3B88F2B6A208CC
+    FE469408584DC2B2912675BF5B9E582928"""
+    ),
+    16,
+)
+_q = int(
+    remove_whitespace(
+        """
+    8CB91E82A3386D280F5D6F7E50E641DF152F7109ED5456B31F166E6CAC0425
+    A7CF3AB6AF6B7FC3103B883202E9046565"""
+    ),
+    16,
+)
+
+curve_brainpoolp384t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp384t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp384t1, _Gx, _Gy, 1, _q, generator=True
+)
+
 # Brainpool P-512-r1
 _a = int(
     remove_whitespace(
@@ -856,4 +1016,59 @@ _q = int(
 curve_brainpoolp512r1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
 generator_brainpoolp512r1 = ellipticcurve.PointJacobi(
     curve_brainpoolp512r1, _Gx, _Gy, 1, _q, generator=True
+)
+
+# Brainpool P-512-t1
+_a = int(
+    remove_whitespace(
+        """
+    AADD9DB8DBE9C48B3FD4E6AE33C9FC07CB308DB3B3C9D20ED6639CCA703308
+    717D4D9B009BC66842AECDA12AE6A380E62881FF2F2D82C68528AA6056583A48F0"""
+    ),
+    16,
+)
+_b = int(
+    remove_whitespace(
+        """
+    7CBBBCF9441CFAB76E1890E46884EAE321F70C0BCB4981527897504BEC3E36
+    A62BCDFA2304976540F6450085F2DAE145C22553B465763689180EA2571867423E"""
+    ),
+    16,
+)
+# _z = int(
+#    remove_whitespace(
+#        """
+#    12EE58E6764838B69782136F0F2D3BA06E27695716054092E60A80BEDB212B
+#    64E585D90BCE13761F85C3F1D2A64E3BE8FEA2220F01EBA5EEB0F35DBD29D922AB"""
+#    ),
+#    16,
+# )
+_Gx = int(
+    remove_whitespace(
+        """
+    640ECE5C12788717B9C1BA06CBC2A6FEBA85842458C56DDE9DB1758D39C031
+    3D82BA51735CDB3EA499AA77A7D6943A64F7A3F25FE26F06B51BAA2696FA9035DA"""
+    ),
+    16,
+)
+_Gy = int(
+    remove_whitespace(
+        """
+    5B534BD595F5AF0FA2C892376C84ACE1BB4E3019B71634C01131159CAE03CE
+    E9D9932184BEEF216BD71DF2DADF86A627306ECFF96DBB8BACE198B61E00F8B332"""
+    ),
+    16,
+)
+_q = int(
+    remove_whitespace(
+        """
+    AADD9DB8DBE9C48B3FD4E6AE33C9FC07CB308DB3B3C9D20ED6639CCA703308
+    70553E5C414CA92619418661197FAC10471DB1D381085DDADDB58796829CA90069"""
+    ),
+    16,
+)
+
+curve_brainpoolp512t1 = ellipticcurve.CurveFp(_p, _a, _b, 1)
+generator_brainpoolp512t1 = ellipticcurve.PointJacobi(
+    curve_brainpoolp512t1, _Gx, _Gy, 1, _q, generator=True
 )
