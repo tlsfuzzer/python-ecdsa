@@ -26,12 +26,19 @@ __all__ = [
     "curve_by_name",
     "SECP256k1",
     "BRAINPOOLP160r1",
+    "BRAINPOOLP160t1",
     "BRAINPOOLP192r1",
+    "BRAINPOOLP192t1",
     "BRAINPOOLP224r1",
+    "BRAINPOOLP224t1",
     "BRAINPOOLP256r1",
+    "BRAINPOOLP256t1",
     "BRAINPOOLP320r1",
+    "BRAINPOOLP320t1",
     "BRAINPOOLP384r1",
+    "BRAINPOOLP384t1",
     "BRAINPOOLP512r1",
+    "BRAINPOOLP512t1",
     "PRIME_FIELD_OID",
     "CHARACTERISTIC_TWO_FIELD_OID",
     "Ed25519",
@@ -375,12 +382,30 @@ BRAINPOOLP160r1 = Curve(
 )
 
 
+BRAINPOOLP160t1 = Curve(
+    "BRAINPOOLP160t1",
+    ecdsa.curve_brainpoolp160t1,
+    ecdsa.generator_brainpoolp160t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 2),
+    "brainpoolP160t1",
+)
+
+
 BRAINPOOLP192r1 = Curve(
     "BRAINPOOLP192r1",
     ecdsa.curve_brainpoolp192r1,
     ecdsa.generator_brainpoolp192r1,
     (1, 3, 36, 3, 3, 2, 8, 1, 1, 3),
     "brainpoolP192r1",
+)
+
+
+BRAINPOOLP192t1 = Curve(
+    "BRAINPOOLP192t1",
+    ecdsa.curve_brainpoolp192t1,
+    ecdsa.generator_brainpoolp192t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 4),
+    "brainpoolP192t1",
 )
 
 
@@ -393,12 +418,30 @@ BRAINPOOLP224r1 = Curve(
 )
 
 
+BRAINPOOLP224t1 = Curve(
+    "BRAINPOOLP224t1",
+    ecdsa.curve_brainpoolp224t1,
+    ecdsa.generator_brainpoolp224t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 6),
+    "brainpoolP224t1",
+)
+
+
 BRAINPOOLP256r1 = Curve(
     "BRAINPOOLP256r1",
     ecdsa.curve_brainpoolp256r1,
     ecdsa.generator_brainpoolp256r1,
     (1, 3, 36, 3, 3, 2, 8, 1, 1, 7),
     "brainpoolP256r1",
+)
+
+
+BRAINPOOLP256t1 = Curve(
+    "BRAINPOOLP256t1",
+    ecdsa.curve_brainpoolp256t1,
+    ecdsa.generator_brainpoolp256t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 8),
+    "brainpoolP256t1",
 )
 
 
@@ -411,6 +454,15 @@ BRAINPOOLP320r1 = Curve(
 )
 
 
+BRAINPOOLP320t1 = Curve(
+    "BRAINPOOLP320t1",
+    ecdsa.curve_brainpoolp320t1,
+    ecdsa.generator_brainpoolp320t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 10),
+    "brainpoolP320t1",
+)
+
+
 BRAINPOOLP384r1 = Curve(
     "BRAINPOOLP384r1",
     ecdsa.curve_brainpoolp384r1,
@@ -420,12 +472,30 @@ BRAINPOOLP384r1 = Curve(
 )
 
 
+BRAINPOOLP384t1 = Curve(
+    "BRAINPOOLP384t1",
+    ecdsa.curve_brainpoolp384t1,
+    ecdsa.generator_brainpoolp384t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 12),
+    "brainpoolP384t1",
+)
+
+
 BRAINPOOLP512r1 = Curve(
     "BRAINPOOLP512r1",
     ecdsa.curve_brainpoolp512r1,
     ecdsa.generator_brainpoolp512r1,
     (1, 3, 36, 3, 3, 2, 8, 1, 1, 13),
     "brainpoolP512r1",
+)
+
+
+BRAINPOOLP512t1 = Curve(
+    "BRAINPOOLP512t1",
+    ecdsa.curve_brainpoolp512t1,
+    ecdsa.generator_brainpoolp512t1,
+    (1, 3, 36, 3, 3, 2, 8, 1, 1, 14),
+    "brainpoolP512t1",
 )
 
 
@@ -466,6 +536,13 @@ curves = [
     SECP160r1,
     Ed25519,
     Ed448,
+    BRAINPOOLP160t1,
+    BRAINPOOLP192t1,
+    BRAINPOOLP224t1,
+    BRAINPOOLP256t1,
+    BRAINPOOLP320t1,
+    BRAINPOOLP384t1,
+    BRAINPOOLP512t1,
 ]
 
 
