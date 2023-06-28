@@ -160,10 +160,20 @@ jobs:
         run: git fetch origin master:refs/remotes/origin/master
       - name: Set up Python ${{ matrix.python-version }}
         # we use containers to use the native python version from them
-        if: ${{ !matrix.container }}
+        if: ${{ !matrix.container && matrix.python-version != '2.7' }}
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Ensure python 2.7
+        if: matrix.python-version == '2.7'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python2.7 python2.7-dev python-pip-whl
+          sudo ln -sf python2.7 /usr/bin/python
+          export PYTHONPATH=`echo /usr/share/python-wheels/pip-*py2*.whl`
+          sudo --preserve-env=PYTHONPATH python -m pip install --upgrade pip setuptools wheel
+          sudo chown -R $USER /usr/local/lib/python2.7
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
       - name: Display installed python package versions
