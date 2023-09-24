@@ -7,7 +7,7 @@ from hashlib import sha1
 import os
 from six import PY2, b
 from . import ecdsa, eddsa
-from . import der
+from . import der, ssh
 from . import rfc6979
 from . import ellipticcurve
 from .curves import NIST192p, Curve, Ed25519, Ed448
@@ -612,6 +612,18 @@ class VerifyingKey(object):
             # 0 is the number of unused bits in the
             # bit string
             der.encode_bitstring(point_str, 0),
+        )
+
+    def to_ssh(self):
+        """
+        Convert the public key to the SSH format.
+
+        :return: SSH encoding of the public key
+        :rtype: bytes
+        """
+        return ssh.serialize_public(
+            self.curve.name,
+            self.to_string(),
         )
 
     def verify(
@@ -1280,6 +1292,19 @@ class SigningKey(object):
                 ),
                 der.encode_octet_string(ec_private_key),
             )
+
+    def to_ssh(self):
+        """
+        Convert the private key to the SSH format.
+
+        :return: SSH encoded private key
+        :rtype: bytes
+        """
+        return ssh.serialize_private(
+            self.curve.name,
+            self.verifying_key.to_string(),
+            self.to_string(),
+        )
 
     def get_verifying_key(self):
         """
