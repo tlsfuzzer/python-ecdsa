@@ -127,7 +127,7 @@ else:
         if length is None:
             length = byte_length(val)
         # for gmpy we need to convert back to native int
-        if type(val) != int:
+        if not isinstance(val, int):
             val = int(val)
         return bytearray(val.to_bytes(length=length, byteorder=byteorder))
 
