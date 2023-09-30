@@ -1008,8 +1008,8 @@ class PointJacobi(AbstractPoint):
         # so we need 4 combined points:
         mAmB_X, mAmB_Y, mAmB_Z = _add(X1, -Y1, Z1, X2, -Y2, Z2, p)
         pAmB_X, pAmB_Y, pAmB_Z = _add(X1, Y1, Z1, X2, -Y2, Z2, p)
-        mApB_X, mApB_Y, mApB_Z = _add(X1, -Y1, Z1, X2, Y2, Z2, p)
-        pApB_X, pApB_Y, pApB_Z = _add(X1, Y1, Z1, X2, Y2, Z2, p)
+        mApB_X, mApB_Y, mApB_Z = pAmB_X, -pAmB_Y, pAmB_Z
+        pApB_X, pApB_Y, pApB_Z = mAmB_X, -mAmB_Y, mAmB_Z
         # when the self and other sum to infinity, we need to add them
         # one by one to get correct result but as that's very unlikely to
         # happen in regular operation, we don't need to optimise this case
