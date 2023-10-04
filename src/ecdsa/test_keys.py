@@ -364,6 +364,18 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         self.assertEqual(vk_pem, vk.to_pem())
 
+    def test_export_ed255_to_ssh(self):
+        vk_str = (
+            b"\x23\x00\x50\xd0\xd6\x64\x22\x28\x8e\xe3\x55\x89\x7e\x6e\x41\x57"
+            b"\x8d\xae\xde\x44\x26\xee\x56\x27\xbc\x85\xe6\x0b\x2f\x2a\xcb\x65"
+        )
+
+        vk = VerifyingKey.from_string(vk_str, Ed25519)
+
+        vk_ssh = b"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMAUNDWZCIojuNViX5uQVeNrt5EJu5WJ7yF5gsvKstl\n"
+
+        self.assertEqual(vk_ssh, vk.to_ssh())
+
     def test_ed25519_export_import(self):
         sk = SigningKey.generate(Ed25519)
         vk = sk.verifying_key
@@ -428,8 +440,8 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         vk_pem = (
             b"-----BEGIN PUBLIC KEY-----\n"
-            b"MEMwBQYDK2VxAzoAeQtetSu7CMEzE+XWB10Bg47LCA0giNikOxHzdp+tZ/eK/En0\n"
-            b"dTdYD2ll94g58MhSnBiBQB9A1MMA\n"
+            b"MEMwBQYDK2VxAzoAeQtetSu7CMEzE+XWB10Bg47LCA0giNikOxHzdp+tZ/eK/En0dTdYD2ll94g5\n"
+            b"8MhSnBiBQB9A1MMA\n"
             b"-----END PUBLIC KEY-----\n"
         )
 
@@ -629,6 +641,25 @@ class TestSigningKey(unittest.TestCase):
 
         self.assertEqual(sk.to_pem(format="pkcs8"), pem_str)
 
+    def test_ed25519_to_ssh(self):
+        sk = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+
+        ssh_str = (
+            b"-----BEGIN OPENSSH PRIVATE KEY-----\n"
+            b"b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZWQyNTUx\n"
+            b"OQAAACAjAFDQ1mQiKI7jVYl+bkFXja7eRCbuVie8heYLLyrLZQAAAIgAAAAAAAAAAAAAAAtzc2gt\n"
+            b"ZWQyNTUxOQAAACAjAFDQ1mQiKI7jVYl+bkFXja7eRCbuVie8heYLLyrLZQAAAEA0usfRTtTxvE+M\n"
+            b"SD4PGXdM/Li+rFRmRRGa19e4Bwv11CMAUNDWZCIojuNViX5uQVeNrt5EJu5WJ7yF5gsvKstlAAAA\n"
+            b"AAECAwQF\n"
+            b"-----END OPENSSH PRIVATE KEY-----\n"
+        )
+
+        self.assertEqual(sk.to_ssh(), ssh_str)
+
     def test_ed25519_to_and_from_pem(self):
         sk = SigningKey.generate(Ed25519)
 
@@ -665,8 +696,8 @@ class TestSigningKey(unittest.TestCase):
         )
         pem_str = (
             b"-----BEGIN PRIVATE KEY-----\n"
-            b"MEcCAQAwBQYDK2VxBDsEOTyFuXqFLXgJlV8uDqcOw9nG4IqzLiZ/i5NfBDoHPzmP\n"
-            b"OP0JMYaLGlTzwovmvCDJ2zLaezu9NLz9aQ==\n"
+            b"MEcCAQAwBQYDK2VxBDsEOTyFuXqFLXgJlV8uDqcOw9nG4IqzLiZ/i5NfBDoHPzmPOP0JMYaLGlTz\n"
+            b"wovmvCDJ2zLaezu9NLz9aQ==\n"
             b"-----END PRIVATE KEY-----\n"
         )
 

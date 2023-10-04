@@ -5,7 +5,7 @@ import base64
 import warnings
 from itertools import chain
 from six import int2byte, b, text_type
-from ._compat import str_idx_as_int
+from ._compat import compat26_str, str_idx_as_int
 
 
 class UnexpectedDER(Exception):
@@ -400,10 +400,10 @@ def unpem(pem):
 
 
 def topem(der, name):
-    b64 = base64.b64encode(der)
+    b64 = base64.b64encode(compat26_str(der))
     lines = [("-----BEGIN %s-----\n" % name).encode()]
     lines.extend(
-        [b64[start : start + 64] + b("\n") for start in range(0, len(b64), 64)]
+        [b64[start : start + 76] + b("\n") for start in range(0, len(b64), 76)]
     )
     lines.append(("-----END %s-----\n" % name).encode())
     return b("").join(lines)
