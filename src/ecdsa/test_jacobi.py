@@ -23,6 +23,7 @@ from .ecdsa import (
     generator_brainpoolp160r1,
     curve_brainpoolp160r1,
     generator_112r2,
+    curve_112r2,
 )
 from .numbertheory import inverse_mod
 from .util import randrange
@@ -433,29 +434,77 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(c, x + y)
 
-    def test_add_different_scale_points_static(self):
+    def test_add_different_points_same_scale_static(self):
         j_g = generator_brainpoolp160r1
         p = curve_brainpoolp160r1.p()
         a = j_g * 11
         a.scale()
-        z1 = 13
+        b = j_g * 12
+        z = 13
         x = PointJacobi(
             curve_brainpoolp160r1,
-            a.x() * z1**2 % p,
-            a.y() * z1**3 % p,
-            z1,
+            a.x() * z**2 % p,
+            a.y() * z**3 % p,
+            z,
         )
-        z2 = 29
         y = PointJacobi(
             curve_brainpoolp160r1,
-            a.x() * z2**2 % p,
-            a.y() * z2**3 % p,
-            z2,
+            b.x() * z**2 % p,
+            b.y() * z**3 % p,
+            z,
+        )
+
+        c = a + b
+
+        self.assertEqual(c, x + y)
+
+    def test_add_same_point_different_scale_second_z_1_static(self):
+        j_g = generator_112r2
+        p = curve_112r2.p()
+        z = 11
+        a = j_g * z
+        a.scale()
+
+        x = PointJacobi(
+            curve_112r2,
+            a.x() * z**2 % p,
+            a.y() * z**3 % p,
+            z,
+        )
+        y = PointJacobi(
+            curve_112r2,
+            a.x(),
+            a.y(),
+            1,
         )
 
         c = a + a
 
         self.assertEqual(c, x + y)
+
+    def test_add_to_infinity_static(self):
+        j_g = generator_112r2
+
+        z = 11
+        a = j_g * z
+        a.scale()
+
+        b = -a
+
+        x = PointJacobi(
+            curve_112r2,
+            a.x(),
+            a.y(),
+            1,
+        )
+        y = PointJacobi(
+            curve_112r2,
+            b.x(),
+            b.y(),
+            1,
+        )
+
+        self.assertEqual(INFINITY, x + y)
 
     def test_add_point_3_times(self):
         j_g = PointJacobi.from_affine(generator_256)
