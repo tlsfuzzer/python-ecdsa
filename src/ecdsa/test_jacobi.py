@@ -640,6 +640,7 @@ class TestJacobi(unittest.TestCase):
         pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)
 
+    @pytest.mark.slow
     @settings(**NO_OLD_SETTINGS)
     @pytest.mark.skipif(
         platform.python_implementation() == "PyPy",
@@ -678,6 +679,7 @@ class TestJacobi(unittest.TestCase):
             generator_112r2._PointJacobi__precompute,
         )
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         platform.system() == "Windows"
         or platform.python_implementation() == "PyPy",
