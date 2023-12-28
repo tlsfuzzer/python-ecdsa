@@ -225,11 +225,17 @@ class CurveEdTw(object):
         return self.__h
 
     def __str__(self):
-        return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
+        if self.__h is not None:
+            return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
+                self.__p,
+                self.__a,
+                self.__d,
+                self.__h,
+            )
+        return "CurveEdTw(p={0}, a={1}, d={2})".format(
             self.__p,
             self.__a,
             self.__d,
-            self.__h,
         )
 
 

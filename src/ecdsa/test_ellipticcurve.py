@@ -14,7 +14,7 @@ try:
 except ImportError:  # pragma: no cover
     HC_PRESENT = False
 from .numbertheory import inverse_mod
-from .ellipticcurve import CurveFp, INFINITY, Point
+from .ellipticcurve import CurveFp, INFINITY, Point, CurveEdTw
 
 
 HYP_SETTINGS = {}
@@ -103,6 +103,19 @@ class TestCurve(unittest.TestCase):
     def test___str___with_cofactor(self):
         c = CurveFp(23, 1, 1, 4)
         self.assertEqual(str(c), "CurveFp(p=23, a=1, b=1, h=4)")
+
+
+class TestCurveEdTw(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.c_23 = CurveEdTw(23, 1, 1)
+
+    def test___str__(self):
+        self.assertEqual(str(self.c_23), "CurveEdTw(p=23, a=1, d=1)")
+
+    def test___str___with_cofactor(self):
+        c = CurveEdTw(23, 1, 1, 4)
+        self.assertEqual(str(c), "CurveEdTw(p=23, a=1, d=1, h=4)")
 
 
 class TestPoint(unittest.TestCase):
