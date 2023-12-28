@@ -259,6 +259,22 @@ class TestEd25519(unittest.TestCase):
         self.assertIn("different curve", str(e.exception))
 
 
+def test_generate_with_point():
+    x1 = int(
+        "427838232691226969392843410947554224151809796397784248136826"
+        "78720006717057747"
+    )
+    y1 = int(
+        "463168356949264781694283940034751631413079938662562256157830"
+        "33603165251855960"
+    )
+    p = PointEdwards(curve_ed25519, x1, y1, 1, x1 * y1)
+
+    pk = PublicKey(generator_ed25519, b"0" * 32, public_point=p)
+
+    assert pk.public_point() == p
+
+
 def test_ed25519_mul_to_order_min_1():
     x1 = int(
         "427838232691226969392843410947554224151809796397784248136826"
