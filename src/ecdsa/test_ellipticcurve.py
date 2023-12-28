@@ -97,6 +97,13 @@ class TestCurve(unittest.TestCase):
         self.assertDictEqual({c_23: None}, {eq1: None})
         self.assertIn(eq2, {eq3: None})
 
+    def test___str__(self):
+        self.assertEqual(str(self.c_23), "CurveFp(p=23, a=1, b=1)")
+
+    def test___str___with_cofactor(self):
+        c = CurveFp(23, 1, 1, 4)
+        self.assertEqual(str(c), "CurveFp(p=23, a=1, b=1, h=4)")
+
 
 class TestPoint(unittest.TestCase):
     @classmethod
