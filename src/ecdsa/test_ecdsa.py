@@ -27,6 +27,7 @@ from .ecdsa import (
     generator_112r2,
     int_to_string,
 )
+from .ellipticcurve import Point
 
 
 HYP_SETTINGS = {}
@@ -75,6 +76,19 @@ class TestP192FromX9_62(unittest.TestCase):
 
     def test_rejection(self):
         assert not self.pubk.verifies(self.msg - 1, self.sig)
+
+    def test_verification_with_regular_point(self):
+        pubk = Public_key(
+            Point(
+                generator_192.curve(),
+                generator_192.x(),
+                generator_192.y(),
+                generator_192.order(),
+            ),
+            self.pubk.point,
+        )
+
+        assert pubk.verifies(self.msg, self.sig)
 
 
 class TestPublicKey(unittest.TestCase):
