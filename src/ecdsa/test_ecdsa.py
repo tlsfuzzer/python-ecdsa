@@ -598,7 +598,13 @@ def test_signature_validity(gen, msg, qx, qy, r, s, expected):
     elliptic curve of `gen`, `r` and `s` are the signature, and
     `expected` is True iff the signature is expected to be valid."""
     pubk = Public_key(gen, ellipticcurve.Point(gen.curve(), qx, qy))
-    assert expected == pubk.verifies(digest_integer(msg), Signature(r, s))
+    with pytest.warns(DeprecationWarning) as warns:
+        msg_dgst = digest_integer(msg)
+    assert len(warns) == 3
+    assert "unused" in warns[0].message.args[0]
+    assert "unused" in warns[1].message.args[0]
+    assert "unused" in warns[2].message.args[0]
+    assert expected == pubk.verifies(msg_dgst, Signature(r, s))
 
 
 @pytest.mark.parametrize(
@@ -607,7 +613,13 @@ def test_signature_validity(gen, msg, qx, qy, r, s, expected):
 def test_pk_recovery(gen, msg, r, s, qx, qy, expected):
     del expected
     sign = Signature(r, s)
-    pks = sign.recover_public_keys(digest_integer(msg), gen)
+    with pytest.warns(DeprecationWarning) as warns:
+        msg_dgst = digest_integer(msg)
+    assert len(warns) == 3
+    assert "unused" in warns[0].message.args[0]
+    assert "unused" in warns[1].message.args[0]
+    assert "unused" in warns[2].message.args[0]
+    pks = sign.recover_public_keys(msg_dgst, gen)
 
     assert pks
 
@@ -675,4 +687,8 @@ def test_sig_verify(args):
 
 
 def test_int_to_string_with_zero():
-    assert int_to_string(0) == b"\x00"
+    with pytest.warns(DeprecationWarning) as warns:
+        assert int_to_string(0) == b"\x00"
+
+    assert len(warns) == 1
+    assert "unused" in warns[0].message.args[0]
