@@ -117,6 +117,12 @@ class TestCurveEdTw(unittest.TestCase):
         c = CurveEdTw(23, 1, 1, 4)
         self.assertEqual(str(c), "CurveEdTw(p=23, a=1, d=1, h=4)")
 
+    def test_usability_in_a_hashed_collection_curves(self):
+        {self.c_23: None}
+
+    def test_hashability_curves(self):
+        hash(self.c_23)
+
 
 class TestPoint(unittest.TestCase):
     @classmethod
