@@ -1,3 +1,4 @@
+import sys
 import pickle
 import hashlib
 import pytest
@@ -663,7 +664,10 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
 
 HYP_SETTINGS = dict()
-HYP_SETTINGS["max_examples"] = 10
+if "--fast" in sys.argv:
+    HYP_SETTINGS["max_examples"] = 2
+else:
+    HYP_SETTINGS["max_examples"] = 10
 
 
 @settings(**HYP_SETTINGS)
