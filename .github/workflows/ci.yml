@@ -295,9 +295,8 @@ jobs:
         run: |
           cosmic-ray init cosmic-ray.toml session-vs-master.sqlite
           git branch master origin/master
-          git rev-parse HEAD
-          git rev-parse master
           cr-filter-git --config cosmic-ray.toml session-vs-master.sqlite
+          cr-report session-vs-master.sqlite | tail -n 5
       - name: Exec mutation testing for PR
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
@@ -306,7 +305,7 @@ jobs:
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
           # remove not-executed results
-          sqlite3 session-vs-master.sqlite "DELETE from work_results WHERE work_results.worker_outcome = 'NO_TEST' OR work_results.worker_outcome = 'SKIPPED'"
+          sqlite3 session-vs-master.sqlite "DELETE from work_results WHERE work_results.worker_outcome = 'SKIPPED'"
           cr-report session-vs-master.sqlite | tail -n 5
           # check if executed have at most 5% survival rate
           cr-rate --fail-over 5 session-vs-master.sqlite
