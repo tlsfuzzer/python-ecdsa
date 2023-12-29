@@ -104,6 +104,10 @@ jobs:
             os: ubuntu-latest
             python-version: 3.9
             tox-env: codechecks
+          - name: mutation testing
+            os: ubuntu-latest
+            python-version: '3.11'
+            mutation: 'true'
     steps:
       - uses: actions/checkout@v2
         if: ${{ !matrix.container }}
@@ -149,6 +153,11 @@ jobs:
         run: |
           apt-get update
           apt-get install -y git make python-is-python3 python3 curl wget python3-distutils python3-pip
+
+      - name: Dependencies for mutation testing
+        if: ${{ matrix.mutation == 'true' }}
+        run: |
+          sudo apt-get install -y sqlite3
       - name: workaround git failures with py3.10
         run: |
           git config --global --add safe.directory /__w/python-ecdsa/python-ecdsa
@@ -256,6 +265,10 @@ jobs:
           else
             pip install -r build-requirements.txt;
           fi
+      - name: Install mutation testing dependencies
+        if: ${{ matrix.mutation == 'true' }}
+        run: |
+          pip install cosmic-ray
       - name: Display installed python package versions
         run: pip list
       - name: Test native speed
@@ -277,6 +290,26 @@ jobs:
       - name: Run unit tests
         if: ${{ matrix.tox-env }}
         run: tox -e ${{ matrix.tox-env }}
+      - name: Init for mutation testing in PR
+        if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
+        run: |
+          cosmic-ray init cosmic-ray.toml session-vs-master.sqlite
+          git branch master origin/master
+          git rev-parse HEAD
+          git rev-parse master
+          cr-filter-git --config cosmic-ray.toml session-vs-master.sqlite
+      - name: Exec mutation testing for PR
+        if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
+        run: |
+          cosmic-ray exec cosmic-ray.toml session-vs-master.sqlite
+      - name: Check test coverage for PR
+        if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
+        run: |
+          # remove not-executed results
+          sqlite3 session-vs-master.sqlite "DELETE from work_results WHERE work_results.worker_outcome = 'NO_TEST' OR work_results.worker_outcome = 'SKIPPED'"
+          cr-report session-vs-master.sqlite | tail -n 5
+          # check if executed have at most 5% survival rate
+          cr-rate --fail-over 5 session-vs-master.sqlite
       - name: instrumental test coverage on PR
         if: ${{ contains(matrix.opt-deps, 'instrumental') && github.event.pull_request }}
         env:
