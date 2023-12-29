@@ -260,7 +260,7 @@ jobs:
         run: pip list
       - name: Test native speed
         # tox uses pip to install dependenceis, so it breaks on py2.6
-        if: ${{ !contains(matrix.tox-env, 'gmpy') && matrix.python-version != '2.6'}}
+        if: ${{ !contains(matrix.tox-env, 'gmpy') && matrix.python-version != '2.6' && ! matrix.mutation && !contains(matrix.tox-env, 'codechecks') }}
         run: tox -e speed
       - name: Test speed with gmpy
         if: ${{ contains(matrix.tox-env, 'gmpyp') }}
