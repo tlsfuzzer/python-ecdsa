@@ -1,7 +1,7 @@
 [cosmic-ray]
 module-path = "src"
 timeout = 20.0
-exclude-modules = ['src/ecdsa/_sha3.py', 'src/ecdsa/_version.py', 'src/ecdsa/test*']
+excluded-modules = ['src/ecdsa/_sha3.py', 'src/ecdsa/_version.py', 'src/ecdsa/test*']
 test-command = "pytest -x --fast -m 'not slow' src/"
 
 [cosmic-ray.distributor]
