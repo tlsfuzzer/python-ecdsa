@@ -622,5 +622,18 @@ jobs:
       - name: Report executed
         run: |
           cr-report session.sqlite | tail -n 3
-      - name: Check mutation level
+      - name: Check survival estimate
         run: cr-rate --estimate --fail-over 32 --confidence 99.9 session.sqlite
+      - name: Get mutation score
+        run: echo "MUT_SCORE=$(python -c 'print(100-$(cr-rate session.sqlite))')" >> $GITHUB_ENV
+      - name: Create mutation score badge
+        uses: schneegans/dynamic-badges-action@v1.4.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 9b6ca1f3410207fbeca785a178781651
+          filename: python-ecdsa-mutation-score.json
+          label: mutation score
+          message: ${{ env.MUT_SCORE }}%
+          valColorRange: ${{ env.MUT_SCORE }}
+          maxColorRange: 100
+          minColorRange: 0
