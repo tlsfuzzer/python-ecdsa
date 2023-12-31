@@ -369,3 +369,258 @@ jobs:
           COVERALLS_SERVICE_NAME: github
         run: |
           coveralls --finish
+
+  mutation-prepare:
+    name: Prepare job files for the mutation runners
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ !matrix.container }}
+        with:
+          fetch-depth: 50
+      - name: save session objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions/
+          key: sessions-${{ github.sha }}
+      - name: Install cosmic-ray
+        run: |
+          pip3 install cosmic-ray
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y sqlite3
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Create list of mutations
+        run: |
+          cosmic-ray init cosmic-ray.toml session.sqlite
+      - name: Log number of jobs created
+        run: |
+          cr-report session.sqlite | tail -n 3
+      - name: Split up mutations to workers
+        run: |
+          cp session.sqlite session-to_del.sqlite
+          sqlite3 session-to_del.sqlite "$(cat sql/create_to_del.sql)"
+          mkdir sessions
+          for i in $(seq 0 19); do
+            sed "s/%SHARD%/$i/" < sql/shard-db.sql > shard.sql
+            cp session-to_del.sqlite session-$i.sqlite
+            sqlite3 session-$i.sqlite "$(cat shard.sql)"
+            mv session-$i.sqlite sessions/
+          done
+  mutation-execute:
+    name: Execute mutation testing
+    needs: mutation-prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: 0
+          - name: 1
+          - name: 2
+          - name: 3
+          - name: 4
+          - name: 5
+          - name: 6
+          - name: 7
+          - name: 8
+          - name: 9
+          - name: 10
+          - name: 11
+          - name: 12
+          - name: 13
+          - name: 14
+          - name: 15
+          - name: 16
+          - name: 17
+          - name: 18
+          - name: 19
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ !matrix.container }}
+        with:
+          fetch-depth: 1
+      - name: Session objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions/
+          key: sessions-${{ github.sha }}
+      - name: Session done objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-${{ matrix.name }}-done.sqlite
+          key: sessions-${{ github.sha }}-${{ matrix.name }}-done
+      - name: Install gmpy2 dependencies
+        run: sudo apt-get install -y libmpfr-dev libmpc-dev
+      - name: Install gmpy2
+        run: pip install gmpy2
+      - name: Install build dependencies
+        run: |
+          pip install -r build-requirements.txt
+          pip install cosmic-ray
+      - name: Run mutation testing
+        run: |
+          cp sessions/session-${{ matrix.name }}.sqlite session.sqlite
+          systemd-run --user --scope -p MemoryMax=2G -p MemoryHigh=2G cosmic-ray exec cosmic-ray.toml session.sqlite &
+          cosmic_pid=$!
+          for i in $(seq 1 10); do
+            echo $i
+            sleep 60
+          done
+          kill $cosmic_pid
+          mkdir sessions-done/
+          cp session.sqlite sessions-done/session-${{ matrix.name }}-done.sqlite
+      - name: Report executed
+        run: |
+          cr-report session.sqlite | tail -n 3
+  mutation-combine:
+    name: Combine mutation testing results
+    needs: mutation-execute
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        if: ${{ !matrix.container }}
+        with:
+          fetch-depth: 1
+      - name: Session done 0 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-0-done.sqlite
+          key: sessions-${{ github.sha }}-0-done
+      - name: Session done 1 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-1-done.sqlite
+          key: sessions-${{ github.sha }}-1-done
+      - name: Session done 2 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-2-done.sqlite
+          key: sessions-${{ github.sha }}-2-done
+      - name: Session done 3 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-3-done.sqlite
+          key: sessions-${{ github.sha }}-3-done
+      - name: Session done 4 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-4-done.sqlite
+          key: sessions-${{ github.sha }}-4-done
+      - name: Session done 5 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-5-done.sqlite
+          key: sessions-${{ github.sha }}-5-done
+      - name: Session done 6 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-6-done.sqlite
+          key: sessions-${{ github.sha }}-6-done
+      - name: Session done 7 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-7-done.sqlite
+          key: sessions-${{ github.sha }}-7-done
+      - name: Session done 8 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-8-done.sqlite
+          key: sessions-${{ github.sha }}-8-done
+      - name: Session done 9 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-9-done.sqlite
+          key: sessions-${{ github.sha }}-9-done
+      - name: Session done 10 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-10-done.sqlite
+          key: sessions-${{ github.sha }}-10-done
+      - name: Session done 11 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-11-done.sqlite
+          key: sessions-${{ github.sha }}-11-done
+      - name: Session done 12 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-12-done.sqlite
+          key: sessions-${{ github.sha }}-12-done
+      - name: Session done 13 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-13-done.sqlite
+          key: sessions-${{ github.sha }}-13-done
+      - name: Session done 14 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-14-done.sqlite
+          key: sessions-${{ github.sha }}-14-done
+      - name: Session done 15 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-15-done.sqlite
+          key: sessions-${{ github.sha }}-15-done
+      - name: Session done 16 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-16-done.sqlite
+          key: sessions-${{ github.sha }}-16-done
+      - name: Session done 17 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-17-done.sqlite
+          key: sessions-${{ github.sha }}-17-done
+      - name: Session done 18 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-18-done.sqlite
+          key: sessions-${{ github.sha }}-18-done
+      - name: Session done 19 objects
+        uses: actions/cache@v3
+        with:
+          path: |
+            sessions-done/session-19-done.sqlite
+          key: sessions-${{ github.sha }}-19-done
+      - name: Install cosmic-ray
+        run: |
+          pip3 install cosmic-ray
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y sqlite3
+      - name: Combine worker results
+        run: |
+          cp sessions-done/session-0-done.sqlite session.sqlite
+          for i in $(seq 1 19); do
+            cp sessions-done/session-$i-done.sqlite session-to_merge.sqlite
+            sqlite3 session.sqlite "$(cat sql/combine.sql)"
+          done
+      - name: Report executed
+        run: |
+          cr-report session.sqlite | tail -n 3
+      - name: Check mutation level
+        run: cr-rate --estimate --fail-over 32 --confidence 99.9 session.sqlite
