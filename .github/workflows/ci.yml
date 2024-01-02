@@ -268,7 +268,7 @@ jobs:
       - name: Install mutation testing dependencies
         if: ${{ matrix.mutation == 'true' }}
         run: |
-          pip install cosmic-ray
+          pip install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
       - name: Display installed python package versions
         run: pip list
       - name: Test native speed
@@ -372,6 +372,9 @@ jobs:
 
   mutation-prepare:
     name: Prepare job files for the mutation runners
+    # use runner minutes on mutation testing only after the PR passed basic
+    # testing
+    needs: coveralls
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -386,7 +389,7 @@ jobs:
           key: sessions-${{ github.sha }}
       - name: Install cosmic-ray
         run: |
-          pip3 install cosmic-ray
+          pip3 install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
       - name: Install dependencies
         run: |
           sudo apt-get install -y sqlite3
@@ -461,7 +464,7 @@ jobs:
       - name: Install build dependencies
         run: |
           pip install -r build-requirements.txt
-          pip install cosmic-ray
+          pip install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
       - name: Run mutation testing
         run: |
           cp sessions/session-${{ matrix.name }}.sqlite session.sqlite
@@ -608,7 +611,7 @@ jobs:
           key: sessions-${{ github.sha }}-19-done
       - name: Install cosmic-ray
         run: |
-          pip3 install cosmic-ray
+          pip3 install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
       - name: Install dependencies
         run: |
           sudo apt-get install -y sqlite3
@@ -621,13 +624,20 @@ jobs:
       - name: Report executed
         run: |
           cr-report session.sqlite | tail -n 3
-      - name: Log survival estimate
-        run: cr-rate --estimate --fail-over 32 --confidence 99.9 session.sqlite || true
+      - name: Generate html report
+        run: |
+          cr-html session.sqlite > cosmic-ray.html
+      - name: Archive mutation testing results
+        uses: actions/upload-artifact@v3
+        with:
+          name: mutation-coverage-report
+          path: cosmic-ray.html
       - name: Get mutation score
         run: |
           echo "print(100-$(cr-rate session.sqlite))" > print-score.py
           echo "MUT_SCORE=$(python print-score.py)" >> $GITHUB_ENV
       - name: Create mutation score badge
+        if: ${{ !github.event.pull_request }}
         uses: schneegans/dynamic-badges-action@v1.4.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
@@ -638,3 +648,5 @@ jobs:
           valColorRange: ${{ env.MUT_SCORE }}
           maxColorRange: 100
           minColorRange: 0
+      - name: Check survival estimate
+        run: cr-rate --estimate --fail-over 32 --confidence 99.9 session.sqlite
