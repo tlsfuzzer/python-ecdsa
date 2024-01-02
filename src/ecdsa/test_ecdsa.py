@@ -27,6 +27,7 @@ from .ecdsa import (
     generator_112r2,
     int_to_string,
 )
+from .ellipticcurve import Point
 
 
 HYP_SETTINGS = {}
@@ -75,6 +76,19 @@ class TestP192FromX9_62(unittest.TestCase):
 
     def test_rejection(self):
         assert not self.pubk.verifies(self.msg - 1, self.sig)
+
+    def test_verification_with_regular_point(self):
+        pubk = Public_key(
+            Point(
+                generator_192.curve(),
+                generator_192.x(),
+                generator_192.y(),
+                generator_192.order(),
+            ),
+            self.pubk.point,
+        )
+
+        assert pubk.verifies(self.msg, self.sig)
 
 
 class TestPublicKey(unittest.TestCase):
@@ -584,7 +598,13 @@ def test_signature_validity(gen, msg, qx, qy, r, s, expected):
     elliptic curve of `gen`, `r` and `s` are the signature, and
     `expected` is True iff the signature is expected to be valid."""
     pubk = Public_key(gen, ellipticcurve.Point(gen.curve(), qx, qy))
-    assert expected == pubk.verifies(digest_integer(msg), Signature(r, s))
+    with pytest.warns(DeprecationWarning) as warns:
+        msg_dgst = digest_integer(msg)
+    assert len(warns) == 3
+    assert "unused" in warns[0].message.args[0]
+    assert "unused" in warns[1].message.args[0]
+    assert "unused" in warns[2].message.args[0]
+    assert expected == pubk.verifies(msg_dgst, Signature(r, s))
 
 
 @pytest.mark.parametrize(
@@ -593,7 +613,13 @@ def test_signature_validity(gen, msg, qx, qy, r, s, expected):
 def test_pk_recovery(gen, msg, r, s, qx, qy, expected):
     del expected
     sign = Signature(r, s)
-    pks = sign.recover_public_keys(digest_integer(msg), gen)
+    with pytest.warns(DeprecationWarning) as warns:
+        msg_dgst = digest_integer(msg)
+    assert len(warns) == 3
+    assert "unused" in warns[0].message.args[0]
+    assert "unused" in warns[1].message.args[0]
+    assert "unused" in warns[2].message.args[0]
+    pks = sign.recover_public_keys(msg_dgst, gen)
 
     assert pks
 
@@ -634,7 +660,10 @@ def st_random_gen_key_msg_nonce(draw):
 
 
 SIG_VER_SETTINGS = dict(HYP_SETTINGS)
-SIG_VER_SETTINGS["max_examples"] = 10
+if "--fast" in sys.argv:  # pragma: no cover
+    SIG_VER_SETTINGS["max_examples"] = 1
+else:
+    SIG_VER_SETTINGS["max_examples"] = 10
 
 
 @settings(**SIG_VER_SETTINGS)
@@ -658,4 +687,8 @@ def test_sig_verify(args):
 
 
 def test_int_to_string_with_zero():
-    assert int_to_string(0) == b"\x00"
+    with pytest.warns(DeprecationWarning) as warns:
+        assert int_to_string(0) == b"\x00"
+
+    assert len(warns) == 1
+    assert "unused" in warns[0].message.args[0]

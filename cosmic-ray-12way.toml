@@ -1,0 +1,28 @@
+[cosmic-ray]
+module-path = "src"
+timeout = 20.0
+excluded-modules = ['src/ecdsa/_sha3.py', 'src/ecdsa/_version.py', 'src/ecdsa/test*']
+test-command = "pytest -x --fast -m 'not slow' src/"
+
+[cosmic-ray.distributor]
+name = "http"
+
+[cosmic-ray.distributor.http]
+worker-urls = [
+    "http://localhost:9870",
+    "http://localhost:9871",
+    "http://localhost:9872",
+    "http://localhost:9873",
+    "http://localhost:9874",
+    "http://localhost:9875",
+    "http://localhost:9876",
+    "http://localhost:9877",
+    "http://localhost:9878",
+    "http://localhost:9879",
+    "http://localhost:9880",
+    "http://localhost:9881",
+    "http://localhost:9882"
+]
+
+[cosmic-ray.filters.git-filter]
+branch = "master"

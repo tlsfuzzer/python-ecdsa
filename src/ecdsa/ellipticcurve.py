@@ -136,11 +136,17 @@ class CurveFp(object):
         return (y * y - ((x * x + self.__a) * x + self.__b)) % self.__p == 0
 
     def __str__(self):
-        return "CurveFp(p=%d, a=%d, b=%d, h=%d)" % (
+        if self.__h is not None:
+            return "CurveFp(p={0}, a={1}, b={2}, h={3})".format(
+                self.__p,
+                self.__a,
+                self.__b,
+                self.__h,
+            )
+        return "CurveFp(p={0}, a={1}, b={2})".format(
             self.__p,
             self.__a,
             self.__b,
-            self.__h,
         )
 
 
@@ -219,11 +225,17 @@ class CurveEdTw(object):
         return self.__h
 
     def __str__(self):
-        return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
+        if self.__h is not None:
+            return "CurveEdTw(p={0}, a={1}, d={2}, h={3})".format(
+                self.__p,
+                self.__a,
+                self.__d,
+                self.__h,
+            )
+        return "CurveEdTw(p={0}, a={1}, d={2})".format(
             self.__p,
             self.__a,
             self.__d,
-            self.__h,
         )
 
 

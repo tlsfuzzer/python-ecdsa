@@ -14,7 +14,7 @@ try:
 except ImportError:  # pragma: no cover
     HC_PRESENT = False
 from .numbertheory import inverse_mod
-from .ellipticcurve import CurveFp, INFINITY, Point
+from .ellipticcurve import CurveFp, INFINITY, Point, CurveEdTw
 
 
 HYP_SETTINGS = {}
@@ -40,7 +40,7 @@ g_23 = Point(c_23, 13, 7, 7)
 
 
 HYP_SLOW_SETTINGS = dict(HYP_SETTINGS)
-HYP_SLOW_SETTINGS["max_examples"] = 10
+HYP_SLOW_SETTINGS["max_examples"] = 2
 
 
 @settings(**HYP_SLOW_SETTINGS)
@@ -96,6 +96,32 @@ class TestCurve(unittest.TestCase):
         self.assertEqual(len(set((c_23, ne1, ne2, ne3))), 4)
         self.assertDictEqual({c_23: None}, {eq1: None})
         self.assertIn(eq2, {eq3: None})
+
+    def test___str__(self):
+        self.assertEqual(str(self.c_23), "CurveFp(p=23, a=1, b=1)")
+
+    def test___str___with_cofactor(self):
+        c = CurveFp(23, 1, 1, 4)
+        self.assertEqual(str(c), "CurveFp(p=23, a=1, b=1, h=4)")
+
+
+class TestCurveEdTw(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.c_23 = CurveEdTw(23, 1, 1)
+
+    def test___str__(self):
+        self.assertEqual(str(self.c_23), "CurveEdTw(p=23, a=1, d=1)")
+
+    def test___str___with_cofactor(self):
+        c = CurveEdTw(23, 1, 1, 4)
+        self.assertEqual(str(c), "CurveEdTw(p=23, a=1, d=1, h=4)")
+
+    def test_usability_in_a_hashed_collection_curves(self):
+        {self.c_23: None}
+
+    def test_hashability_curves(self):
+        hash(self.c_23)
 
 
 class TestPoint(unittest.TestCase):

@@ -9,11 +9,12 @@ import sys
 import shutil
 import subprocess
 import pytest
+import sys
 from binascii import hexlify, unhexlify
 import hashlib
 from functools import partial
 
-from hypothesis import given
+from hypothesis import given, settings
 import hypothesis.strategies as st
 
 from six import b, print_, binary_type
@@ -73,6 +74,13 @@ from . import ecdsa
 
 class SubprocessError(Exception):
     pass
+
+
+HYP_SETTINGS = {}
+
+
+if "--fast" in sys.argv:  # pragma: no cover
+    HYP_SETTINGS["max_examples"] = 2
 
 
 def run_openssl(cmd):
@@ -138,41 +146,13 @@ class ECDSA(unittest.TestCase):
         self.assertRaises(TypeError, SigningKey)
         self.assertRaises(TypeError, VerifyingKey)
 
-    def test_lengths(self):
+    def test_lengths_default(self):
         default = NIST192p
         priv = SigningKey.generate()
         pub = priv.get_verifying_key()
         self.assertEqual(len(pub.to_string()), default.verifying_key_length)
-        sig = priv.sign(b("data"))
+        sig = priv.sign(b"data")
         self.assertEqual(len(sig), default.signature_length)
-        for curve in (
-            NIST192p,
-            NIST224p,
-            NIST256p,
-            NIST384p,
-            NIST521p,
-            BRAINPOOLP160r1,
-            BRAINPOOLP192r1,
-            BRAINPOOLP224r1,
-            BRAINPOOLP256r1,
-            BRAINPOOLP320r1,
-            BRAINPOOLP384r1,
-            BRAINPOOLP512r1,
-            BRAINPOOLP160t1,
-            BRAINPOOLP192t1,
-            BRAINPOOLP224t1,
-            BRAINPOOLP256t1,
-            BRAINPOOLP320t1,
-            BRAINPOOLP384t1,
-            BRAINPOOLP512t1,
-        ):
-            priv = SigningKey.generate(curve=curve)
-            pub1 = priv.get_verifying_key()
-            pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
-            self.assertEqual(pub1.to_string(), pub2.to_string())
-            self.assertEqual(len(pub1.to_string()), curve.verifying_key_length)
-            sig = priv.sign(b("data"))
-            self.assertEqual(len(sig), curve.signature_length)
 
     def test_serialize(self):
         seed = b("secret")
@@ -1005,6 +985,24 @@ def test_VerifyingKey_encode_decode(curve, encoding):
     assert vk.pubkey.point == from_enc.pubkey.point
 
 
+if "--fast" in sys.argv:  # pragma: no cover
+    params = [NIST192p, BRAINPOOLP160r1]
+else:
+    params = curves
+
+
+@pytest.mark.parametrize("curve", params)
+def test_lengths(curve):
+    priv = SigningKey.generate(curve=curve)
+    pub1 = priv.get_verifying_key()
+    pub2 = VerifyingKey.from_string(pub1.to_string(), curve)
+    assert pub1.to_string() == pub2.to_string()
+    assert len(pub1.to_string()) == curve.verifying_key_length
+    sig = priv.sign(b"data")
+    assert len(sig) == curve.signature_length
+
+
+@pytest.mark.slow
 class OpenSSL(unittest.TestCase):
     # test interoperability with OpenSSL tools. Note that openssl's ECDSA
     # sign/verify arguments changed between 0.9.8 and 1.0.0: the early
@@ -1041,6 +1039,7 @@ class OpenSSL(unittest.TestCase):
     # vk: 3:OpenSSL->python  4:python->OpenSSL
     # sig: 5:OpenSSL->python 6:python->OpenSSL
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r1",
@@ -1048,6 +1047,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp112r1(self):
         return self.do_test_from_openssl(SECP112r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r2" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r2",
@@ -1055,6 +1055,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp112r2(self):
         return self.do_test_from_openssl(SECP112r2)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp128r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp128r1",
@@ -1062,6 +1063,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp128r1(self):
         return self.do_test_from_openssl(SECP128r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp160r1",
@@ -1069,6 +1071,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp160r1(self):
         return self.do_test_from_openssl(SECP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -1076,6 +1079,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist192p(self):
         return self.do_test_from_openssl(NIST192p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -1083,6 +1087,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist192p_sha256(self):
         return self.do_test_from_openssl(NIST192p, "SHA256")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp224r1",
@@ -1090,6 +1095,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist224p(self):
         return self.do_test_from_openssl(NIST224p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1097,6 +1103,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist256p(self):
         return self.do_test_from_openssl(NIST256p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1104,6 +1111,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist256p_sha384(self):
         return self.do_test_from_openssl(NIST256p, "SHA384")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1111,6 +1119,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist256p_sha512(self):
         return self.do_test_from_openssl(NIST256p, "SHA512")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp384r1",
@@ -1118,6 +1127,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist384p(self):
         return self.do_test_from_openssl(NIST384p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp521r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp521r1",
@@ -1125,6 +1135,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_nist521p(self):
         return self.do_test_from_openssl(NIST521p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp256k1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp256k1",
@@ -1132,6 +1143,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_secp256k1(self):
         return self.do_test_from_openssl(SECP256k1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP160r1",
@@ -1139,6 +1151,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp160r1(self):
         return self.do_test_from_openssl(BRAINPOOLP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP192r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP192r1",
@@ -1146,6 +1159,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp192r1(self):
         return self.do_test_from_openssl(BRAINPOOLP192r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP224r1",
@@ -1153,6 +1167,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp224r1(self):
         return self.do_test_from_openssl(BRAINPOOLP224r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP256r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP256r1",
@@ -1160,6 +1175,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp256r1(self):
         return self.do_test_from_openssl(BRAINPOOLP256r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP320r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP320r1",
@@ -1167,6 +1183,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp320r1(self):
         return self.do_test_from_openssl(BRAINPOOLP320r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP384r1",
@@ -1174,6 +1191,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp384r1(self):
         return self.do_test_from_openssl(BRAINPOOLP384r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP512r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP512r1",
@@ -1181,6 +1199,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp512r1(self):
         return self.do_test_from_openssl(BRAINPOOLP512r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP160t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP160t1",
@@ -1188,6 +1207,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp160t1(self):
         return self.do_test_from_openssl(BRAINPOOLP160t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP192t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP192t1",
@@ -1195,6 +1215,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp192t1(self):
         return self.do_test_from_openssl(BRAINPOOLP192t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP224t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP224t1",
@@ -1202,6 +1223,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp224t1(self):
         return self.do_test_from_openssl(BRAINPOOLP224t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP256t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP256t1",
@@ -1209,6 +1231,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp256t1(self):
         return self.do_test_from_openssl(BRAINPOOLP256t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP320t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP320t1",
@@ -1216,6 +1239,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp320t1(self):
         return self.do_test_from_openssl(BRAINPOOLP320t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP384t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP384t1",
@@ -1223,6 +1247,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_brainpoolp384t1(self):
         return self.do_test_from_openssl(BRAINPOOLP384t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP512t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP512t1",
@@ -1282,6 +1307,7 @@ class OpenSSL(unittest.TestCase):
         sk_from_p8 = SigningKey.from_pem(privkey_p8_pem)
         self.assertEqual(sk, sk_from_p8)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r1",
@@ -1289,6 +1315,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp112r1(self):
         self.do_test_to_openssl(SECP112r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp112r2" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp112r2",
@@ -1296,6 +1323,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp112r2(self):
         self.do_test_to_openssl(SECP112r2)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp128r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp128r1",
@@ -1303,6 +1331,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp128r1(self):
         self.do_test_to_openssl(SECP128r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp160r1",
@@ -1310,6 +1339,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp160r1(self):
         self.do_test_to_openssl(SECP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -1317,6 +1347,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist192p(self):
         self.do_test_to_openssl(NIST192p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime192v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime192v1",
@@ -1324,6 +1355,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist192p_sha256(self):
         self.do_test_to_openssl(NIST192p, "SHA256")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp224r1",
@@ -1331,6 +1363,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist224p(self):
         self.do_test_to_openssl(NIST224p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1338,6 +1371,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist256p(self):
         self.do_test_to_openssl(NIST256p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1345,6 +1379,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist256p_sha384(self):
         self.do_test_to_openssl(NIST256p, "SHA384")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "prime256v1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support prime256v1",
@@ -1352,6 +1387,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist256p_sha512(self):
         self.do_test_to_openssl(NIST256p, "SHA512")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp384r1",
@@ -1359,6 +1395,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist384p(self):
         self.do_test_to_openssl(NIST384p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp521r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp521r1",
@@ -1366,6 +1403,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_nist521p(self):
         self.do_test_to_openssl(NIST521p)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "secp256k1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support secp256k1",
@@ -1373,6 +1411,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_secp256k1(self):
         self.do_test_to_openssl(SECP256k1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP160r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP160r1",
@@ -1380,6 +1419,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp160r1(self):
         self.do_test_to_openssl(BRAINPOOLP160r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP192r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP192r1",
@@ -1387,6 +1427,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp192r1(self):
         self.do_test_to_openssl(BRAINPOOLP192r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP224r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP224r1",
@@ -1394,6 +1435,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp224r1(self):
         self.do_test_to_openssl(BRAINPOOLP224r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP256r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP256r1",
@@ -1401,6 +1443,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp256r1(self):
         self.do_test_to_openssl(BRAINPOOLP256r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP320r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP320r1",
@@ -1408,6 +1451,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp320r1(self):
         self.do_test_to_openssl(BRAINPOOLP320r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP384r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP384r1",
@@ -1415,6 +1459,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp384r1(self):
         self.do_test_to_openssl(BRAINPOOLP384r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP512r1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP512r1",
@@ -1422,6 +1467,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp512r1(self):
         self.do_test_to_openssl(BRAINPOOLP512r1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP160t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP160t1",
@@ -1429,6 +1475,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp160t1(self):
         self.do_test_to_openssl(BRAINPOOLP160t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP192t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP192t1",
@@ -1436,6 +1483,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp192t1(self):
         self.do_test_to_openssl(BRAINPOOLP192t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP224t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP224t1",
@@ -1443,6 +1491,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp224t1(self):
         self.do_test_to_openssl(BRAINPOOLP224t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP256t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP256t1",
@@ -1450,6 +1499,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp256t1(self):
         self.do_test_to_openssl(BRAINPOOLP256t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP320t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP320t1",
@@ -1457,6 +1507,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp320t1(self):
         self.do_test_to_openssl(BRAINPOOLP320t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP384t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP384t1",
@@ -1464,6 +1515,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_brainpoolp384t1(self):
         self.do_test_to_openssl(BRAINPOOLP384t1)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "brainpoolP512t1" not in OPENSSL_SUPPORTED_CURVES,
         reason="system openssl does not support brainpoolP512t1",
@@ -1604,6 +1656,7 @@ class OpenSSL(unittest.TestCase):
 
     # in practice at least OpenSSL 3.0.0 is needed to make EdDSA signatures
     # earlier versions support EdDSA only in X.509 certificates
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "ed25519" not in OPENSSL_SUPPORTED_TYPES,
         reason="system openssl does not support signing with Ed25519",
@@ -1611,6 +1664,7 @@ class OpenSSL(unittest.TestCase):
     def test_to_openssl_ed25519(self):
         return self.do_eddsa_test_to_openssl(Ed25519)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "ed448" not in OPENSSL_SUPPORTED_TYPES,
         reason="system openssl does not support signing with Ed448",
@@ -1654,6 +1708,7 @@ class OpenSSL(unittest.TestCase):
 
         shutil.rmtree("t")
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "ed25519" not in OPENSSL_SUPPORTED_TYPES,
         reason="system openssl does not support signing with Ed25519",
@@ -1661,6 +1716,7 @@ class OpenSSL(unittest.TestCase):
     def test_from_openssl_ed25519(self):
         return self.do_eddsa_test_from_openssl(Ed25519)
 
+    @pytest.mark.slow
     @pytest.mark.skipif(
         "ed448" not in OPENSSL_SUPPORTED_TYPES,
         reason="system openssl does not support signing with Ed448",
@@ -1779,6 +1835,7 @@ class DER(unittest.TestCase):
 
 
 class Util(unittest.TestCase):
+    @pytest.mark.slow
     def test_trytryagain(self):
         tta = util.randrange_from_seed__trytryagain
         for i in range(1000):
@@ -1808,9 +1865,10 @@ class Util(unittest.TestCase):
         # known issue: https://github.com/warner/python-ecdsa/issues/221
         if sys.version_info < (3, 0):  # pragma: no branch
             self.assertEqual(n, 228)
-        else:
+        else:  # pragma: no branch
             self.assertEqual(n, 18)
 
+    @settings(**HYP_SETTINGS)
     @given(st.integers(min_value=0, max_value=10**200))
     def test_randrange(self, i):
         # util.randrange does not provide long-term stability: we might
@@ -2143,6 +2201,7 @@ class RFC6932(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP384r1(self):
         self._do(
             curve=curve_brainpoolp384r1,
@@ -2189,6 +2248,7 @@ class RFC6932(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP512r1(self):
         self._do(
             curve=curve_brainpoolp512r1,
@@ -2293,6 +2353,7 @@ class RFC7027(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP384r1(self):
         self._do(
             curve=curve_brainpoolp384r1,
@@ -2339,6 +2400,7 @@ class RFC7027(ECDH):
             ),
         )
 
+    @pytest.mark.slow
     def test_brainpoolP512r1(self):
         self._do(
             curve=curve_brainpoolp512r1,

@@ -64,6 +64,7 @@ Originally written in 2005 by Peter Pearson and placed in the public domain,
 modified as part of the python-ecdsa package.
 """
 
+import warnings
 from six import int2byte, b
 from . import ellipticcurve
 from . import numbertheory
@@ -269,8 +270,14 @@ class Private_key(object):
         return Signature(r, s)
 
 
-def int_to_string(x):
+def int_to_string(x):  # pragma: no cover
     """Convert integer x into a string of bytes, as per X9.62."""
+    # deprecated in 0.19
+    warnings.warn(
+        "Function is unused in library code. If you use this code, "
+        "change to util.string_to_number.",
+        DeprecationWarning,
+    )
     assert x >= 0
     if x == 0:
         return b("\0")
@@ -284,8 +291,14 @@ def int_to_string(x):
     return b("").join(result)
 
 
-def string_to_int(s):
+def string_to_int(s):  # pragma: no cover
     """Convert a string of bytes into an integer, as per X9.62."""
+    # deprecated in 0.19
+    warnings.warn(
+        "Function is unused in library code. If you use this code, "
+        "change to util.number_to_string.",
+        DeprecationWarning,
+    )
     result = 0
     for c in s:
         if not isinstance(c, int):
@@ -294,9 +307,16 @@ def string_to_int(s):
     return result
 
 
-def digest_integer(m):
+def digest_integer(m):  # pragma: no cover
     """Convert an integer into a string of bytes, compute
     its SHA-1 hash, and convert the result to an integer."""
+    # deprecated in 0.19
+    warnings.warn(
+        "Function is unused in library code. If you use this code, "
+        "change to a one-liner with util.number_to_string and "
+        "util.string_to_number methods.",
+        DeprecationWarning,
+    )
     #
     # I don't expect this function to be used much. I wrote
     # it in order to be able to duplicate the examples

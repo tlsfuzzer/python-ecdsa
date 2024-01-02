@@ -1,0 +1,11 @@
+[cosmic-ray]
+module-path = "src"
+timeout = 20.0
+excluded-modules = ['src/ecdsa/_sha3.py', 'src/ecdsa/_version.py', 'src/ecdsa/test*']
+test-command = "pytest -x --fast -m 'not slow' src/"
+
+[cosmic-ray.distributor]
+name = "local"
+
+[cosmic-ray.filters.git-filter]
+branch = "master"

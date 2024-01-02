@@ -249,13 +249,13 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         self.assertEqual(self.vk.to_string(), vk.to_string())
 
     def test_equality_on_verifying_keys(self):
-        self.assertEqual(self.vk, self.sk.get_verifying_key())
+        self.assertTrue(self.vk == self.sk.get_verifying_key())
 
     def test_inequality_on_verifying_keys(self):
-        self.assertNotEqual(self.vk, self.vk2)
+        self.assertFalse(self.vk == self.vk2)
 
     def test_inequality_on_verifying_keys_not_implemented(self):
-        self.assertNotEqual(self.vk, None)
+        self.assertFalse(self.vk == None)
 
     def test_VerifyingKey_inequality_on_same_curve(self):
         self.assertNotEqual(self.vk, self.sk2.verifying_key)
@@ -264,7 +264,7 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         self.assertNotEqual(self.sk, self.sk2)
 
     def test_inequality_on_wrong_types(self):
-        self.assertNotEqual(self.vk, self.sk)
+        self.assertFalse(self.vk == self.sk)
 
     def test_from_public_point_old(self):
         pj = self.vk.pubkey.point
@@ -272,7 +272,7 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         vk = VerifyingKey.from_public_point(point, self.vk.curve)
 
-        self.assertEqual(vk, self.vk)
+        self.assertTrue(vk == self.vk)
 
     def test_ed25519_VerifyingKey_repr__(self):
         sk = SigningKey.from_string(Ed25519.generator.to_bytes(), Ed25519)
@@ -970,14 +970,14 @@ def test_VerifyingKey_inequality_with_different_curves():
     sk1 = SigningKey.from_secret_exponent(2, BRAINPOOLP160r1)
     sk2 = SigningKey.from_secret_exponent(2, NIST256p)
 
-    assert sk1.verifying_key != sk2.verifying_key
+    assert not (sk1.verifying_key == sk2.verifying_key)
 
 
 def test_VerifyingKey_inequality_with_different_secret_points():
     sk1 = SigningKey.from_secret_exponent(2, BRAINPOOLP160r1)
     sk2 = SigningKey.from_secret_exponent(3, BRAINPOOLP160r1)
 
-    assert sk1.verifying_key != sk2.verifying_key
+    assert not (sk1.verifying_key == sk2.verifying_key)
 
 
 def test_SigningKey_from_pem_pkcs8v2_EdDSA():
