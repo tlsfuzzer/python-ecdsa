@@ -30,6 +30,16 @@ from .numbertheory import (
     square_root_mod_prime,
 )
 
+try:
+    from gmpy2 import mpz
+except ImportError:
+    try:
+        from gmpy import mpz
+    except ImportError:
+
+        def mpz(x):
+            return x
+
 
 BIGPRIMES = (
     999671,
@@ -293,7 +303,7 @@ class TestIsPrime(unittest.TestCase):
 
     def test_large_prime(self):
         # nextPrime[2^2048]
-        assert is_prime(2**2048 + 0x3D5)
+        assert is_prime(mpz(2) ** 2048 + 0x3D5)
 
 
 class TestNumbertheory(unittest.TestCase):
@@ -309,6 +319,7 @@ class TestNumbertheory(unittest.TestCase):
         "case times-out on it",
     )
     @settings(**HYP_SLOW_SETTINGS)
+    @example([877 * 1151, 877 * 1009])
     @given(st_comp_with_com_fac())
     def test_gcd_with_com_factor(self, numbers):
         n = gcd(numbers)
@@ -323,6 +334,7 @@ class TestNumbertheory(unittest.TestCase):
         "case times-out on it",
     )
     @settings(**HYP_SLOW_SETTINGS)
+    @example([1151, 1069, 1009])
     @given(st_comp_no_com_fac())
     def test_gcd_with_uncom_factor(self, numbers):
         n = gcd(numbers)
@@ -415,13 +427,16 @@ class TestNumbertheory(unittest.TestCase):
     @settings(**HYP_SLOW_SETTINGS)
     @given(st.integers(min_value=3, max_value=1000).filter(lambda x: x % 2))
     def test_jacobi(self, mod):
+        mod = mpz(mod)
         if is_prime(mod):
             squares = set()
             for root in range(1, mod):
+                root = mpz(root)
                 assert jacobi(root * root, mod) == 1
                 squares.add(root * root % mod)
             for i in range(1, mod):
                 if i not in squares:
+                    i = mpz(i)
                     assert jacobi(i, mod) == -1
         else:
             factors = factorization(mod)

@@ -20,11 +20,11 @@ try:
 except NameError:
     xrange = range
 try:
-    from gmpy2 import powmod
+    from gmpy2 import powmod, mpz
 
     GMPY2 = True
     GMPY = False
-except ImportError:
+except ImportError:  # pragma: no branch
     GMPY2 = False
     try:
         from gmpy import mpz
@@ -33,8 +33,14 @@ except ImportError:
     except ImportError:
         GMPY = False
 
+
+if GMPY2 or GMPY:  # pragma: no branch
+    integer_types = tuple(integer_types + (type(mpz(1)),))
+
+
 import math
 import warnings
+from .util import bit_length
 
 
 class Error(Exception):
@@ -555,8 +561,8 @@ def is_prime(n):
             return True
         else:
             return False
-
-    if gcd(n, 2 * 3 * 5 * 7 * 11) != 1:
+    # 2310 = 2 * 3 * 5 * 7 * 11
+    if gcd(n, 2310) != 1:
         return False
 
     # Choose a number of iterations sufficient to reduce the
@@ -564,7 +570,7 @@ def is_prime(n):
     # (from Menezes et al. Table 4.4):
 
     t = 40
-    n_bits = 1 + int(math.log(n, 2))
+    n_bits = 1 + bit_length(n)
     for k, tt in (
         (100, 27),
         (150, 18),
