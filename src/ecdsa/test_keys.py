@@ -25,6 +25,8 @@ from .der import (
     encode_sequence,
     encode_oid,
     encode_bitstring,
+    encode_integer,
+    encode_octet_string,
 )
 from .util import (
     sigencode_string,
@@ -668,6 +670,34 @@ class TestSigningKey(unittest.TestCase):
 
         self.assertEqual(sk, sk_str)
 
+    def test_ed25519_from_der_bad_alg_id_params(self):
+        der_str = encode_sequence(
+            encode_integer(1),
+            encode_sequence(encode_oid(*Ed25519.oid), encode_integer(1)),
+            encode_octet_string(encode_octet_string(b"A" * 32)),
+        )
+
+        with self.assertRaises(UnexpectedDER) as e:
+            SigningKey.from_der(der_str)
+
+        self.assertIn("Non NULL parameters", str(e.exception))
+
+    def test_ed25519_from_der_junk_after_priv_key(self):
+        der_str = encode_sequence(
+            encode_integer(1),
+            encode_sequence(
+                encode_oid(*Ed25519.oid),
+            ),
+            encode_octet_string(encode_octet_string(b"A" * 32) + b"B"),
+        )
+
+        with self.assertRaises(UnexpectedDER) as e:
+            SigningKey.from_der(der_str)
+
+        self.assertIn(
+            "trailing junk after the encoded private key", str(e.exception)
+        )
+
     def test_ed25519_sign(self):
         sk_str = SigningKey.from_string(
             b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
@@ -773,6 +803,11 @@ class TestSigningKey(unittest.TestCase):
         decoded = SigningKey.from_pem(sk.to_pem(format="pkcs8"))
 
         self.assertEqual(sk, decoded)
+
+    def test_ed25519_custom_entropy(self):
+        sk = SigningKey.generate(Ed25519, entropy=os.urandom)
+
+        self.assertIsNotNone(sk)
 
     def test_ed25519_from_secret_exponent(self):
         with self.assertRaises(ValueError) as e:
