@@ -13,7 +13,12 @@ import array
 import pytest
 import hashlib
 
-from .keys import VerifyingKey, SigningKey, MalformedPointError
+from .keys import (
+    VerifyingKey,
+    SigningKey,
+    MalformedPointError,
+    BadSignatureError,
+)
 from .der import (
     unpem,
     UnexpectedDER,
@@ -119,6 +124,10 @@ class TestVerifyingKeyFromString(unittest.TestCase):
         vk = VerifyingKey.from_string(bytearray(b"\x02" + self.key_bytes[:24]))
 
         self.assertEqual(self.vk.to_string(), vk.to_string())
+
+    def test_ed25519_VerifyingKey_from_string_imported(self):
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_string(b"AAA", Ed25519)
 
 
 class TestVerifyingKeyFromDer(unittest.TestCase):
@@ -405,6 +414,28 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
 
         self.assertTrue(vk.verify(sig, data))
 
+    def test_ed25519_sig_verify_malformed(self):
+        vk_pem = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MCowBQYDK2VwAyEAIwBQ0NZkIiiO41WJfm5BV42u3kQm7lYnvIXmCy8qy2U=\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+
+        vk = VerifyingKey.from_pem(vk_pem)
+
+        data = b"data\n"
+
+        # modified signature from test_ed25519_sig_verify
+        sig = (
+            b"\xAA\x47\xab\x6a\x33\xcd\x79\x45\xad\x98\x11\x6c\xb9\xf2\x20\xeb"
+            b"\x90\xd6\x50\xe3\xc7\x8f\x9f\x60\x10\xec\x75\xe0\x2f\x27\xd3\x96"
+            b"\xda\xe8\x58\x7f\xe0\xfe\x46\x5c\x81\xef\x50\xec\x29\x9f\xae\xd5"
+            b"\xad\x46\x3c\x91\x68\x83\x4d\xea\x8d\xa8\x19\x04\x04\x79\x03\x0b"
+        )
+
+        with self.assertRaises(BadSignatureError):
+            vk.verify(sig, data)
+
     def test_ed448_from_pem(self):
         pem_str = (
             "-----BEGIN PUBLIC KEY-----\n"
@@ -517,6 +548,17 @@ class TestSigningKey(unittest.TestCase):
         )
         cls.sk2 = SigningKey.from_pem(prv_key_str)
 
+    def test_to_der_pkcs8(self):
+        self.assertEqual(
+            self.sk1.to_der(format="pkcs8"),
+            b"0o\x02\x01\x010\x13\x06\x07*\x86H\xce=\x02\x01\x06\x08*\x86H"
+            b"\xce=\x03\x01\x01\x04U0S\x02\x01\x01\x04\x18^\xc8B\x0b\xd6\xef"
+            b"\x92R\xa9B\xe9\x89\x04<\xa2\x9fV\x1f\xa5%w\x0e\xb1\xc5\xa14\x03"
+            b"2\x00\x04\xb8\x81w\xd0\x84\xef\x17\xf5\xe4V9@\x80(6\x0f\x9fY"
+            b"\xb4\xa4\xd7&Nb\xda\x06Q\xdc\xe4z5\xa4\xc5\xb4\\\xf5\x15\x93B:"
+            b"\x8bU{\x9c \x99\xf3l",
+        )
+
     def test_decoding_explicit_curve_parameters(self):
         prv_key_str = (
             "-----BEGIN PRIVATE KEY-----\n"
@@ -626,6 +668,71 @@ class TestSigningKey(unittest.TestCase):
 
         self.assertEqual(sk, sk_str)
 
+    def test_ed25519_sign(self):
+        sk_str = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+
+        msg = b"message"
+
+        sig = sk_str.sign(msg, sigencode=sigencode_der)
+
+        self.assertEqual(
+            sig,
+            b"\xe1,v\xc9>%\xda\xd2~>\xc3&\na\xf4@|\x9e`X\x11\x13@<\x987\xd4"
+            b"\r\xb1\xf5\xb3\x15\x7f%i{\xdf}\xdd\xb1\xf3\x02\x7f\x80\x02\xc2"
+            b'|\xe5\xd6\x06\xc4\n\xa3\xb0\xf6}\xc0\xed)"+E\xaf\x00',
+        )
+
+    def test_ed25519_sign_digest_deterministic(self):
+        sk_str = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+        with self.assertRaises(ValueError) as e:
+            sk_str.sign_digest_deterministic(b"a" * 20)
+
+        self.assertIn("Method unsupported for Edwards", str(e.exception))
+
+    def test_ed25519_sign_digest(self):
+        sk_str = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+        with self.assertRaises(ValueError) as e:
+            sk_str.sign_digest(b"a" * 20)
+
+        self.assertIn("Method unsupported for Edwards", str(e.exception))
+
+    def test_ed25519_sign_number(self):
+        sk_str = SigningKey.from_string(
+            b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
+            b"\xFC\xB8\xBE\xAC\x54\x66\x45\x11\x9A\xD7\xD7\xB8\x07\x0B\xF5\xD4",
+            Ed25519,
+        )
+        with self.assertRaises(ValueError) as e:
+            sk_str.sign_number(20)
+
+        self.assertIn("Method unsupported for Edwards", str(e.exception))
+
+    def test_ed25519_to_der_ssleay(self):
+        pem_str = (
+            "-----BEGIN PRIVATE KEY-----\n"
+            "MC4CAQAwBQYDK2VwBCIEIDS6x9FO1PG8T4xIPg8Zd0z8uL6sVGZFEZrX17gHC/XU\n"
+            "-----END PRIVATE KEY-----\n"
+        )
+
+        sk = SigningKey.from_pem(pem_str)
+
+        with self.assertRaises(ValueError) as e:
+            sk.to_der(format="ssleay")
+
+        self.assertIn("Only PKCS#8 format", str(e.exception))
+
     def test_ed25519_to_pem(self):
         sk = SigningKey.from_string(
             b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
@@ -666,6 +773,12 @@ class TestSigningKey(unittest.TestCase):
         decoded = SigningKey.from_pem(sk.to_pem(format="pkcs8"))
 
         self.assertEqual(sk, decoded)
+
+    def test_ed25519_from_secret_exponent(self):
+        with self.assertRaises(ValueError) as e:
+            SigningKey.from_secret_exponent(1234567890, curve=Ed25519)
+
+        self.assertIn("don't support setting the secret", str(e.exception))
 
     def test_ed448_from_pem(self):
         pem_str = (
