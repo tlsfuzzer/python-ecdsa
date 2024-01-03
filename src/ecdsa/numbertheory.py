@@ -222,14 +222,15 @@ def square_root_mod_prime(a, p):
         range_top = min(0x7FFFFFFF, p)
     else:
         range_top = p
-    for b in xrange(2, range_top):
+    for b in xrange(2, range_top):  # pragma: no branch
         if jacobi(b * b - 4 * a, p) == -1:
             f = (a, -b, 1)
             ff = polynomial_exp_mod((0, 1), (p + 1) // 2, f, p)
             if ff[1]:
                 raise SquareRootError("p is not prime")
             return ff[0]
-    raise RuntimeError("No b found.")
+    # just an assertion
+    raise RuntimeError("No b found.")  # pragma: no cover
 
 
 # because all the inverse_mod code is arch/environment specific, and coveralls
@@ -352,7 +353,7 @@ def factorization(n):
         q, r = divmod(n, d)
         if r == 0:
             count = 1
-            while d <= n:
+            while d <= n:  # pragma: no branch
                 n = q
                 q, r = divmod(n, d)
                 if r != 0:
@@ -376,7 +377,8 @@ def factorization(n):
                 if r == 0:  # d divides n. How many times?
                     count = 1
                     n = q
-                    while d <= n:  # As long as d might still divide n,
+                    # As long as d might still divide n,
+                    while d <= n:  # pragma: no branch
                         q, r = divmod(n, d)  # see if it does.
                         if r != 0:
                             break
