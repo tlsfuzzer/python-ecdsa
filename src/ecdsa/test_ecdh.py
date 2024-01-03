@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import subprocess
 import pytest
@@ -16,6 +17,8 @@ from .curves import (
     NIST384p,
     NIST521p,
     BRAINPOOLP160r1,
+    SECP112r2,
+    SECP128r1,
 )
 from .curves import curves
 from .ecdh import (
@@ -27,6 +30,10 @@ from .ecdh import (
 )
 from .keys import SigningKey, VerifyingKey
 from .ellipticcurve import CurveEdTw
+
+
+if "--fast" in sys.argv:
+    curves = [SECP112r2, SECP128r1]
 
 
 @pytest.mark.parametrize(
