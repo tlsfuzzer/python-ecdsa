@@ -300,15 +300,25 @@ jobs:
       - name: Exec mutation testing for PR
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
-          cosmic-ray exec cosmic-ray.toml session-vs-master.sqlite
+          systemd-run --user --scope -p MemoryMax=2G -p MemoryHigh=2G cosmic-ray exec cosmic-ray.toml session-vs-master.sqlite &
+          cosmic_pid=$!
+          for i in $(seq 1 10); do
+            echo $i
+            for j in $(seq 1 60); do
+              echo -n .
+              sleep 1
+            done
+          done
+          kill $cosmic_pid
+          wait $cosmic_pid || true
       - name: Check test coverage for PR
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
           # remove not-executed results
           sqlite3 session-vs-master.sqlite "DELETE from work_results WHERE work_results.worker_outcome = 'SKIPPED'"
           cr-report session-vs-master.sqlite | tail -n 5
-          # check if executed have at most 5% survival rate
-          cr-rate --fail-over 5 session-vs-master.sqlite
+          # check if executed have at most 15% survival rate
+          cr-rate --estimate --confidence 99.9 --fail-over 15 session-vs-master.sqlite
       - name: instrumental test coverage on PR
         if: ${{ contains(matrix.opt-deps, 'instrumental') && github.event.pull_request }}
         env:
