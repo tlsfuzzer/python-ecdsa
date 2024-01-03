@@ -664,7 +664,7 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
 
 HYP_SETTINGS = dict()
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     HYP_SETTINGS["max_examples"] = 2
 else:
     HYP_SETTINGS["max_examples"] = 10
