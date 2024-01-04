@@ -215,10 +215,10 @@ jobs:
         if: ${{ contains(matrix.tox-env, 'gmpyp') }}
         run: pip install gmpy
       - name: Install gmpy2 dependencies
-        if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') }}
+        if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') || matrix.mutation == 'true' }}
         run: sudo apt-get install -y libmpfr-dev libmpc-dev
       - name: Install gmpy2
-        if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') }}
+        if: ${{ contains(matrix.tox-env, 'gmpy2') || contains(matrix.tox-env, 'instrumental') || matrix.mutation == 'true' }}
         run: pip install gmpy2
       - name: Install build dependencies (2.6)
         if: ${{ matrix.python-version == '2.6' }}
@@ -268,7 +268,7 @@ jobs:
       - name: Install mutation testing dependencies
         if: ${{ matrix.mutation == 'true' }}
         run: |
-          pip install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
+          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
       - name: Display installed python package versions
         run: pip list
       - name: Test native speed
@@ -296,27 +296,38 @@ jobs:
           cosmic-ray init cosmic-ray.toml session-vs-master.sqlite
           git branch master origin/master
           cr-filter-git --config cosmic-ray.toml session-vs-master.sqlite
-          cr-report session-vs-master.sqlite | tail -n 5
+          cr-report session-vs-master.sqlite | tail -n 3
       - name: Exec mutation testing for PR
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
-          systemd-run --user --scope -p MemoryMax=2G -p MemoryHigh=2G cosmic-ray exec cosmic-ray.toml session-vs-master.sqlite &
+          systemd-run --user --scope -p MemoryMax=2G -p MemoryHigh=2G cosmic-ray --verbosity INFO exec cosmic-ray.toml session-vs-master.sqlite &
           cosmic_pid=$!
-          for i in $(seq 1 10); do
-            echo $i
-            for j in $(seq 1 60); do
-              echo -n .
-              sleep 1
-            done
+          for i in $(seq 1 600); do
+            # wait for test execution at most 10 minutes
+            kill -s 0 $cosmic_pid || break
+            sleep 1
           done
-          kill $cosmic_pid
+          kill $cosmic_pid || true
           wait $cosmic_pid || true
       - name: Check test coverage for PR
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
           # remove not-executed results
           sqlite3 session-vs-master.sqlite "DELETE from work_results WHERE work_results.worker_outcome = 'SKIPPED'"
-          cr-report session-vs-master.sqlite | tail -n 5
+          cr-report session-vs-master.sqlite | tail -n 3
+      - name: Generate html report
+        if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
+        run: |
+          cr-html session-vs-master.sqlite > cosmic-ray.html
+      - name: Archive mutation testing results
+        if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: mutation-PR-coverage-report
+          path: cosmic-ray.html
+      - name: Check test coverage for PR
+        if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
+        run: |
           # check if executed have at most 15% survival rate
           cr-rate --estimate --confidence 99.9 --fail-over 15 session-vs-master.sqlite
       - name: instrumental test coverage on PR
@@ -399,7 +410,7 @@ jobs:
           key: sessions-${{ github.sha }}
       - name: Install cosmic-ray
         run: |
-          pip3 install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
+          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
       - name: Install dependencies
         run: |
           sudo apt-get install -y sqlite3
@@ -474,7 +485,7 @@ jobs:
       - name: Install build dependencies
         run: |
           pip install -r build-requirements.txt
-          pip install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
+          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
       - name: Run mutation testing
         run: |
           cp sessions/session-${{ matrix.name }}.sqlite session.sqlite
@@ -621,7 +632,7 @@ jobs:
           key: sessions-${{ github.sha }}-19-done
       - name: Install cosmic-ray
         run: |
-          pip3 install https://github.com/tomato42/cosmic-ray/archive/random-order.zip
+          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
       - name: Install dependencies
         run: |
           sudo apt-get install -y sqlite3
