@@ -65,7 +65,7 @@ modified as part of the python-ecdsa package.
 """
 
 import warnings
-from six import int2byte, b
+from six import int2byte
 from . import ellipticcurve
 from . import numbertheory
 from .util import bit_length
@@ -280,7 +280,7 @@ def int_to_string(x):  # pragma: no cover
     )
     assert x >= 0
     if x == 0:
-        return b("\0")
+        return b"\0"
     result = []
     while x:
         ordinal = x & 0xFF
@@ -288,7 +288,7 @@ def int_to_string(x):  # pragma: no cover
         x >>= 8
 
     result.reverse()
-    return b("").join(result)
+    return b"".join(result)
 
 
 def string_to_int(s):  # pragma: no cover

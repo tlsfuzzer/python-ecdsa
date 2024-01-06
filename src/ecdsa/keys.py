@@ -5,7 +5,7 @@ Primary classes for performing signing and verification operations.
 import binascii
 from hashlib import sha1
 import os
-from six import PY2, b
+from six import PY2
 from . import ecdsa, eddsa
 from . import der, ssh
 from . import rfc6979
@@ -1044,7 +1044,7 @@ class SigningKey(object):
         curve = None
 
         s, empty = der.remove_sequence(s)
-        if empty != b(""):
+        if empty != b"":
             raise der.UnexpectedDER(
                 "trailing junk after DER privkey: %s" % binascii.hexlify(empty)
             )
@@ -1115,7 +1115,7 @@ class SigningKey(object):
             # Unpack the ECPrivateKey to get to the key data octet string,
             # and rejoin the ssleay parsing path.
             s, empty = der.remove_sequence(s)
-            if empty != b(""):
+            if empty != b"":
                 raise der.UnexpectedDER(
                     "trailing junk after DER privkey: %s"
                     % binascii.hexlify(empty)
@@ -1155,7 +1155,7 @@ class SigningKey(object):
         # our from_string method likes fixed-length privkey strings
         if len(privkey_str) < curve.baselen:
             privkey_str = (
-                b("\x00") * (curve.baselen - len(privkey_str)) + privkey_str
+                b"\x00" * (curve.baselen - len(privkey_str)) + privkey_str
             )
         return cls.from_string(privkey_str, curve, hashfunc)
 

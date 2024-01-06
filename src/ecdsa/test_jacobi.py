@@ -7,7 +7,6 @@ except ImportError:
     import unittest
 
 import os
-import sys
 import signal
 import pytest
 import threading
