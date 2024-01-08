@@ -18,7 +18,7 @@ import math
 import binascii
 import sys
 from hashlib import sha256
-from six import PY2, int2byte, b, next
+from six import PY2, int2byte, next
 from . import der
 from ._compat import normalise_bytes
 
@@ -202,7 +202,7 @@ def randrange_from_seed__trytryagain(seed, order):
     bits, bytes, extrabits = bits_and_bytes(order)
     generate = PRNG(seed)
     while True:
-        extrabyte = b("")
+        extrabyte = b""
         if extrabits:
             extrabyte = int2byte(ord(generate(1)) & lsb_of_ones(extrabits))
         guess = string_to_number(extrabyte + generate(bytes)) + 1
