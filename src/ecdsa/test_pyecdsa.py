@@ -332,9 +332,7 @@ class ECDSA(unittest.TestCase):
         pem = pub1.to_pem()
         self.assertEqual(type(pem), binary_type)
         self.assertTrue(pem.startswith(b"-----BEGIN PUBLIC KEY-----"), pem)
-        self.assertTrue(
-            pem.strip().endswith(b"-----END PUBLIC KEY-----"), pem
-        )
+        self.assertTrue(pem.strip().endswith(b"-----END PUBLIC KEY-----"), pem)
         pub2 = VerifyingKey.from_pem(pem)
         self.assertTruePubkeysEqual(pub1, pub2)
 
