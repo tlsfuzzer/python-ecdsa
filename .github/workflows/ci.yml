@@ -269,6 +269,7 @@ jobs:
         if: ${{ matrix.mutation == 'true' }}
         run: |
           pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install pytest-timeout
       - name: Display installed python package versions
         run: pip list
       - name: Test native speed
@@ -411,6 +412,7 @@ jobs:
       - name: Install cosmic-ray
         run: |
           pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install pytest-timeout
       - name: Install dependencies
         run: |
           sudo apt-get install -y sqlite3
@@ -486,6 +488,7 @@ jobs:
         run: |
           pip install -r build-requirements.txt
           pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install pytest-timeout
       - name: Run mutation testing
         run: |
           cp sessions/session-${{ matrix.name }}.sqlite session.sqlite
@@ -633,6 +636,7 @@ jobs:
       - name: Install cosmic-ray
         run: |
           pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install pytest-timeout
       - name: Install dependencies
         run: |
           sudo apt-get install -y sqlite3
