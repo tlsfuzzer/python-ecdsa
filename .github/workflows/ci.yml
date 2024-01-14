@@ -655,7 +655,7 @@ jobs:
           path: cosmic-ray.html
       - name: Get mutation score
         run: |
-          echo "print(100-$(cr-rate session.sqlite))" > print-score.py
+          echo "print('{0:.2f}'.format(100-$(cr-rate session.sqlite)))" > print-score.py
           echo "MUT_SCORE=$(python print-score.py)" >> $GITHUB_ENV
       - name: Create mutation score badge
         if: ${{ !github.event.pull_request }}
