@@ -32,7 +32,7 @@ from .keys import SigningKey, VerifyingKey
 from .ellipticcurve import CurveEdTw
 
 
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     curves = [SECP112r2, SECP128r1]
 
 

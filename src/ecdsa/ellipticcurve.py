@@ -1532,7 +1532,9 @@ class PointEdwards(AbstractPoint):
 
         X3, Y3, Z3, T3 = self._double(X1, Y1, Z1, T1, p, a)
 
-        if not X3 or not T3:
+        # both Ed25519 and Ed448 have prime order, so no point added to
+        # itself will equal zero
+        if not X3 or not T3:  # pragma: no branch
             return INFINITY
         return PointEdwards(self.__curve, X3, Y3, Z3, T3, self.__order)
 
