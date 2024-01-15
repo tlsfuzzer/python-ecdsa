@@ -40,6 +40,7 @@ if GMPY2 or GMPY:  # pragma: no branch
 
 import math
 import warnings
+import random
 from .util import bit_length
 
 
@@ -573,6 +574,7 @@ def is_prime(n):
 
     t = 40
     n_bits = 1 + bit_length(n)
+    assert 11 <= n_bits <= 16384
     for k, tt in (
         (100, 27),
         (150, 18),
@@ -599,7 +601,7 @@ def is_prime(n):
         s = s + 1
         r = r // 2
     for i in xrange(t):
-        a = smallprimes[i]
+        a = random.choice(smallprimes)
         y = pow(a, r, n)
         if y != 1 and y != n - 1:
             j = 1

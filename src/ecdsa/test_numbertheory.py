@@ -305,6 +305,29 @@ class TestIsPrime(unittest.TestCase):
         # nextPrime[2^2048]
         assert is_prime(mpz(2) ** 2048 + 0x3D5)
 
+    def test_pseudoprime_base_19(self):
+        assert not is_prime(1543267864443420616877677640751301)
+
+    def test_pseudoprime_base_300(self):
+        # F. Arnault "Constructing Carmichael Numbers Which Are Strong
+        # Pseudoprimes to Several Bases". Journal of Symbolic
+        # Computation. 20 (2): 151-161. doi:10.1006/jsco.1995.1042.
+        # Section 4.4 Large Example (a pseudoprime to all bases up to
+        # 300)
+        p = int(
+            "29 674 495 668 685 510 550 154 174 642 905 332 730 "
+            "771 991 799 853 043 350 995 075 531 276 838 753 171 "
+            "770 199 594 238 596 428 121 188 033 664 754 218 345 "
+            "562 493 168 782 883".replace(" ", "")
+        )
+
+        assert is_prime(p)
+        for _ in range(10):
+            if not is_prime(p * (313 * (p - 1) + 1) * (353 * (p - 1) + 1)):
+                break
+        else:
+            assert False, "composite not detected"
+
 
 class TestNumbertheory(unittest.TestCase):
     def test_gcd(self):
