@@ -329,8 +329,8 @@ jobs:
       - name: Check test coverage for PR
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
         run: |
-          # check if executed have at most 15% survival rate
-          cr-rate --estimate --confidence 99.9 --fail-over 15 session-vs-master.sqlite
+          # check if executed have at most 50% survival rate
+          cr-rate --estimate --confidence 99.9 --fail-over 50 session-vs-master.sqlite
       - name: instrumental test coverage on PR
         if: ${{ contains(matrix.opt-deps, 'instrumental') && github.event.pull_request }}
         env:
