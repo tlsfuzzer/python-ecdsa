@@ -163,6 +163,27 @@ def test_ed25519_eq_x_different_y():
     assert a != b
 
 
+def test_ed25519_mul_by_order():
+    g = PointEdwards(
+        curve_ed25519,
+        generator_ed25519.x(),
+        generator_ed25519.y(),
+        1,
+        generator_ed25519.x() * generator_ed25519.y(),
+    )
+
+    assert g * generator_ed25519.order() == INFINITY
+
+
+def test_radd():
+
+    a = PointEdwards(curve_ed25519, 1, 1, 1, 1)
+
+    p = INFINITY + a
+
+    assert p == a
+
+
 def test_ed25519_test_normalisation_and_scaling():
     x = generator_ed25519.x()
     y = generator_ed25519.y()
@@ -664,7 +685,7 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
 
 HYP_SETTINGS = dict()
-if "--fast" in sys.argv:
+if "--fast" in sys.argv:  # pragma: no cover
     HYP_SETTINGS["max_examples"] = 2
 else:
     HYP_SETTINGS["max_examples"] = 10

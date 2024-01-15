@@ -223,3 +223,34 @@ class TestPoint(unittest.TestCase):
     def test_inequality_points_diff_types(self):
         c = CurveFp(100, -3, 100)
         self.assertNotEqual(self.g_23, c)
+
+    def test_to_bytes_from_bytes(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(p, Point.from_bytes(self.c_23, p.to_bytes()))
+
+    def test_add_to_neg_self(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(INFINITY, p + (-p))
+
+    def test_add_to_infinity(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertIs(p, p + INFINITY)
+
+    def test_mul_infinity_by_scalar(self):
+        self.assertIs(INFINITY, INFINITY * 10)
+
+    def test_mul_by_negative(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(p * -5, (-p) * 5)
+
+    def test_str_infinity(self):
+        self.assertEqual(str(INFINITY), "infinity")
+
+    def test_str_point(self):
+        p = Point(self.c_23, 3, 10)
+
+        self.assertEqual(str(p), "(3,10)")

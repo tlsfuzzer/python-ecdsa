@@ -635,6 +635,12 @@ class TestJacobi(unittest.TestCase):
 
         self.assertNotEqual(p_a, p_b)
 
+    def test_add_with_point_at_infinity(self):
+        pj1 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
+        x, y, z = pj1._add(2, 3, 1, 5, 5, 0, 23)
+
+        self.assertEqual((x, y, z), (2, 3, 1))
+
     def test_pickle(self):
         pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)

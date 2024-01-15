@@ -8,7 +8,7 @@ try:
     from gmpy2 import mpz
 
     GMPY = True
-except ImportError:
+except ImportError:  # pragma: no cover
     try:
         from gmpy import mpz
 

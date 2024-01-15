@@ -31,7 +31,7 @@ from .keys import SigningKey
 from .keys import BadSignatureError
 from .util import sigencode_der, sigencode_string
 from .util import sigdecode_der, sigdecode_string
-from .curves import curves
+from .curves import curves, SECP112r2, SECP128r1
 from .der import (
     encode_integer,
     encode_bitstring,
@@ -53,6 +53,10 @@ hash_and_size = [
 """Pairs of hash names and their output sizes.
 Needed for pairing with curves as we don't support hashes
 bigger than order sizes of curves."""
+
+
+if "--fast" in sys.argv:  # pragma: no cover
+    curves = [SECP112r2, SECP128r1]
 
 
 keys_and_sigs = []
@@ -91,7 +95,7 @@ def test_signatures(verifying_key, signature):
 
 
 @st.composite
-def st_fuzzed_sig(draw, keys_and_sigs):
+def st_fuzzed_sig(draw, keys_and_sigs):  # pragma: no cover
     """
     Hypothesis strategy that generates pairs of VerifyingKey and malformed
     signatures created by fuzzing of a valid signature.
@@ -174,7 +178,7 @@ def test_fuzzed_der_signatures(args):
 
 
 @st.composite
-def st_random_der_ecdsa_sig_value(draw):
+def st_random_der_ecdsa_sig_value(draw):  # pragma: no cover
     """
     Hypothesis strategy for selecting random values and encoding them
     to ECDSA-Sig-Value object::
@@ -220,7 +224,7 @@ def test_random_der_ecdsa_sig_value(params):
         verifying_key.verify(sig, example_data, sigdecode=sigdecode_der)
 
 
-def st_der_integer(*args, **kwargs):
+def st_der_integer(*args, **kwargs):  # pragma: no cover
     """
     Hypothesis strategy that returns a random positive integer as DER
     INTEGER.
@@ -232,7 +236,7 @@ def st_der_integer(*args, **kwargs):
 
 
 @st.composite
-def st_der_bit_string(draw, *args, **kwargs):
+def st_der_bit_string(draw, *args, **kwargs):  # pragma: no cover
     """
     Hypothesis strategy that returns a random DER BIT STRING.
     Parameters are passed to hypothesis.strategy.binary.
@@ -248,7 +252,7 @@ def st_der_bit_string(draw, *args, **kwargs):
     return encode_bitstring(data, unused)
 
 
-def st_der_octet_string(*args, **kwargs):
+def st_der_octet_string(*args, **kwargs):  # pragma: no cover
     """
     Hypothesis strategy that returns a random DER OCTET STRING object.
     Parameters are passed to hypothesis.strategy.binary
@@ -256,7 +260,7 @@ def st_der_octet_string(*args, **kwargs):
     return st.builds(encode_octet_string, st.binary(*args, **kwargs))
 
 
-def st_der_null():
+def st_der_null():  # pragma: no cover
     """
     Hypothesis strategy that returns DER NULL object.
     """
@@ -264,7 +268,7 @@ def st_der_null():
 
 
 @st.composite
-def st_der_oid(draw):
+def st_der_oid(draw):  # pragma: no cover
     """
     Hypothesis strategy that returns DER OBJECT IDENTIFIER objects.
     """
@@ -279,7 +283,7 @@ def st_der_oid(draw):
     return encode_oid(first, second, *rest)
 
 
-def st_der():
+def st_der():  # pragma: no cover
     """
     Hypothesis strategy that returns random DER structures.
 

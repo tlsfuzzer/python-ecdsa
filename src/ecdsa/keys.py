@@ -1102,12 +1102,6 @@ class SigningKey(object):
 
             curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
 
-            if empty != b"":
-                raise der.UnexpectedDER(
-                    "unexpected data after algorithm identifier: %s"
-                    % binascii.hexlify(empty)
-                )
-
             # Up next is an octet string containing an ECPrivateKey. Ignore
             # the optional "attributes" and "publicKey" fields that come after.
             s, _ = der.remove_octet_string(s)

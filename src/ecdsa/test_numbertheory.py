@@ -30,6 +30,16 @@ from .numbertheory import (
     square_root_mod_prime,
 )
 
+try:
+    from gmpy2 import mpz
+except ImportError:
+    try:
+        from gmpy import mpz
+    except ImportError:
+
+        def mpz(x):
+            return x
+
 
 BIGPRIMES = (
     999671,
@@ -293,7 +303,30 @@ class TestIsPrime(unittest.TestCase):
 
     def test_large_prime(self):
         # nextPrime[2^2048]
-        assert is_prime(2**2048 + 0x3D5)
+        assert is_prime(mpz(2) ** 2048 + 0x3D5)
+
+    def test_pseudoprime_base_19(self):
+        assert not is_prime(1543267864443420616877677640751301)
+
+    def test_pseudoprime_base_300(self):
+        # F. Arnault "Constructing Carmichael Numbers Which Are Strong
+        # Pseudoprimes to Several Bases". Journal of Symbolic
+        # Computation. 20 (2): 151-161. doi:10.1006/jsco.1995.1042.
+        # Section 4.4 Large Example (a pseudoprime to all bases up to
+        # 300)
+        p = int(
+            "29 674 495 668 685 510 550 154 174 642 905 332 730 "
+            "771 991 799 853 043 350 995 075 531 276 838 753 171 "
+            "770 199 594 238 596 428 121 188 033 664 754 218 345 "
+            "562 493 168 782 883".replace(" ", "")
+        )
+
+        assert is_prime(p)
+        for _ in range(10):
+            if not is_prime(p * (313 * (p - 1) + 1) * (353 * (p - 1) + 1)):
+                break
+        else:
+            assert False, "composite not detected"
 
 
 class TestNumbertheory(unittest.TestCase):
@@ -309,6 +342,7 @@ class TestNumbertheory(unittest.TestCase):
         "case times-out on it",
     )
     @settings(**HYP_SLOW_SETTINGS)
+    @example([877 * 1151, 877 * 1009])
     @given(st_comp_with_com_fac())
     def test_gcd_with_com_factor(self, numbers):
         n = gcd(numbers)
@@ -323,6 +357,7 @@ class TestNumbertheory(unittest.TestCase):
         "case times-out on it",
     )
     @settings(**HYP_SLOW_SETTINGS)
+    @example([1151, 1069, 1009])
     @given(st_comp_no_com_fac())
     def test_gcd_with_uncom_factor(self, numbers):
         n = gcd(numbers)
@@ -415,13 +450,16 @@ class TestNumbertheory(unittest.TestCase):
     @settings(**HYP_SLOW_SETTINGS)
     @given(st.integers(min_value=3, max_value=1000).filter(lambda x: x % 2))
     def test_jacobi(self, mod):
+        mod = mpz(mod)
         if is_prime(mod):
             squares = set()
             for root in range(1, mod):
+                root = mpz(root)
                 assert jacobi(root * root, mod) == 1
                 squares.add(root * root % mod)
             for i in range(1, mod):
                 if i not in squares:
+                    i = mpz(i)
                     assert jacobi(i, mod) == -1
         else:
             factors = factorization(mod)
