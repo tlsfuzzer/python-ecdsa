@@ -374,7 +374,13 @@ jobs:
           COVERALLS_FLAG_NAME: ${{ matrix.name }}
           COVERALLS_PARALLEL: true
           COVERALLS_SERVICE_NAME: github
-        run: coveralls
+          PY_VERSION: ${{ matrix.python-version }}
+        run: |
+          if [[ $PY_VERSION == "2.6" ]]; then
+            COVERALLS_SKIP_SSL_VERIFY=1 coveralls
+          else
+            coveralls
+          fi
 
   coveralls:
     name: Indicate completion to coveralls.io
