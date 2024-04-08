@@ -268,7 +268,8 @@ jobs:
       - name: Install mutation testing dependencies
         if: ${{ matrix.mutation == 'true' }}
         run: |
-          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          #pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
           pip install pytest-timeout
       - name: Display installed python package versions
         run: pip list
@@ -417,7 +418,8 @@ jobs:
           key: sessions-${{ github.sha }}
       - name: Install cosmic-ray
         run: |
-          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          #pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip3 install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
           pip install pytest-timeout
       - name: Install dependencies
         run: |
@@ -493,7 +495,8 @@ jobs:
       - name: Install build dependencies
         run: |
           pip install -r build-requirements.txt
-          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          #pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
           pip install pytest-timeout
       - name: Run mutation testing
         run: |
@@ -641,7 +644,8 @@ jobs:
           key: sessions-${{ github.sha }}-19-done
       - name: Install cosmic-ray
         run: |
-          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          #pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip3 install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
           pip install pytest-timeout
       - name: Install dependencies
         run: |
