@@ -503,7 +503,11 @@ jobs:
           cp sessions/session-${{ matrix.name }}.sqlite session.sqlite
           systemd-run --user --scope -p MemoryMax=2G -p MemoryHigh=2G cosmic-ray exec cosmic-ray.toml session.sqlite &
           cosmic_pid=$!
+          sleep 1
           for i in $(seq 1 10); do
+            if ! kill -s 0 $cosmic_pid; then
+              break
+            fi
             echo $i
             sleep 60
           done
