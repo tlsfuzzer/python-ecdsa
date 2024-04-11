@@ -268,8 +268,7 @@ jobs:
       - name: Install mutation testing dependencies
         if: ${{ matrix.mutation == 'true' }}
         run: |
-          #pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
-          pip install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
+          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
           pip install pytest-timeout
       - name: Display installed python package versions
         run: pip list
@@ -306,7 +305,9 @@ jobs:
           cosmic_pid=$!
           for i in $(seq 1 600); do
             # wait for test execution at most 10 minutes
-            kill -s 0 $cosmic_pid || break
+            if ! kill -s 0 $cosmic_pid; then
+              break
+            fi
             sleep 1
           done
           kill $cosmic_pid || true
@@ -418,8 +419,7 @@ jobs:
           key: sessions-${{ github.sha }}
       - name: Install cosmic-ray
         run: |
-          #pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
-          pip3 install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
+          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
           pip install pytest-timeout
       - name: Install dependencies
         run: |
@@ -495,8 +495,7 @@ jobs:
       - name: Install build dependencies
         run: |
           pip install -r build-requirements.txt
-          #pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
-          pip install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
+          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
           pip install pytest-timeout
       - name: Run mutation testing
         run: |
@@ -511,7 +510,7 @@ jobs:
             echo $i
             sleep 60
           done
-          kill $cosmic_pid
+          kill -s 0 $cosmic_pid && kill $cosmic_pid
           mkdir sessions-done/
           cp session.sqlite sessions-done/session-${{ matrix.name }}-done.sqlite
       - name: Report executed
@@ -648,8 +647,7 @@ jobs:
           key: sessions-${{ github.sha }}-19-done
       - name: Install cosmic-ray
         run: |
-          #pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
-          pip3 install https://github.com/tomato42/cosmic-ray/archive/no-executed.zip
+          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
           pip install pytest-timeout
       - name: Install dependencies
         run: |
