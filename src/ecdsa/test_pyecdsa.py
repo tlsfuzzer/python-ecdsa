@@ -365,7 +365,9 @@ class ECDSA(unittest.TestCase):
 
     def test_vk_from_der_garbage_after_curve_oid(self):
         type_oid_der = encoded_oid_ecPublicKey
-        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b"garbage"
+        curve_oid_der = (
+            der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b"garbage"
+        )
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
         point_der = der.encode_bitstring(b"\x00\xff", None)
         to_decode = der.encode_sequence(enc_type_der, point_der)
