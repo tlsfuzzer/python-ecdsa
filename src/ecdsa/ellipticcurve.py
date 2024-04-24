@@ -1223,14 +1223,14 @@ class Point(AbstractPoint):
         negative_self = Point(self.__curve, self.__x, -self.__y, self.__order)
         i = leftmost_bit(e3) // 2
         result = self
-        # print_("Multiplying %s by %d (e3 = %d):" % (self, other, e3))
+        # print("Multiplying %s by %d (e3 = %d):" % (self, other, e3))
         while i > 1:
             result = result.double()
             if (e3 & i) != 0 and (e & i) == 0:
                 result = result + self
             if (e3 & i) == 0 and (e & i) != 0:
                 result = result + negative_self
-            # print_(". . . i = %d, result = %s" % ( i, result ))
+            # print(". . . i = %d, result = %s" % ( i, result ))
             i = i // 2
 
         return result
