@@ -1,4 +1,4 @@
-from __future__ import with_statement, division
+from __future__ import with_statement, division, print_function
 
 try:
     import unittest2 as unittest
@@ -16,7 +16,7 @@ from functools import partial
 from hypothesis import given, settings
 import hypothesis.strategies as st
 
-from six import b, print_, binary_type
+from six import binary_type
 from .keys import SigningKey, VerifyingKey
 from .keys import BadSignatureError, MalformedPointError, BadDigestError
 from . import util
@@ -365,8 +365,8 @@ class ECDSA(unittest.TestCase):
 
     def test_vk_from_der_garbage_after_curve_oid(self):
         type_oid_der = encoded_oid_ecPublicKey
-        curve_oid_der = der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b(
-            "garbage"
+        curve_oid_der = (
+            der.encode_oid(*(1, 2, 840, 10045, 3, 1, 1)) + b"garbage"
         )
         enc_type_der = der.encode_sequence(type_oid_der, curve_oid_der)
         point_der = der.encode_bitstring(b"\x00\xff", None)
@@ -770,10 +770,10 @@ class ECDSA(unittest.TestCase):
         sk = SigningKey.from_secret_exponent(123456789)
         vk = sk.verifying_key
 
-        exp = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        exp = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         self.assertEqual(vk.to_string(), exp)
         self.assertEqual(vk.to_string("raw"), exp)
@@ -785,10 +785,10 @@ class ECDSA(unittest.TestCase):
         sk = SigningKey.from_secret_exponent(123456789)
         vk = sk.verifying_key
 
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         from_raw = VerifyingKey.from_string(enc)
@@ -804,11 +804,11 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(from_uncompressed.pubkey.point, vk.pubkey.point)
 
     def test_uncompressed_decoding_as_only_alowed(self):
-        enc = b(
-            "\x04"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x04"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         vk = VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
         sk = SigningKey.from_secret_exponent(123456789)
@@ -816,10 +816,10 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(vk, sk.verifying_key)
 
     def test_raw_decoding_with_blocked_format(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
@@ -833,11 +833,11 @@ class ECDSA(unittest.TestCase):
         self.assertIn("Only uncompressed, compressed", str(e.exception))
 
     def test_uncompressed_decoding_with_blocked_format(self):
-        enc = b(
-            "\x04"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x04"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
@@ -845,11 +845,11 @@ class ECDSA(unittest.TestCase):
         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
 
     def test_hybrid_decoding_with_blocked_format(self):
-        enc = b(
-            "\x06"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x06"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("uncompressed",))
@@ -857,11 +857,11 @@ class ECDSA(unittest.TestCase):
         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
 
     def test_compressed_decoding_with_blocked_format(self):
-        enc = b(
-            "\x02"
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x02"
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )[:25]
         with self.assertRaises(MalformedPointError) as exp:
             VerifyingKey.from_string(enc, valid_encodings=("hybrid", "raw"))
@@ -869,40 +869,40 @@ class ECDSA(unittest.TestCase):
         self.assertIn("(hybrid, raw)", str(exp.exception))
 
     def test_decoding_with_malformed_uncompressed(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b"\x02" + enc)
 
     def test_decoding_with_malformed_compressed(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b"\x01" + enc[:24])
 
     def test_decoding_with_inconsistent_hybrid(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b"\x07" + enc)
 
     def test_decoding_with_point_not_on_curve(self):
-        enc = b(
-            "\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
-            "\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
-            "z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
+        enc = (
+            b"\x0c\xe0\x1d\xe0d\x1c\x8eS\x8a\xc0\x9eK\xa8x !\xd5\xc2\xc3"
+            b"\xfd\xc8\xa0c\xff\xfb\x02\xb9\xc4\x84)\x1a\x0f\x8b\x87\xa4"
+            b"z\x8a#\xb5\x97\xecO\xb6\xa0HQ\x89*"
         )
 
         with self.assertRaises(MalformedPointError):
@@ -1894,7 +1894,7 @@ class Util(unittest.TestCase):
         # this technique should use the full range
         self.assertTrue(counts[order - 1])
         for i in range(1, order):
-            print_("%3d: %s" % (i, "*" * (counts[i] // 100)))
+            print("%3d: %s" % (i, "*" * (counts[i] // 100)))
 
 
 class RFC6979(unittest.TestCase):
@@ -1981,9 +1981,7 @@ class RFC6979(unittest.TestCase):
             ),
             secexp=int("09A4D6792295A7F730FC3F2B49CBC0F62E862272F", 16),
             hsh=unhexlify(
-                b(
-                    "AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"
-                )
+                b"AF2BDBE1AA9B6EC1E2ADE1D694F41FC71A831D0268E9891562113D8A62ADD1BF"
             ),
             hash_func=hashlib.sha256,
             expected=int("23AF4074C90A02B3FE61D286D5C87F425E6BDD81B", 16),
