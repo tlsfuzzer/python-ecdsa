@@ -641,6 +641,36 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual((x, y, z), (2, 3, 1))
 
+    def test_double_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 11, 20, 1)
+        p2 = p.double()
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2.double()
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_mul_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 11, 20, 1)
+        p2 = p * 2
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 * 2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_add_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 11, 20, 1)
+        p2 = p + p
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 + p2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
     def test_pickle(self):
         pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         self.assertEqual(pickle.loads(pickle.dumps(pj)), pj)

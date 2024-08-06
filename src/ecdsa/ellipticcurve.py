@@ -633,7 +633,7 @@ class PointJacobi(AbstractPoint):
         """
         x1, y1, z1 = self.__coords
         if other is INFINITY:
-            return not y1 or not z1
+            return (not x1 and not y1) or not z1
         if isinstance(other, Point):
             x2, y2, z2 = other.x(), other.y(), 1
         elif isinstance(other, PointJacobi):
@@ -728,6 +728,7 @@ class PointJacobi(AbstractPoint):
             return INFINITY
         self.scale()
         x, y, z = self.__coords
+        assert z == 1
         return Point(self.__curve, x, y, self.__order)
 
     @staticmethod
@@ -802,7 +803,7 @@ class PointJacobi(AbstractPoint):
 
         X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
 
-        if not Y3 or not Z3:
+        if not Y3 and not X3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -886,10 +887,10 @@ class PointJacobi(AbstractPoint):
 
     def _add(self, X1, Y1, Z1, X2, Y2, Z2, p):
         """add two points, select fastest method."""
-        if not Y1 or not Z1:
-            return X2, Y2, Z2
-        if not Y2 or not Z2:
-            return X1, Y1, Z1
+        if (not X1 and not Y1) or not Z1:
+            return X2 % p, Y2 % p, Z2 % p
+        if (not X2 and not Y2) or not Z2:
+            return X1 % p, Y1 % p, Z1 % p
         if Z1 == Z2:
             if Z1 == 1:
                 return self._add_with_z_1(X1, Y1, X2, Y2, p)
@@ -917,7 +918,7 @@ class PointJacobi(AbstractPoint):
 
         X3, Y3, Z3 = self._add(X1, Y1, Z1, X2, Y2, Z2, p)
 
-        if not Y3 or not Z3:
+        if (not X3 and not Y3) or not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -972,7 +973,7 @@ class PointJacobi(AbstractPoint):
             elif i > 0:
                 X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
 
-        if not Y3 or not Z3:
+        if (not X3 and not Y3) or not Z3:
             return INFINITY
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
@@ -1070,7 +1071,7 @@ class PointJacobi(AbstractPoint):
                     assert B > 0
                     X3, Y3, Z3 = _add(X3, Y3, Z3, pApB_X, pApB_Y, pApB_Z, p)
 
-        if not Y3 or not Z3:
+        if (not X3 and not Y3) or not Z3:
             return INFINITY
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
@@ -1220,7 +1221,12 @@ class Point(AbstractPoint):
         # From X9.62 D.3.2:
 
         e3 = 3 * e
-        negative_self = Point(self.__curve, self.__x, -self.__y, self.__order)
+        negative_self = Point(
+            self.__curve,
+            self.__x,
+            (-self.__y) % self.__curve.p(),
+            self.__order,
+        )
         i = leftmost_bit(e3) // 2
         result = self
         # print("Multiplying %s by %d (e3 = %d):" % (self, other, e3))
@@ -1247,7 +1253,6 @@ class Point(AbstractPoint):
 
     def double(self):
         """Return a new point that is twice the old."""
-
         if self == INFINITY:
             return INFINITY
 
@@ -1260,6 +1265,9 @@ class Point(AbstractPoint):
             (3 * self.__x * self.__x + a)
             * numbertheory.inverse_mod(2 * self.__y, p)
         ) % p
+
+        if not l:
+            return INFINITY
 
         x3 = (l * l - 2 * self.__x) % p
         y3 = (l * (self.__x - x3) - self.__y) % p
