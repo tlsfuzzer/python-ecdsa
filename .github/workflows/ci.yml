@@ -47,10 +47,6 @@ jobs:
             os: ubuntu-20.04
             python-version: 2.7
             tox-env: gmpy2py27
-          - name: py3.5
-            os: ubuntu-20.04
-            python-version: 3.5
-            tox-env: py35
           - name: py3.6
             os: ubuntu-20.04
             python-version: 3.6
