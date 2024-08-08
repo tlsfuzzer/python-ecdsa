@@ -633,7 +633,7 @@ class PointJacobi(AbstractPoint):
         """
         x1, y1, z1 = self.__coords
         if other is INFINITY:
-            return (not x1 and not y1) or not z1
+            return not z1
         if isinstance(other, Point):
             x2, y2, z2 = other.x(), other.y(), 1
         elif isinstance(other, PointJacobi):
@@ -723,8 +723,9 @@ class PointJacobi(AbstractPoint):
 
     def to_affine(self):
         """Return point in affine form."""
-        _, y, z = self.__coords
-        if not y or not z:
+        _, _, z = self.__coords
+        p = self.__curve.p()
+        if not (z % p):
             return INFINITY
         self.scale()
         x, y, z = self.__coords
@@ -760,7 +761,7 @@ class PointJacobi(AbstractPoint):
         # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-mdbl-2007-bl
         XX, YY = X1 * X1 % p, Y1 * Y1 % p
         if not YY:
-            return 0, 0, 1
+            return 0, 0, 0
         YYYY = YY * YY % p
         S = 2 * ((X1 + YY) ** 2 - XX - YYYY) % p
         M = 3 * XX + a
@@ -774,13 +775,13 @@ class PointJacobi(AbstractPoint):
         """Add a point to itself, arbitrary z."""
         if Z1 == 1:
             return self._double_with_z_1(X1, Y1, p, a)
-        if not Y1 or not Z1:
-            return 0, 0, 1
+        if not Z1:
+            return 0, 0, 0
         # after:
         # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#doubling-dbl-2007-bl
         XX, YY = X1 * X1 % p, Y1 * Y1 % p
         if not YY:
-            return 0, 0, 1
+            return 0, 0, 0
         YYYY = YY * YY % p
         ZZ = Z1 * Z1 % p
         S = 2 * ((X1 + YY) ** 2 - XX - YYYY) % p
@@ -796,14 +797,14 @@ class PointJacobi(AbstractPoint):
         """Add a point to itself."""
         X1, Y1, Z1 = self.__coords
 
-        if not Y1:
+        if not Z1:
             return INFINITY
 
         p, a = self.__curve.p(), self.__curve.a()
 
         X3, Y3, Z3 = self._double(X1, Y1, Z1, p, a)
 
-        if not Y3 and not X3:
+        if not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -887,9 +888,9 @@ class PointJacobi(AbstractPoint):
 
     def _add(self, X1, Y1, Z1, X2, Y2, Z2, p):
         """add two points, select fastest method."""
-        if (not X1 and not Y1) or not Z1:
+        if not Z1:
             return X2 % p, Y2 % p, Z2 % p
-        if (not X2 and not Y2) or not Z2:
+        if not Z2:
             return X1 % p, Y1 % p, Z1 % p
         if Z1 == Z2:
             if Z1 == 1:
@@ -918,7 +919,7 @@ class PointJacobi(AbstractPoint):
 
         X3, Y3, Z3 = self._add(X1, Y1, Z1, X2, Y2, Z2, p)
 
-        if (not X3 and not Y3) or not Z3:
+        if not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -928,7 +929,7 @@ class PointJacobi(AbstractPoint):
 
     def _mul_precompute(self, other):
         """Multiply point by integer with precomputation table."""
-        X3, Y3, Z3, p = 0, 0, 1, self.__curve.p()
+        X3, Y3, Z3, p = 0, 0, 0, self.__curve.p()
         _add = self._add
         for X2, Y2 in self.__precompute:
             if other % 2:
@@ -941,7 +942,7 @@ class PointJacobi(AbstractPoint):
             else:
                 other //= 2
 
-        if not Y3 or not Z3:
+        if not Z3:
             return INFINITY
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
 
@@ -960,7 +961,7 @@ class PointJacobi(AbstractPoint):
 
         self = self.scale()
         X2, Y2, _ = self.__coords
-        X3, Y3, Z3 = 0, 0, 1
+        X3, Y3, Z3 = 0, 0, 0
         p, a = self.__curve.p(), self.__curve.a()
         _double = self._double
         _add = self._add
@@ -973,7 +974,7 @@ class PointJacobi(AbstractPoint):
             elif i > 0:
                 X3, Y3, Z3 = _add(X3, Y3, Z3, X2, Y2, 1, p)
 
-        if (not X3 and not Y3) or not Z3:
+        if not Z3:
             return INFINITY
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
@@ -1002,7 +1003,7 @@ class PointJacobi(AbstractPoint):
             other_mul = other_mul % self.__order
 
         # (X3, Y3, Z3) is the accumulator
-        X3, Y3, Z3 = 0, 0, 1
+        X3, Y3, Z3 = 0, 0, 0
         p, a = self.__curve.p(), self.__curve.a()
 
         # as we have 6 unique points to work with, we can't scale all of them,
@@ -1026,7 +1027,7 @@ class PointJacobi(AbstractPoint):
         # when the self and other sum to infinity, we need to add them
         # one by one to get correct result but as that's very unlikely to
         # happen in regular operation, we don't need to optimise this case
-        if not pApB_Y or not pApB_Z:
+        if not pApB_Z:
             return self * self_mul + other * other_mul
 
         # gmp object creation has cumulatively higher overhead than the
@@ -1071,7 +1072,7 @@ class PointJacobi(AbstractPoint):
                     assert B > 0
                     X3, Y3, Z3 = _add(X3, Y3, Z3, pApB_X, pApB_Y, pApB_Z, p)
 
-        if (not X3 and not Y3) or not Z3:
+        if not Z3:
             return INFINITY
 
         return PointJacobi(self.__curve, X3, Y3, Z3, self.__order)
@@ -1155,6 +1156,8 @@ class Point(AbstractPoint):
 
         Note: only points that lay on the same curve can be equal.
         """
+        if other is INFINITY:
+            return self.__x is None or self.__y is None
         if isinstance(other, Point):
             return (
                 self.__curve == other.__curve

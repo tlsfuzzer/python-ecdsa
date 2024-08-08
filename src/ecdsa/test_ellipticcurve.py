@@ -251,6 +251,12 @@ class TestPoint(unittest.TestCase):
         c = CurveFp(100, -3, 100)
         self.assertNotEqual(self.g_23, c)
 
+    def test_inequality_diff_y(self):
+        p1 = Point(self.c_23, 6, 4)
+        p2 = Point(self.c_23, 6, 19)
+
+        self.assertNotEqual(p1, p2)
+
     def test_to_bytes_from_bytes(self):
         p = Point(self.c_23, 3, 10)
 
