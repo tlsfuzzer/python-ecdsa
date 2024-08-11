@@ -47,10 +47,6 @@ jobs:
             os: ubuntu-20.04
             python-version: 2.7
             tox-env: gmpy2py27
-          - name: py3.5
-            os: ubuntu-20.04
-            python-version: 3.5
-            tox-env: py35
           - name: py3.6
             os: ubuntu-20.04
             python-version: 3.6
@@ -268,7 +264,7 @@ jobs:
       - name: Install mutation testing dependencies
         if: ${{ matrix.mutation == 'true' }}
         run: |
-          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install cosmic-ray
           pip install pytest-timeout
       - name: Display installed python package versions
         run: pip list
@@ -419,7 +415,7 @@ jobs:
           key: sessions-${{ github.sha }}
       - name: Install cosmic-ray
         run: |
-          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip3 install cosmic-ray
           pip install pytest-timeout
       - name: Install dependencies
         run: |
@@ -495,7 +491,7 @@ jobs:
       - name: Install build dependencies
         run: |
           pip install -r build-requirements.txt
-          pip install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip install cosmic-ray
           pip install pytest-timeout
       - name: Run mutation testing
         run: |
@@ -647,7 +643,7 @@ jobs:
           key: sessions-${{ github.sha }}-19-done
       - name: Install cosmic-ray
         run: |
-          pip3 install https://github.com/sixty-north/cosmic-ray/archive/master.zip
+          pip3 install cosmic-ray
           pip install pytest-timeout
       - name: Install dependencies
         run: |
