@@ -83,6 +83,11 @@ class TestCurve(unittest.TestCase):
         c192 = CurveFp(p, -3, b)
         self.assertNotEqual(self.c_23, c192)
 
+    def test_inequality_curves_by_b_only(self):
+        a = CurveFp(23, 1, 0)
+        b = CurveFp(23, 1, 1)
+        self.assertNotEqual(a, b)
+
     def test_usability_in_a_hashed_collection_curves(self):
         {self.c_23: None}
 

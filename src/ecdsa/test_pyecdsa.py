@@ -856,6 +856,22 @@ class ECDSA(unittest.TestCase):
 
         self.assertIn("Invalid X9.62 encoding", str(exp.exception))
 
+    def test_hybrid_decoding_with_inconsistent_encoding_and_no_validation(self):
+        sk = SigningKey.from_secret_exponent(123456789)
+        vk = sk.verifying_key
+
+        enc = vk.to_string("hybrid")
+        self.assertEqual(enc[:1], b'\x06')
+        enc = b'\x07' + enc[1:]
+
+        b = VerifyingKey.from_string(
+            enc,
+            valid_encodings=("hybrid",),
+            validate_point=False
+        )
+
+        self.assertEqual(vk, b)
+
     def test_compressed_decoding_with_blocked_format(self):
         enc = (
             b"\x02"
@@ -897,6 +913,17 @@ class ECDSA(unittest.TestCase):
 
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b"\x07" + enc)
+
+    def test_decoding_with_inconsistent_hybrid_odd_point(self):
+        sk = SigningKey.from_secret_exponent(123456791)
+        vk = sk.verifying_key
+
+        enc = vk.to_string("hybrid")
+        self.assertEqual(enc[:1], b'\x07')
+        enc = b'\x06' + enc[1:]
+
+        with self.assertRaises(MalformedPointError):
+            b = VerifyingKey.from_string(enc, valid_encodings=("hybrid",))
 
     def test_decoding_with_point_not_on_curve(self):
         enc = (
