@@ -666,15 +666,9 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(j_g.mul_add(4, dbl_neg, 2), INFINITY)
 
     @given(
-        st.integers(
-            min_value=0, max_value=int(generator_112r2.order() - 1)
-        ),
-        st.integers(
-            min_value=0, max_value=int(generator_112r2.order() - 1)
-        ),
-        st.integers(
-            min_value=0, max_value=int(generator_112r2.order() - 1)
-        )
+        st.integers(min_value=0, max_value=int(generator_112r2.order() - 1)),
+        st.integers(min_value=0, max_value=int(generator_112r2.order() - 1)),
+        st.integers(min_value=0, max_value=int(generator_112r2.order() - 1)),
     )
     @example(693, 2, 3293)  # values that will hit all the conditions for NAF
     def test_mul_add_random(self, mul1, mul2, mul3):
@@ -893,6 +887,7 @@ class TestJacobi(unittest.TestCase):
 
 class TestZeroCurve(unittest.TestCase):
     """Tests with curve that has (0, 0) on the curve."""
+
     def setUp(self):
         self.curve = CurveFp(23, 1, 0)
 
