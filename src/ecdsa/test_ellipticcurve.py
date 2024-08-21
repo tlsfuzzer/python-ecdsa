@@ -83,6 +83,11 @@ class TestCurve(unittest.TestCase):
         c192 = CurveFp(p, -3, b)
         self.assertNotEqual(self.c_23, c192)
 
+    def test_inequality_curves_by_b_only(self):
+        a = CurveFp(23, 1, 0)
+        b = CurveFp(23, 1, 1)
+        self.assertNotEqual(a, b)
+
     def test_usability_in_a_hashed_collection_curves(self):
         {self.c_23: None}
 
@@ -184,6 +189,33 @@ class TestPoint(unittest.TestCase):
         self.assertEqual(p3.x(), x3)
         self.assertEqual(p3.y(), y3)
 
+    def test_double_to_infinity(self):
+        p1 = Point(self.c_23, 11, 20)
+        p2 = p1.double()
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2.double()
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_add_self_to_infinity(self):
+        p1 = Point(self.c_23, 11, 20)
+        p2 = p1 + p1
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 + p2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_mul_to_infinity(self):
+        p1 = Point(self.c_23, 11, 20)
+        p2 = p1 * 2
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 * 2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
     def test_multiply(self):
         x1, y1, m, x3, y3 = (3, 10, 2, 7, 12)
         p1 = Point(self.c_23, x1, y1)
@@ -223,6 +255,12 @@ class TestPoint(unittest.TestCase):
     def test_inequality_points_diff_types(self):
         c = CurveFp(100, -3, 100)
         self.assertNotEqual(self.g_23, c)
+
+    def test_inequality_diff_y(self):
+        p1 = Point(self.c_23, 6, 4)
+        p2 = Point(self.c_23, 6, 19)
+
+        self.assertNotEqual(p1, p2)
 
     def test_to_bytes_from_bytes(self):
         p = Point(self.c_23, 3, 10)

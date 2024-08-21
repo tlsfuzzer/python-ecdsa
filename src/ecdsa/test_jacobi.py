@@ -14,7 +14,7 @@ import platform
 import hypothesis.strategies as st
 from hypothesis import given, assume, settings, example
 
-from .ellipticcurve import CurveFp, PointJacobi, INFINITY
+from .ellipticcurve import CurveFp, PointJacobi, INFINITY, Point
 from .ecdsa import (
     generator_256,
     curve_256,
@@ -92,14 +92,21 @@ class TestJacobi(unittest.TestCase):
         self.assertIs(pj, INFINITY)
 
     def test_double_with_zero_equivalent_point(self):
-        pj = PointJacobi(curve_256, 0, curve_256.p(), 1)
+        pj = PointJacobi(curve_256, 0, 0, 0)
 
         pj = pj.double()
 
         self.assertIs(pj, INFINITY)
 
-    def test_double_with_zero_equivalent_point_non_1_z(self):
-        pj = PointJacobi(curve_256, 0, curve_256.p(), 2)
+    def test_double_with_zero_equivalent_point_non_zero_z_non_zero_y(self):
+        pj = PointJacobi(curve_256, 0, 1, curve_256.p())
+
+        pj = pj.double()
+
+        self.assertIs(pj, INFINITY)
+
+    def test_double_with_zero_equivalent_point_non_zero_z(self):
+        pj = PointJacobi(curve_256, 0, 0, curve_256.p())
 
         pj = pj.double()
 
@@ -113,7 +120,7 @@ class TestJacobi(unittest.TestCase):
         self.assertEqual(pa, pj)
 
     def test_to_affine_with_zero_point(self):
-        pj = PointJacobi(curve_256, 0, 0, 1)
+        pj = PointJacobi(curve_256, 0, 0, 0)
 
         pa = pj.to_affine()
 
@@ -144,7 +151,7 @@ class TestJacobi(unittest.TestCase):
 
     def test_add_zero_point_to_affine(self):
         pa = PointJacobi.from_affine(generator_256).to_affine()
-        pj = PointJacobi(curve_256, 0, 0, 1)
+        pj = PointJacobi(curve_256, 0, 0, 0)
 
         s = pj + pa
 
@@ -195,8 +202,35 @@ class TestJacobi(unittest.TestCase):
 
         self.assertNotEqual(pj, INFINITY)
 
+    def test_compare_non_zero_bad_scale_with_infinity(self):
+        pj = PointJacobi(curve_256, 1, 1, 0)
+        self.assertEqual(pj, INFINITY)
+
+    def test_eq_x_0_on_curve_with_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        pj = PointJacobi(c_23, 0, 1, 1)
+
+        self.assertTrue(c_23.contains_point(0, 1))
+
+        self.assertNotEqual(pj, INFINITY)
+
+    def test_eq_y_0_on_curve_with_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        pj = PointJacobi(c_23, 4, 0, 1)
+
+        self.assertTrue(c_23.contains_point(4, 0))
+
+        self.assertNotEqual(pj, INFINITY)
+
+    def test_eq_with_same_x_different_y(self):
+        c_23 = CurveFp(23, 1, 1)
+        p_a = PointJacobi(c_23, 0, 22, 1)
+        p_b = PointJacobi(c_23, 0, 1, 1)
+
+        self.assertNotEqual(p_a, p_b)
+
     def test_compare_zero_point_with_infinity(self):
-        pj = PointJacobi(curve_256, 0, 0, 1)
+        pj = PointJacobi(curve_256, 0, 0, 0)
 
         self.assertEqual(pj, INFINITY)
 
@@ -579,6 +613,18 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(ret.to_affine(), w_a + w_b)
 
+    def test_mul_add_zero(self):
+        j_g = PointJacobi.from_affine(generator_256)
+
+        w_a = generator_256 * 255
+        w_b = generator_256 * (0 * 0xA8)
+
+        j_b = j_g * 0xA8
+
+        ret = j_g.mul_add(255, j_b, 0)
+
+        self.assertEqual(ret.to_affine(), w_a + w_b)
+
     def test_mul_add_large(self):
         j_g = PointJacobi.from_affine(generator_256)
         b = PointJacobi.from_affine(j_g * 255)
@@ -619,6 +665,20 @@ class TestJacobi(unittest.TestCase):
 
         self.assertEqual(j_g.mul_add(4, dbl_neg, 2), INFINITY)
 
+    @given(
+        st.integers(min_value=0, max_value=int(generator_112r2.order() - 1)),
+        st.integers(min_value=0, max_value=int(generator_112r2.order() - 1)),
+        st.integers(min_value=0, max_value=int(generator_112r2.order() - 1)),
+    )
+    @example(693, 2, 3293)  # values that will hit all the conditions for NAF
+    def test_mul_add_random(self, mul1, mul2, mul3):
+        p_a = PointJacobi.from_affine(generator_112r2)
+        p_b = generator_112r2 * mul2
+
+        res = p_a.mul_add(mul1, p_b, mul3)
+
+        self.assertEqual(res, p_a * mul1 + p_b * mul3)
+
     def test_equality(self):
         pj1 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
         pj2 = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
@@ -640,6 +700,78 @@ class TestJacobi(unittest.TestCase):
         x, y, z = pj1._add(2, 3, 1, 5, 5, 0, 23)
 
         self.assertEqual((x, y, z), (2, 3, 1))
+
+    def test_double_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 11, 20, 1)
+        p2 = p.double()
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2.double()
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_double_to_x_0(self):
+        c_23_2 = CurveFp(23, 1, 2)
+        p = PointJacobi(c_23_2, 9, 2, 1)
+        p2 = p.double()
+
+        self.assertEqual((p2.x(), p2.y()), (0, 18))
+
+    def test_mul_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 11, 20, 1)
+        p2 = p * 2
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 * 2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_add_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 11, 20, 1)
+        p2 = p + p
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+        self.assertNotEqual(p2, INFINITY)
+        p3 = p2 + p2
+        self.assertEqual(p3, INFINITY)
+        self.assertIs(p3, INFINITY)
+
+    def test_mul_to_x_0(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 9, 7, 1)
+
+        p2 = p * 13
+        self.assertEqual((p2.x(), p2.y()), (0, 22))
+
+    def test_mul_to_y_0(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 9, 7, 1)
+
+        p2 = p * 14
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+
+    def test_add_to_x_0(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 9, 7, 1)
+
+        p2 = p * 12 + p
+        self.assertEqual((p2.x(), p2.y()), (0, 22))
+
+    def test_add_to_y_0(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 9, 7, 1)
+
+        p2 = p * 13 + p
+        self.assertEqual((p2.x(), p2.y()), (4, 0))
+
+    def test_add_diff_z_to_infinity(self):
+        c_23 = CurveFp(23, 1, 1)
+        p = PointJacobi(c_23, 9, 7, 1)
+
+        c = p * 20 + p * 8
+        self.assertIs(c, INFINITY)
 
     def test_pickle(self):
         pj = PointJacobi(curve=CurveFp(23, 1, 1, 1), x=2, y=3, z=1, order=1)
@@ -751,3 +883,52 @@ class TestJacobi(unittest.TestCase):
             gen._PointJacobi__precompute,
             generator_112r2._PointJacobi__precompute,
         )
+
+
+class TestZeroCurve(unittest.TestCase):
+    """Tests with curve that has (0, 0) on the curve."""
+
+    def setUp(self):
+        self.curve = CurveFp(23, 1, 0)
+
+    def test_zero_point_on_curve(self):
+        self.assertTrue(self.curve.contains_point(0, 0))
+
+    def test_double_to_0_0_point(self):
+        p = PointJacobi(self.curve, 1, 18, 1)
+
+        d = p.double()
+
+        self.assertNotEqual(d, INFINITY)
+        self.assertEqual((0, 0), (d.x(), d.y()))
+
+    def test_double_to_0_0_point_with_non_one_z(self):
+        z = 2
+        p = PointJacobi(self.curve, 1 * z**2, 18 * z**3, z)
+
+        d = p.double()
+
+        self.assertNotEqual(d, INFINITY)
+        self.assertEqual((0, 0), (d.x(), d.y()))
+
+    def test_mul_to_0_0_point(self):
+        p = PointJacobi(self.curve, 11, 13, 1)
+
+        d = p * 12
+
+        self.assertNotEqual(d, INFINITY)
+        self.assertEqual((0, 0), (d.x(), d.y()))
+
+    def test_double_of_0_0_point(self):
+        p = PointJacobi(self.curve, 0, 0, 1)
+
+        d = p.double()
+
+        self.assertIs(d, INFINITY)
+
+    def test_compare_to_old_implementation(self):
+        p = PointJacobi(self.curve, 11, 13, 1)
+        p_c = Point(self.curve, 11, 13)
+
+        for i in range(24):
+            self.assertEqual(p * i, p_c * i)
