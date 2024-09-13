@@ -275,7 +275,7 @@ def int_to_string(x):  # pragma: no cover
     # deprecated in 0.19
     warnings.warn(
         "Function is unused in library code. If you use this code, "
-        "change to util.string_to_number.",
+        "change to util.number_to_string.",
         DeprecationWarning,
     )
     assert x >= 0
@@ -296,7 +296,7 @@ def string_to_int(s):  # pragma: no cover
     # deprecated in 0.19
     warnings.warn(
         "Function is unused in library code. If you use this code, "
-        "change to util.number_to_string.",
+        "change to util.string_to_number.",
         DeprecationWarning,
     )
     result = 0
