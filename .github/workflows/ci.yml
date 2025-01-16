@@ -81,7 +81,7 @@ jobs:
             tox-env: py311
           - name: py3.12
             os: ubuntu-latest
-            python-version: '3.12.0-beta.1'
+            python-version: '3.12'
             tox-env: py312
           - name: pypy
             os: ubuntu-latest
