@@ -52,7 +52,7 @@ jobs:
             python-version: 3.6
             tox-env: py36
           - name: py3.7
-            os: ubuntu-latest
+            os: ubuntu-22.04
             python-version: 3.7
             tox-env: py37
           - name: py3.8
@@ -88,7 +88,7 @@ jobs:
             python-version: pypy-2.7
             tox-env: pypy
           - name: pypy3
-            os: ubuntu-latest
+            os: ubuntu-22.04
             python-version: pypy-3.7
             tox-env: pypy3
           # special configurations
