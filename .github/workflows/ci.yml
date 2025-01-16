@@ -83,6 +83,10 @@ jobs:
             os: ubuntu-latest
             python-version: '3.12'
             tox-env: py312
+          - name: py3.13
+            os: ubuntu-latest
+            python-version: '3.13'
+            tox-env: py313
           - name: pypy
             os: ubuntu-latest
             python-version: pypy-2.7
