@@ -1376,83 +1376,86 @@ class SigningKey(object):
         )
 
     def sign_digest_deterministic(
-        self,
-        digest,
-        hashfunc=None,
-        sigencode=sigencode_string,
-        extra_entropy=b"",
-        allow_truncate=False,
-    ):
-        """
-        Create signature for digest using the deterministic RFC6979 algorithm.
+    self,
+    digest,
+    hashfunc=None,
+    sigencode=sigencode_string,
+    extra_entropy=b"",
+    allow_truncate=False,
+):
+    """
+    Create signature for digest using the deterministic RFC6979 algorithm.
 
-        `digest` should be the output of cryptographically secure hash function
-        like SHA256 or SHA-3-256.
+    `digest` should be the output of cryptographically secure hash function
+    like SHA256 or SHA-3-256.
 
-        This is the recommended method for performing signatures when no
-        hashing of data is necessary.
+    This is the recommended method for performing signatures when no
+    hashing of data is necessary.
 
-        :param digest: hash of data that will be signed
-        :type digest: :term:`bytes-like object`
-        :param hashfunc: hash function to use for computing the random "k"
-            value from RFC6979 process,
-            if unspecified, the default hash function selected during
-            object initialisation will be used (see
-            :attr:`.VerifyingKey.default_hashfunc`). The object needs to
-            implement
-            the same interface as :func:`~hashlib.sha1` from :py:mod:`hashlib`.
-        :type hashfunc: callable
-        :param sigencode: function used to encode the signature.
-            The function needs to accept three parameters: the two integers
-            that are the signature and the order of the curve over which the
-            signature was computed. It needs to return an encoded signature.
-            See :func:`~ecdsa.util.sigencode_string` and
-            :func:`~ecdsa.util.sigencode_der`
-            as examples of such functions.
-        :type sigencode: callable
-        :param extra_entropy: additional data that will be fed into the random
-            number generator used in the RFC6979 process. Entirely optional.
-        :type extra_entropy: :term:`bytes-like object`
-        :param bool allow_truncate: if True, the provided digest can have
-            bigger bit-size than the order of the curve, the extra bits (at
-            the end of the digest) will be truncated. Use it when signing
-            SHA-384 output using NIST256p or in similar situations.
+    :param digest: hash of data that will be signed
+    :type digest: :term:`bytes-like object`
+    :param hashfunc: hash function to use for computing the random "k"
+        value from RFC6979 process,
+        if unspecified, the default hash function selected during
+        object initialisation will be used (see
+        :attr:`.VerifyingKey.default_hashfunc`). The object needs to
+        implement
+        the same interface as :func:`~hashlib.sha1` from :py:mod:`hashlib`.
+    :type hashfunc: callable
+    :param sigencode: function used to encode the signature.
+        The function needs to accept three parameters: the two integers
+        that are the signature and the order of the curve over which the
+        signature was computed. It needs to return an encoded signature.
+        See :func:`~ecdsa.util.sigencode_string` and
+        :func:`~ecdsa.util.sigencode_der`
+        as examples of such functions.
+    :type sigencode: callable
+    :param extra_entropy: additional data that will be fed into the random
+        number generator used in the RFC6979 process. Entirely optional.
+    :type extra_entropy: :term:`bytes-like object`
+    :param bool allow_truncate: if True, the provided digest can have
+        bigger bit-size than the order of the curve, the extra bits (at
+        the end of the digest) will be truncated. Use it when signing
+        SHA-384 output using NIST256p or in similar situations.
 
-        :return: encoded signature for the `digest` hash
-        :rtype: bytes or sigencode function dependent type
-        """
-        if isinstance(self.curve.curve, CurveEdTw):
-            raise ValueError("Method unsupported for Edwards curves")
-        secexp = self.privkey.secret_multiplier
-        hashfunc = hashfunc or self.default_hashfunc
-        digest = normalise_bytes(digest)
-        extra_entropy = normalise_bytes(extra_entropy)
+    :return: encoded signature for the `digest` hash
+    :rtype: bytes or sigencode function dependent type
+    """
+    if isinstance(self.curve.curve, CurveEdTw):
+        raise ValueError("Method unsupported for Edwards curves")
+    secexp = self.privkey.secret_multiplier
+    hashfunc = hashfunc or self.default_hashfunc
+    digest = normalise_bytes(digest)
+    extra_entropy = normalise_bytes(extra_entropy)
 
-        def simple_r_s(r, s, order):
-            return r, s, order
+    def simple_r_s(r, s, order):
+        return r, s, order
 
-        retry_gen = 0
-        while True:
-            k = rfc6979.generate_k(
-                self.curve.generator.order(),
-                secexp,
-                hashfunc,
+    retry_gen = 0
+    while True:
+        k = rfc6979.generate_k(
+            self.curve.generator.order(),
+            secexp,
+            hashfunc,
+            digest,
+            retry_gen=retry_gen,
+            extra_entropy=extra_entropy,
+        )
+        try:
+            r, s, order = self.sign_digest(
                 digest,
-                retry_gen=retry_gen,
-                extra_entropy=extra_entropy,
+                sigencode=simple_r_s,
+                k=k,
+                allow_truncate=allow_truncate,
             )
-            try:
-                r, s, order = self.sign_digest(
-                    digest,
-                    sigencode=simple_r_s,
-                    k=k,
-                    allow_truncate=allow_truncate,
-                )
-                break
-            except RSZeroError:
-                retry_gen += 1
+            break
+        except RSZeroError:
+            retry_gen += 1
 
-        return sigencode(r, s, order)
+    return sigencode(r, s, order)
+
+# Ensure that the rfc6979.generate_k function is implemented in a constant-time manner to prevent timing attacks.
+# This involves reviewing the implementation of generate_k to ensure it does not introduce timing variations based on the bit size of 'k'.
 
     def sign(
         self,
