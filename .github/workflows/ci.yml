@@ -52,7 +52,7 @@ jobs:
             python-version: 3.6
             tox-env: py36
           - name: py3.7
-            os: ubuntu-latest
+            os: ubuntu-22.04
             python-version: 3.7
             tox-env: py37
           - name: py3.8
@@ -81,14 +81,18 @@ jobs:
             tox-env: py311
           - name: py3.12
             os: ubuntu-latest
-            python-version: '3.12.0-beta.1'
+            python-version: '3.12'
             tox-env: py312
+          - name: py3.13
+            os: ubuntu-latest
+            python-version: '3.13'
+            tox-env: py313
           - name: pypy
             os: ubuntu-latest
             python-version: pypy-2.7
             tox-env: pypy
           - name: pypy3
-            os: ubuntu-latest
+            os: ubuntu-22.04
             python-version: pypy-3.7
             tox-env: pypy3
           # special configurations
@@ -320,7 +324,7 @@ jobs:
           cr-html session-vs-master.sqlite > cosmic-ray.html
       - name: Archive mutation testing results
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mutation-PR-coverage-report
           path: cosmic-ray.html
@@ -661,7 +665,7 @@ jobs:
         run: |
           cr-html session.sqlite > cosmic-ray.html
       - name: Archive mutation testing results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mutation-coverage-report
           path: cosmic-ray.html
