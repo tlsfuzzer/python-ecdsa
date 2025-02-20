@@ -727,6 +727,114 @@ class TestSigningKey(unittest.TestCase):
 
         self.assertIn("Method unsupported for Edwards", str(e.exception))
 
+    import pytest
+import hashlib
+from ecdsa import SigningKey, NIST256p, util
+from ecdsa.curves import CurveEdTw
+from ecdsa.keys import RSZeroError
+
+def test_sign_digest_deterministic_basic():
+    """Test basic signing functionality with default parameters"""
+    # Create a signing key
+    sk = SigningKey.generate(curve=NIST256p)
+    
+    # Create a test message and its digest
+    message = b"test message"
+    digest = hashlib.sha256(message).digest()
+    
+    # Sign the digest
+    signature = sk.sign_digest_deterministic(digest)
+    
+    # Verify the signature
+    vk = sk.get_verifying_key()
+    assert vk.verify_digest(signature, digest)
+
+def test_sign_digest_deterministic_with_custom_hashfunc():
+    """Test signing with a custom hash function"""
+    sk = SigningKey.generate(curve=NIST256p)
+    message = b"test message"
+    digest = hashlib.sha256(message).digest()
+    
+    signature = sk.sign_digest_deterministic(
+        digest,
+        hashfunc=hashlib.sha384
+    )
+    
+    vk = sk.get_verifying_key()
+    assert vk.verify_digest(signature, digest)
+
+def test_sign_digest_deterministic_with_extra_entropy():
+    """Test signing with extra entropy"""
+    sk = SigningKey.generate(curve=NIST256p)
+    message = b"test message"
+    digest = hashlib.sha256(message).digest()
+    
+    signature1 = sk.sign_digest_deterministic(digest)
+    signature2 = sk.sign_digest_deterministic(
+        digest,
+        extra_entropy=b"additional random data"
+    )
+    
+    # Signatures should be different due to extra entropy
+    assert signature1 != signature2
+
+def test_sign_digest_deterministic_with_custom_sigencode():
+    """Test signing with custom signature encoding"""
+    sk = SigningKey.generate(curve=NIST256p)
+    message = b"test message"
+    digest = hashlib.sha256(message).digest()
+    
+    signature = sk.sign_digest_deterministic(
+        digest,
+        sigencode=util.sigencode_der
+    )
+    
+    vk = sk.get_verifying_key()
+    assert vk.verify_digest(signature, digest, sigdecode=util.sigdecode_der)
+
+def test_sign_digest_deterministic_with_truncation():
+    """Test signing with digest truncation"""
+    sk = SigningKey.generate(curve=NIST256p)
+    # Create a digest larger than the curve order
+    digest = hashlib.sha384(b"test message").digest()
+    
+    # Should work with allow_truncate=True
+    signature = sk.sign_digest_deterministic(
+        digest,
+        allow_truncate=True
+    )
+    
+    vk = sk.get_verifying_key()
+    assert vk.verify_digest(signature, digest, allow_truncate=True)
+
+def test_sign_digest_deterministic_edwards_curve_error():
+    """Test that Edwards curves raise ValueError"""
+    class MockEdwardsCurve:
+        def __init__(self):
+            self.curve = CurveEdTw()
+    
+    class MockSigningKey:
+        def __init__(self):
+            self.curve = MockEdwardsCurve()
+    
+    sk = MockSigningKey()
+    
+    with pytest.raises(ValueError, match="Method unsupported for Edwards curves"):
+        sk.sign_digest_deterministic(b"test digest")
+
+def test_sign_digest_deterministic_same_input_same_output():
+    """Test that the same input produces the same signature"""
+    sk = SigningKey.generate(curve=NIST256p)
+    message = b"test message"
+    digest = hashlib.sha256(message).digest()
+    
+    signature1 = sk.sign_digest_deterministic(digest)
+    signature2 = sk.sign_digest_deterministic(digest)
+    
+    # Signatures should be identical due to deterministic k
+    assert signature1 == signature2
+
+
     def test_ed25519_sign_digest(self):
         sk_str = SigningKey.from_string(
             b"\x34\xBA\xC7\xD1\x4E\xD4\xF1\xBC\x4F\x8C\x48\x3E\x0F\x19\x77\x4C"
