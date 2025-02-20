@@ -324,7 +324,7 @@ jobs:
           cr-html session-vs-master.sqlite > cosmic-ray.html
       - name: Archive mutation testing results
         if: ${{ matrix.mutation == 'true' && github.event.pull_request }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mutation-PR-coverage-report
           path: cosmic-ray.html
@@ -665,7 +665,7 @@ jobs:
         run: |
           cr-html session.sqlite > cosmic-ray.html
       - name: Archive mutation testing results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mutation-coverage-report
           path: cosmic-ray.html
