@@ -62,7 +62,9 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"https://docs.python.org/": None}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/", None),
+}
 
 autodoc_default_options = {
     "undoc-members": True,
