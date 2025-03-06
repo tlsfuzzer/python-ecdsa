@@ -25,6 +25,7 @@ from .der import (
     remove_implicit,
     remove_octet_string,
     remove_sequence,
+    encode_implicit,
 )
 
 
@@ -462,6 +463,61 @@ class TestRemoveImplicit(unittest.TestCase):
             remove_implicit(data)
 
         self.assertIn("wanted type primitive, got 0xa6 tag", str(e.exception))
+
+    def test_encode_decode(self):
+        data = b"some longish string"
+
+        tag, body, rest = remove_implicit(
+            encode_implicit(6, data, "application"), "application"
+        )
+
+        self.assertEqual(tag, 6)
+        self.assertEqual(body, data)
+        self.assertEqual(rest, b"")
+
+
+class TestEncodeImplicit(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.data = b"\x0a\x0b"
+        # data with application tag class
+        cls.data_application = b"\x46\x02\x0a\x0b"
+        # data with context-specific tag class
+        cls.data_context_specific = b"\x86\x02\x0a\x0b"
+        # data with private tag class
+        cls.data_private = b"\xc6\x02\x0a\x0b"
+
+    def test_encode_with_default_class(self):
+        ret = encode_implicit(6, self.data)
+
+        self.assertEqual(ret, self.data_context_specific)
+
+    def test_encode_with_application_class(self):
+        ret = encode_implicit(6, self.data, "application")
+
+        self.assertEqual(ret, self.data_application)
+
+    def test_encode_with_context_specific_class(self):
+        ret = encode_implicit(6, self.data, "context-specific")
+
+        self.assertEqual(ret, self.data_context_specific)
+
+    def test_encode_with_private_class(self):
+        ret = encode_implicit(6, self.data, "private")
+
+        self.assertEqual(ret, self.data_private)
+
+    def test_encode_with_invalid_class(self):
+        with self.assertRaises(ValueError) as e:
+            encode_implicit(6, self.data, "foobar")
+
+        self.assertIn("invalid tag class", str(e.exception))
+
+    def test_encode_with_too_large_tag(self):
+        with self.assertRaises(ValueError) as e:
+            encode_implicit(32, self.data)
+
+        self.assertIn("Long tags not supported", str(e.exception))
 
 
 class TestRemoveOctetString(unittest.TestCase):

@@ -16,6 +16,32 @@ def encode_constructed(tag, value):
     return int2byte(0xA0 + tag) + encode_length(len(value)) + value
 
 
+def encode_implicit(tag, value, cls="context-specific"):
+    """
+    Encode and IMPLICIT value using :term:`DER`.
+
+    :param int tag: the tag value to encode, must be between 0 an 31 inclusive
+    :param bytes value: the data to encode
+    :param str cls: the class of the tag to encode: "application",
+      "context-specific", or "private"
+    :rtype: bytes
+    """
+    if cls not in ("application", "context-specific", "private"):
+        raise ValueError("invalid tag class")
+    if tag > 31:
+        raise ValueError("Long tags not supported")
+
+    if cls == "application":
+        tag_class = 0b01000000
+    elif cls == "context-specific":
+        tag_class = 0b10000000
+    else:
+        assert cls == "private"
+        tag_class = 0b11000000
+
+    return int2byte(tag_class + tag) + encode_length(len(value)) + value
+
+
 def encode_integer(r):
     assert r >= 0  # can't support negative numbers yet
     h = ("%x" % r).encode()
