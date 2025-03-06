@@ -16,6 +16,32 @@ def encode_constructed(tag, value):
     return int2byte(0xA0 + tag) + encode_length(len(value)) + value
 
 
+def encode_implicit(tag, value, cls="context-specific"):
+    """
+    Encode and IMPLICIT value using :term:`DER`.
+
+    :param int tag: the tag value to encode, must be between 0 an 31 inclusive
+    :param bytes value: the data to encode
+    :param str cls: the class of the tag to encode: "application",
+      "context-specific", or "private"
+    :rtype: bytes
+    """
+    if cls not in ("application", "context-specific", "private"):
+        raise ValueError("invalid tag class")
+    if tag > 31:
+        raise ValueError("Long tags not supported")
+
+    if cls == "application":
+        tag_class = 0b01000000
+    elif cls == "context-specific":
+        tag_class = 0b10000000
+    else:
+        assert cls == "private"
+        tag_class = 0b11000000
+
+    return int2byte(tag_class + tag) + encode_length(len(value)) + value
+
+
 def encode_integer(r):
     assert r >= 0  # can't support negative numbers yet
     h = ("%x" % r).encode()
@@ -135,6 +161,49 @@ def remove_constructed(string):
         raise UnexpectedDER(
             "wanted type 'constructed tag' (0xa0-0xbf), got 0x%02x" % s0
         )
+    tag = s0 & 0x1F
+    length, llen = read_length(string[1:])
+    body = string[1 + llen : 1 + llen + length]
+    rest = string[1 + llen + length :]
+    return tag, body, rest
+
+
+def remove_implicit(string, exp_class="context-specific"):
+    """
+    Removes an IMPLICIT tagged value from ``string`` following :term:`DER`.
+
+    :param bytes string: a byte string that can have one or more
+      DER elements.
+    :param str exp_class: the expected tag class of the implicitly
+      encoded value. Possible values are: "context-specific", "application",
+      and "private".
+    :return: a tuple with first value being the tag without indicator bits,
+      second being the raw bytes of the value and the third one being
+      remaining bytes (or an empty string if there are none)
+    :rtype: tuple(int,bytes,bytes)
+    """
+    if exp_class not in ("context-specific", "application", "private"):
+        raise ValueError("invalid `exp_class` value")
+    if exp_class == "application":
+        tag_class = 0b01000000
+    elif exp_class == "context-specific":
+        tag_class = 0b10000000
+    else:
+        assert exp_class == "private"
+        tag_class = 0b11000000
+    tag_mask = 0b11000000
+
+    s0 = str_idx_as_int(string, 0)
+
+    if (s0 & tag_mask) != tag_class:
+        raise UnexpectedDER(
+            "wanted class {0}, got 0x{1:02x} tag".format(exp_class, s0)
+        )
+    if s0 & 0b00100000 != 0:
+        raise UnexpectedDER(
+            "wanted type primitive, got 0x{0:02x} tag".format(s0)
+        )
+
     tag = s0 & 0x1F
     length, llen = read_length(string[1:])
     body = string[1 + llen : 1 + llen + length]
