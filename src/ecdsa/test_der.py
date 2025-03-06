@@ -22,6 +22,7 @@ from .der import (
     remove_object,
     encode_oid,
     remove_constructed,
+    remove_implicit,
     remove_octet_string,
     remove_sequence,
 )
@@ -394,6 +395,73 @@ class TestRemoveConstructed(unittest.TestCase):
             remove_constructed(data)
 
         self.assertIn("constructed tag", str(e.exception))
+
+
+class TestRemoveImplicit(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.exp_tag = 6
+        cls.exp_data = b"\x0a\x0b"
+        # data with application tag class
+        cls.data_application = b"\x46\x02\x0a\x0b"
+        # data with context-specific tag class
+        cls.data_context_specific = b"\x86\x02\x0a\x0b"
+        # data with private tag class
+        cls.data_private = b"\xc6\x02\x0a\x0b"
+
+    def test_simple(self):
+        tag, body, rest = remove_implicit(self.data_context_specific)
+
+        self.assertEqual(tag, self.exp_tag)
+        self.assertEqual(body, self.exp_data)
+        self.assertEqual(rest, b"")
+
+    def test_wrong_expected_class(self):
+        with self.assertRaises(ValueError) as e:
+            remove_implicit(self.data_context_specific, "foobar")
+
+        self.assertIn("invalid `exp_class` value", str(e.exception))
+
+    def test_with_wrong_class(self):
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_implicit(self.data_application)
+
+        self.assertIn(
+            "wanted class context-specific, got 0x46 tag", str(e.exception)
+        )
+
+    def test_with_application_class(self):
+        tag, body, rest = remove_implicit(self.data_application, "application")
+
+        self.assertEqual(tag, self.exp_tag)
+        self.assertEqual(body, self.exp_data)
+        self.assertEqual(rest, b"")
+
+    def test_with_private_class(self):
+        tag, body, rest = remove_implicit(self.data_private, "private")
+
+        self.assertEqual(tag, self.exp_tag)
+        self.assertEqual(body, self.exp_data)
+        self.assertEqual(rest, b"")
+
+    def test_with_data_following(self):
+        extra_data = b"\x00\x01"
+
+        tag, body, rest = remove_implicit(
+            self.data_context_specific + extra_data
+        )
+
+        self.assertEqual(tag, self.exp_tag)
+        self.assertEqual(body, self.exp_data)
+        self.assertEqual(rest, extra_data)
+
+    def test_with_constructed(self):
+        data = b"\xa6\x02\x0a\x0b"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_implicit(data)
+
+        self.assertIn("wanted type primitive, got 0xa6 tag", str(e.exception))
 
 
 class TestRemoveOctetString(unittest.TestCase):
