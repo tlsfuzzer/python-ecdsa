@@ -1,6 +1,6 @@
 # Pure-Python ECDSA and ECDH
 
-[![Build Status](https://github.com/tlsfuzzer/python-ecdsa/workflows/GitHub%20CI/badge.svg?branch=master)](https://github.com/tlsfuzzer/python-ecdsa/actions?query=workflow%3A%22GitHub+CI%22+branch%3Amaster)
+[![GitHub CI](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/ci.yml/badge.svg)](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/ecdsa/badge/?version=latest)](https://ecdsa.readthedocs.io/en/latest/?badge=latest)
 [![Coverage Status](https://coveralls.io/repos/github/tlsfuzzer/python-ecdsa/badge.svg?branch=master)](https://coveralls.io/github/tlsfuzzer/python-ecdsa?branch=master)
 ![condition coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/tomato42/9b6ca1f3410207fbeca785a178781651/raw/python-ecdsa-condition-coverage.json)
