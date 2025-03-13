@@ -304,6 +304,23 @@ def sigencode_der(r, s, order):
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
 
 
+def _canonize(s, order):
+    """
+    Internal function for ensuring that the ``s`` value of a signature is in
+    the "canonical" format.
+
+    :param int s: the second parameter of ECDSA signature
+    :param int order: the order of the curve over which the signatures was
+        computed
+
+    :return: canonical value of s
+    :rtype: int
+    """
+    if s > order // 2:
+        s = order - s
+    return s
+
+
 def sigencode_strings_canonize(r, s, order):
     """
     Encode the signature to a pair of strings in a tuple
@@ -326,8 +343,7 @@ def sigencode_strings_canonize(r, s, order):
     :return: raw encoding of ECDSA signature
     :rtype: tuple(bytes, bytes)
     """
-    if s > order / 2:
-        s = order - s
+    s = _canonize(s, order)
     return sigencode_strings(r, s, order)
 
 
@@ -350,8 +366,7 @@ def sigencode_string_canonize(r, s, order):
     :return: raw encoding of ECDSA signature
     :rtype: bytes
     """
-    if s > order / 2:
-        s = order - s
+    s = _canonize(s, order)
     return sigencode_string(r, s, order)
 
 
@@ -381,8 +396,7 @@ def sigencode_der_canonize(r, s, order):
     :return: DER encoding of ECDSA signature
     :rtype: bytes
     """
-    if s > order / 2:
-        s = order - s
+    s = _canonize(s, order)
     return sigencode_der(r, s, order)
 
 
