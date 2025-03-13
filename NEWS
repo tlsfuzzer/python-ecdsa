@@ -1,3 +1,25 @@
+* Release 0.19.1 (13 Mar 2025)
+
+New API:
+* ``der.remove_implitic`` and ``der.encode_implicit`` for decoding and
+  encoding DER IMPLICIT values with custom tag values and arbitrary
+  classes
+
+Bug fixes:
+* Minor fixes around arithmetic with curves that have non-prime order
+  (useful for experimentation, not practical deployments)
+* Fix arithmetic to work with curves that have (0, 0) on the curve
+* Fix canonicalization of signatures when ``s`` is just slightly
+  above half of curve order
+
+Maintenance:
+* Dropped official support for Python 3.5 (again, issues with CI, support
+  for Python 2.6 and Python 2.7 is unchanged)
+* Officialy support Python 3.12 and 3.13 (add them to CI)
+* Removal of few more unnecessary `six.b` literals (Alexandre Detiste)
+* Fix typos in warning messages
+
+
 * Release 0.19.0 (08 Apr 2024)
 
 New API:
