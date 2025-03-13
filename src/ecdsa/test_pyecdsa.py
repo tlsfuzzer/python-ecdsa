@@ -520,6 +520,23 @@ class ECDSA(unittest.TestCase):
         self.assertEqual(r, new_r)
         self.assertEqual(order - s, new_s)
 
+    def test_sigencode_der_canonize_with_close_to_half_order(self):
+        r = 13
+        order = SECP112r1.order
+        s = order // 2 + 1
+
+        regular_encode = sigencode_der(r, s, order)
+        canonical_encode = sigencode_der_canonize(r, s, order)
+
+        self.assertNotEqual(regular_encode, canonical_encode)
+
+        new_r, new_s = sigdecode_der(
+            sigencode_der_canonize(r, s, order), order
+        )
+
+        self.assertEqual(r, new_r)
+        self.assertEqual(order - s, new_s)
+
     def test_sig_decode_strings_with_invalid_count(self):
         with self.assertRaises(MalformedSignature):
             sigdecode_strings([b"one", b"two", b"three"], 0xFF)
