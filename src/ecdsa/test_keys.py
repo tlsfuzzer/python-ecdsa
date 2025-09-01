@@ -1037,6 +1037,7 @@ prv_key_str = (
 key_bytes = unpem(prv_key_str)
 assert isinstance(key_bytes, bytes)
 
+
 # last two converters are for array.array of ints, those require input
 # that's multiple of 4, which no curve we support produces
 @pytest.mark.parametrize("convert", converters[:-2])

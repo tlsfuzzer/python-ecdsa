@@ -9,6 +9,16 @@ respectively. See the :func:`sigencode_strings`, :func:`sigdecode_string`,
 :func:`sigencode_string_canonize`, :func:`sigencode_der_canonize`,
 :func:`sigdecode_strings`, :func:`sigdecode_string`, and
 :func:`sigdecode_der` functions.
+The methods :func:`sigencode_der_full_r`,
+:func:`sigencode_der_sig_value_y_boolean`,
+:func:`sigencode_der_sig_value_y_field_elem` are implemented according to
+ASN.1 extension of signature structure of ECDSA.
+The extentions aim to accelerate the computations,
+but the accelerations are not implemented!
+The functions must be used with :func:`~ecdsa.keys.SigningKey.sign`
+function with accelarate=True parameter, to recieve the whole point,
+instead of 'r' as integer.
+For decoding such signatures :func:`sigdecode_der_extended` must be used.
 """
 
 from __future__ import division
@@ -117,13 +127,11 @@ class PRNG:
             return bytes(a)
 
     def block_generator(self, seed):
-        counter = 0
+        c = 0
         while True:
-            for byte in sha256(
-                ("prng-%d-%s" % (counter, seed)).encode()
-            ).digest():
+            for byte in sha256(("prng-%d-%s" % (c, seed)).encode()).digest():
                 yield byte
-            counter += 1
+            c += 1
 
 
 def randrange_from_seed__overshoot_modulo(seed, order):
@@ -302,6 +310,144 @@ def sigencode_der(r, s, order):
     :rtype: bytes
     """
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
+
+
+def sigencode_der_sig_value_y_field_elem(r, s, order):
+    """
+    Encode the signature into the ECDSA-Sig-Value structure using :term:`DER`.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+
+        with 'y' being a field element.
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param ECPoint r: point of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: DER encoding of ECDSA signature
+    :rtype: bytes
+    """
+    y = r.y()
+    r = r.x() % order
+    f = number_to_string(y, order)
+
+    return der.encode_sequence(
+        der.encode_integer(r),
+        der.encode_integer(s),
+        der.encode_octet_string(f),
+    )
+
+
+def sigencode_der_sig_value_y_boolean(r, s, order):
+    """
+    Encode the signature into the ECDSA-Sig-Value structure using :term:`DER`.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+
+        with 'y' being a boolean.
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param ECPoint r: point of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: DER encoding of ECDSA signature
+    :rtype: bytes
+    """
+    y = r.y()
+    r = r.x() % order
+    b = False
+    if y & 1:
+        b = True
+    return der.encode_sequence(
+        der.encode_integer(r), der.encode_integer(s), der.encode_boolean(b)
+    )
+
+
+def sigencode_der_sig_value_a(r, s, order, a):
+    """
+    The function is used for testing purposes. The 'a' value is
+    applicable for binary curves, wich the current implementation of
+    python-ecdsa does not support.
+    Encode the signature into the ECDSA-Sig-Value structure using :term:`DER`.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+
+        with 'a' specified.
+    :param int r: the integer used to create the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+    :param int a: the  coefficient to be encoded
+
+    :return: DER encoding of ECDSA signature
+    :rtype: bytes
+    """
+    return der.encode_sequence(
+        der.encode_integer(r), der.encode_integer(s), der.encode_integer(a)
+    )
+
+
+def sigencode_der_full_r(r, s, order, encoding="raw"):
+    """
+    Encode the signature into the ECDSA-Sig-Value structure using :term:`DER`.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        ECDSA-Full-R ::= SEQUENCE {
+            r ECPoint,
+            s INTEGER
+        }
+
+    Encodes the ECPoint with chosen encoding.
+    If no encoding was provided, the 'raw' encoding will be used.
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param ECPoint r: the point used to create the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: DER encoding of ECDSA signature
+    :rtype: bytes
+    """
+    r = r.to_bytes(encoding=encoding)
+    sig = der.encode_sequence(
+        der.encode_octet_string(r), der.encode_integer(s)
+    )
+    # the ECDSA-FULL-R in ECDSA-Signature has a tag [0]
+    sig = der.encode_implicit(0, sig)
+    return sig
 
 
 def _canonize(s, order):
@@ -530,4 +676,148 @@ def sigdecode_der(sig_der, order):
         raise der.UnexpectedDER(
             "trailing junk after DER numbers: %s" % binascii.hexlify(empty)
         )
+    return r, s
+
+
+def sigdecode_der_extended(sig_der, order):
+    """
+    Decoder for DER format of ECDSA signatures.
+
+    DER format of signature is one that uses the :term:`ASN.1` :term:`DER`
+    rules to encode it as one of the choices::
+
+        ECDSA-Signature ::= CHOICE {
+            two-ints-plus ECDSA-Sig-Value,
+            point-int [0] ECDSA-Full-R,
+            ... -- Future representations may be added
+        }
+
+    It's expected that this function will be used as as the ``sigdecode=``
+    parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
+
+    :param sig_der: encoded signature
+    :type sig_der: bytes like object
+    :param order: order of the curve over which the signature was computed
+    :type order: int
+
+    :raises UnexpectedDER: when the encoding of signature is invalid
+
+    :return: tuple with decoded ``r`` and ``s`` values of signature
+    :rtype: tuple of ints
+    """
+    sig_der = normalise_bytes(sig_der)
+    # what signature is encoded depends on the tag presence
+    if not der.is_sequence(sig_der):
+        return sigdecode_der_full_r(sig_der, order)
+    return sigdecode_der_ecdsa_sig_extended(sig_der, order)
+
+
+def sigdecode_der_full_r(sig_der, order):
+    """
+    Decoder for DER format of ECDSA-Full-R signatures.
+
+    DER format of ECDSA-Full-R signature includes the point R
+    represented as an octet string:
+
+        ECDSA-Full-R ::= SEQUENCE {
+            r ECPoint,
+            s INTEGER
+        }
+
+        ECPoint ::= OCTET STRING
+
+    The function transforms the r octet string to integer.
+
+    :param sig_der: encoded signature
+    :type sig_der: bytes like object
+    :param order: order of the curve over which the signature was computed
+    :type order: int
+
+    :raises UnexpectedDER: when the encoding of signature is invalid
+
+    :return: tuple with decoded ``r`` and ``s`` values of signature
+    :rtype: tuple of ints
+    """
+
+    tag, body, empty = der.remove_implicit(sig_der)
+    if tag != 0:
+        raise der.UnexpectedDER("ECDSA-Full-R must be taged with [0]")
+    if empty != b"":
+        raise der.UnexpectedDER(
+            "trailing junk after DER sig: %s" % binascii.hexlify(empty)
+        )
+    body, empty = der.remove_sequence(body)
+    if empty != b"":
+        raise der.UnexpectedDER(
+            "trailing junk after DER sig: %s" % binascii.hexlify(empty)
+        )
+    r, rest = der.remove_octet_string(body)
+    s, empty = der.remove_integer(rest)
+    if empty != b"":
+        raise der.UnexpectedDER(
+            "trailing junk after DER numbers: %s" % binascii.hexlify(empty)
+        )
+    return r, s
+
+
+def sigdecode_der_ecdsa_sig_extended(sig_der, order):
+    """
+    Decoder for DER format of ECDSA-Sig-Value signatures.
+
+    DER format of ECDSA-Sig-Value signature includes the mandotary r
+    and s values, but also may has additional inforamtion:
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+
+        FieldElement ::= OCTET STRING
+
+    :param sig_der: encoded signature
+    :type sig_der: bytes like object
+    :param order: order of the curve over which the signature was computed
+    :type order: int
+
+    :raises UnexpectedDER: when the encoding of signature is invalid
+
+    :return: tuple with decoded ``r`` and ``s`` values of signature
+    :rtype: tuple of ints
+    """
+
+    rs_strings, empty = der.remove_sequence(sig_der)
+    if empty != b"":
+        raise der.UnexpectedDER(
+            "trailing junk after DER sig: %s" % binascii.hexlify(empty)
+        )
+    r, rest = der.remove_integer(rs_strings)
+    s, optional = der.remove_integer(rest)
+    empty = optional
+    r_point = None
+
+    # check if "a" is present
+    if optional[:1] == b"\x02":
+        raise der.UnexpectedDER("Only prime field curves are supported.")
+    # check if "y" is present as boolean
+    if optional[:1] == b"\x01":
+        y, empty = der.remove_boolean(optional)
+        r_octet = number_to_string(r, order)
+        # In point compression True is odd b"\x03", False is even b"\x02"
+        if y:
+            r_point = b"\x03" + r_octet
+        else:
+            r_point = b"\x02" + r_octet
+    # or if "y" is present as FieldElement
+    elif optional[:1] == b"\x04":
+        y, empty = der.remove_octet_string(optional)
+        r_octet = number_to_string(r, order)
+        r_point = r_octet + y
+    if empty != b"":
+        raise der.UnexpectedDER(
+            "trailing junk after DER numbers: %s" % binascii.hexlify(empty)
+        )
+    if r_point:
+        return r_point, s
     return r, s

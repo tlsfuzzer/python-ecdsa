@@ -64,6 +64,7 @@ Originally written in 2005 by Peter Pearson and placed in the public domain,
 modified as part of the python-ecdsa package.
 """
 
+import sys
 import warnings
 from six import int2byte
 from . import ellipticcurve
@@ -192,9 +193,21 @@ class Public_key(object):
         n = G.order()
         r = signature.r
         s = signature.s
-        if r < 1 or r > n - 1:
-            return False
         if s < 1 or s > n - 1:
+            return False
+
+        if sys.version_info < (3, 0):  # pragma: no branch
+            # memoryview was introduced in py 2.7
+            byte_objects = set((bytearray, bytes))
+        else:
+            byte_objects = set((bytearray, bytes, memoryview))
+        if type(r) in byte_objects:
+            point = ellipticcurve.AbstractPoint.from_bytes(
+                self.generator.curve(), r
+            )
+            r = point[0] % n
+
+        if r < 1 or r > n - 1:
             return False
         c = numbertheory.inverse_mod(s, n)
         u1 = (hash * c) % n
@@ -231,7 +244,7 @@ class Private_key(object):
         """Return False if the points are identical, True otherwise."""
         return not self == other
 
-    def sign(self, hash, random_k):
+    def sign(self, hash, random_k, accelerate=False):
         """Return a signature for the provided hash, using the provided
         random nonce.  It is absolutely vital that random_k be an unpredictable
         number in the range [1, self.public_key.point.order()-1].  If
@@ -267,6 +280,8 @@ class Private_key(object):
         ) % n
         if s == 0:
             raise RSZeroError("amazingly unlucky random number s")
+        if accelerate:
+            return Signature(p1, s)
         return Signature(r, s)
 
 

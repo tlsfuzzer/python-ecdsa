@@ -1318,6 +1318,7 @@ class SigningKey(object):
         hashfunc=None,
         sigencode=sigencode_string,
         extra_entropy=b"",
+        accelerate=False,
     ):
         """
         Create signature over data.
@@ -1354,6 +1355,10 @@ class SigningKey(object):
             number generator used in the RFC6979 process. Entirely optional.
             Ignored with EdDSA.
         :type extra_entropy: :term:`bytes-like object`
+        :param accelerate: an indicator for ECDSA sign operation to return
+            an ECPoint instead of a number of "r" parameter.
+            Applicable only for ECDSA key.
+        :type accelerate: boolean
 
         :return: encoded signature over `data`
         :rtype: bytes or sigencode function dependent type
@@ -1373,6 +1378,7 @@ class SigningKey(object):
             sigencode=sigencode,
             extra_entropy=extra_entropy,
             allow_truncate=True,
+            accelerate=accelerate,
         )
 
     def sign_digest_deterministic(
@@ -1382,6 +1388,7 @@ class SigningKey(object):
         sigencode=sigencode_string,
         extra_entropy=b"",
         allow_truncate=False,
+        accelerate=False,
     ):
         """
         Create signature for digest using the deterministic RFC6979 algorithm.
@@ -1417,6 +1424,10 @@ class SigningKey(object):
             bigger bit-size than the order of the curve, the extra bits (at
             the end of the digest) will be truncated. Use it when signing
             SHA-384 output using NIST256p or in similar situations.
+        :param accelerate: an indicator for ECDSA sign operation to return
+            an ECPoint instead of a number of "r" parameter.
+            Applicable only for ECDSA key.
+        :type accelerate: boolean
 
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependent type
@@ -1447,6 +1458,7 @@ class SigningKey(object):
                     sigencode=simple_r_s,
                     k=k,
                     allow_truncate=allow_truncate,
+                    accelerate=accelerate,
                 )
                 break
             except RSZeroError:
@@ -1462,6 +1474,7 @@ class SigningKey(object):
         sigencode=sigencode_string,
         k=None,
         allow_truncate=True,
+        accelerate=False,
     ):
         """
         Create signature over data.
@@ -1525,6 +1538,10 @@ class SigningKey(object):
             leak the key. Caller should try a better entropy source, retry with
             different ``k``, or use the
             :func:`~SigningKey.sign_deterministic` in such case.
+        :param accelerate: an indicator for ECDSA sign operation to return
+            an ECPoint instead of a number of "r" parameter.
+            Applicable only for ECDSA key.
+        :type accelerate: boolean
 
         :return: encoded signature of the hash of `data`
         :rtype: bytes or sigencode function dependent type
@@ -1534,7 +1551,9 @@ class SigningKey(object):
         if isinstance(self.curve.curve, CurveEdTw):
             return self.sign_deterministic(data)
         h = hashfunc(data).digest()
-        return self.sign_digest(h, entropy, sigencode, k, allow_truncate)
+        return self.sign_digest(
+            h, entropy, sigencode, k, allow_truncate, accelerate
+        )
 
     def sign_digest(
         self,
@@ -1543,6 +1562,7 @@ class SigningKey(object):
         sigencode=sigencode_string,
         k=None,
         allow_truncate=False,
+        accelerate=False,
     ):
         """
         Create signature over digest using the probabilistic ECDSA algorithm.
@@ -1579,6 +1599,10 @@ class SigningKey(object):
             leak the key. Caller should try a better entropy source, retry with
             different 'k', or use the
             :func:`~SigningKey.sign_digest_deterministic` in such case.
+        :param accelerate: an indicator for ECDSA sign operation to return
+            an ECPoint instead of a number of "r" parameter.
+            Applicable only for ECDSA key.
+        :type accelerate: boolean
 
         :return: encoded signature for the `digest` hash
         :rtype: bytes or sigencode function dependent type
@@ -1591,10 +1615,10 @@ class SigningKey(object):
             self.curve,
             allow_truncate,
         )
-        r, s = self.sign_number(number, entropy, k)
+        r, s = self.sign_number(number, entropy, k, accelerate)
         return sigencode(r, s, self.privkey.order)
 
-    def sign_number(self, number, entropy=None, k=None):
+    def sign_number(self, number, entropy=None, k=None, accelerate=False):
         """
         Sign an integer directly.
 
@@ -1613,6 +1637,10 @@ class SigningKey(object):
             leak the key. Caller should try a better entropy source, retry with
             different 'k', or use the
             :func:`~SigningKey.sign_digest_deterministic` in such case.
+        :param accelerate: an indicator for ECDSA sign operation to return
+            an ECPoint instead of a number of "r" parameter.
+            Applicable only for ECDSA key.
+        :type accelerate: boolean
 
         :return: the "r" and "s" parameters of the signature
         :rtype: tuple of ints
@@ -1627,5 +1655,5 @@ class SigningKey(object):
             _k = randrange(order, entropy)
 
         assert 1 <= _k < order
-        sig = self.privkey.sign(number, _k)
+        sig = self.privkey.sign(number, _k, accelerate)
         return sig.r, sig.s

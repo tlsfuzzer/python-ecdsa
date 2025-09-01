@@ -2,6 +2,8 @@ from __future__ import with_statement, division
 
 import hashlib
 
+from .errors import MalformedPointError
+
 try:
     from hashlib import algorithms_available
 except ImportError:  # pragma: no cover
@@ -29,7 +31,13 @@ from hypothesis import note, assume, given, settings, example
 
 from .keys import SigningKey
 from .keys import BadSignatureError
-from .util import sigencode_der, sigencode_string
+from .util import (
+    number_to_string,
+    sigdecode_der_extended,
+    sigencode_der,
+    sigencode_der_sig_value_a,
+    sigencode_string,
+)
 from .util import sigdecode_der, sigdecode_string
 from .curves import curves, SECP112r2, SECP128r1
 from .der import (
@@ -39,6 +47,8 @@ from .der import (
     encode_oid,
     encode_sequence,
     encode_constructed,
+    encode_implicit,
+    encode_boolean,
 )
 from .ellipticcurve import CurveEdTw
 
@@ -222,6 +232,215 @@ def test_random_der_ecdsa_sig_value(params):
 
     with pytest.raises(BadSignatureError):
         verifying_key.verify(sig, example_data, sigdecode=sigdecode_der)
+
+
+@st.composite
+def st_random_der_ecdsa_sig_value_full_r(draw):  # pragma: no cover
+    """
+    Hypothesis strategy for selecting random values and encoding them
+    to ECDSA-Signature object with chosen ECDSA-Full-R::
+
+        ECDSA-Signature ::= CHOICE {
+            two-ints-plus ECDSA-Sig-Value,
+            point-int [0] ECDSA-Full-R,
+            ... -- Future representations may be added
+        }
+
+        ECDSA-Full-R ::= SEQUENCE {
+            r ECPoint,
+            s INTEGER
+        }
+
+        ECPoint ::= OCTET STRING
+    """
+    name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
+    note("Configuration: {0}".format(name))
+    order = int(verifying_key.curve.order)
+
+    x = draw(st.integers(min_value=0, max_value=verifying_key.curve.baselen))
+    y = draw(st.integers(min_value=0, max_value=verifying_key.curve.baselen))
+    prime = verifying_key.curve.curve.p()
+    x_str = number_to_string(x, prime)
+    y_str = number_to_string(y, prime)
+    r = x_str + y_str
+    s = draw(
+        st.integers(min_value=0, max_value=order << 4)
+        | st.integers(min_value=order >> 2, max_value=order + 1)
+    )
+    sig = encode_sequence(encode_octet_string(r), encode_integer(s))
+    # the ECDSA-FULL-R in ECDSA-Signature has a tag [0]
+    sig = encode_implicit(0, sig)
+
+    return verifying_key, sig
+
+
+@settings(**slow_params)
+@given(st_random_der_ecdsa_sig_value_full_r())
+def test_random_der_ecdsa_sig_value_full_r(params):
+    """
+    Check if random values encoded in ECDSA-Full-R structure are rejected
+    as signature.
+    """
+    verifying_key, sig = params
+
+    with pytest.raises(BadSignatureError):
+        verifying_key.verify(
+            sig, example_data, sigdecode=sigdecode_der_extended
+        )
+
+
+@st.composite
+def st_random_der_ecdsa_sig_value_a(draw):  # pragma: no cover
+    """
+    Hypothesis strategy for selecting random values and encoding them
+    to ECDSA-Sig-Value object with coefficient 'a' specified::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+    """
+    name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
+    note("Configuration: {0}".format(name))
+    order = int(verifying_key.curve.order)
+
+    # the encode_integer doesn't support negative numbers, would be nice
+    # to generate them too, but we have coverage for remove_integer()
+    # verifying that it doesn't accept them, so meh.
+    # Test all numbers around the ones that can show up (around order)
+    # way smaller and slightly bigger
+    r = draw(
+        st.integers(min_value=0, max_value=order << 4)
+        | st.integers(min_value=order >> 2, max_value=order + 1)
+    )
+    s = draw(
+        st.integers(min_value=0, max_value=order << 4)
+        | st.integers(min_value=order >> 2, max_value=order + 1)
+    )
+    a = draw(st.integers(min_value=0, max_value=1))
+
+    sig = sigencode_der_sig_value_a(r, s, None, a)
+
+    return verifying_key, sig
+
+
+@settings(**slow_params)
+@given(st_random_der_ecdsa_sig_value_a())
+def test_random_der_ecdsa_sig_value_a(params):
+    """
+    Check if 'a' value encoded in ECDSA-Sig-Value structure is rejected
+    as signature.
+    """
+    verifying_key, sig = params
+
+    with pytest.raises(BadSignatureError):
+        verifying_key.verify(
+            sig, example_data, sigdecode=sigdecode_der_extended
+        )
+
+
+@st.composite
+def st_random_der_ecdsa_sig_value_y_field_elem(draw):  # pragma: no cover
+    """
+    Hypothesis strategy for selecting random values and encoding them
+    to ECDSA-Signature object with chosen ECDSA-Sig-Value with 'y' being FieldElement::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+    """
+    name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
+    note("Configuration: {0}".format(name))
+    order = int(verifying_key.curve.order)
+
+    x = draw(st.integers(min_value=0, max_value=verifying_key.curve.baselen))
+    y = draw(st.integers(min_value=0, max_value=verifying_key.curve.baselen))
+    prime = verifying_key.curve.curve.p()
+    y_str = number_to_string(y, prime)
+
+    s = draw(
+        st.integers(min_value=0, max_value=order << 4)
+        | st.integers(min_value=order >> 2, max_value=order + 1)
+    )
+    sig = encode_sequence(
+        encode_integer(x), encode_integer(s), encode_octet_string(y_str)
+    )
+
+    return verifying_key, sig
+
+
+@settings(**slow_params)
+@given(st_random_der_ecdsa_sig_value_y_field_elem())
+def test_random_der_ecdsa_sig_value_y_field_elem(params):  # pragma: no cover
+    """
+    Check if 'y' value encoded as FieldElement ECDSA-Sig-Value
+    structure is rejected as signature.
+    """
+    verifying_key, sig = params
+    # The random values are not creating a valid point every time,
+    # sometimes the test will fail with MalformedPointError.
+    # When the point is valid, the test will fail with BadSignatureError.
+    with pytest.raises((BadSignatureError, MalformedPointError)):
+        verifying_key.verify(
+            sig, example_data, sigdecode=sigdecode_der_extended
+        )
+
+
+@st.composite
+def st_random_der_ecdsa_sig_value_y_boolean(draw):  # pragma: no cover
+    """
+    Hypothesis strategy for selecting random values and encoding them
+    to ECDSA-Signature object with chosen ECDSA-Sig-Value with 'y' being BOOLEAN::
+
+        ECDSA-Sig-Value ::= SEQUENCE {
+            r INTEGER,
+            s INTEGER,
+            a INTEGER OPTIONAL,
+            y CHOICE { b BOOLEAN, f FieldElement } OPTIONAL
+        }
+    """
+    name, verifying_key, _ = draw(st.sampled_from(keys_and_sigs))
+    note("Configuration: {0}".format(name))
+    order = int(verifying_key.curve.order)
+    b = False
+    x = draw(st.integers(min_value=0, max_value=verifying_key.curve.baselen))
+    y = draw(st.integers(min_value=0, max_value=verifying_key.curve.baselen))
+    if y & 1:
+        b = True
+    s = draw(
+        st.integers(min_value=0, max_value=order << 4)
+        | st.integers(min_value=order >> 2, max_value=order + 1)
+    )
+    sig = encode_sequence(
+        encode_integer(x), encode_integer(s), encode_boolean(b)
+    )
+
+    return verifying_key, sig
+
+
+@settings(**slow_params)
+@given(st_random_der_ecdsa_sig_value_y_boolean())
+def test_random_der_ecdsa_sig_value_y_boolean(params):  # pragma: no cover
+    """
+    Check if 'y' value encoded as BOOLEAN ECDSA-Sig-Value
+    structure is rejected as signature.
+    """
+    verifying_key, sig = params
+
+    # The compressed point verification is more strict than 'raw',
+    # sometimes the random numbers are producing valid point, so
+    # the signature verification will fail (BadSignatureError),
+    # but sometimes the test will fail with trying to create a point
+    # (MalformedPointError).
+    with pytest.raises((BadSignatureError, MalformedPointError)):
+        verifying_key.verify(
+            sig, example_data, sigdecode=sigdecode_der_extended
+        )
 
 
 def st_der_integer(*args, **kwargs):  # pragma: no cover

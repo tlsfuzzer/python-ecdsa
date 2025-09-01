@@ -151,6 +151,20 @@ def encode_number(n):
     return b"".join([int2byte(d) for d in b128_digits])
 
 
+def encode_boolean(b):
+    """
+    Encodes BOOLEAN acording to ASN.1 DER format.
+    The ASN.1 BOOLEAN type has two possible values: TRUE and FALSE.
+    True is encoded as ff", False is encoded as a zero.
+
+    :param boolean b: the boolean value to be encoded
+    :return: a byte string
+    :rtype: bytes
+    """
+
+    return b"\x01" + encode_length(1) + (b"\xff" if b else b"\x00")
+
+
 def is_sequence(string):
     return string and string[:1] == b"\x30"
 
@@ -240,6 +254,45 @@ def remove_octet_string(string):
     return body, rest
 
 
+def remove_boolean(string):
+    """
+    Removes the ASN.1 BOOLEAN type.
+    For BOOLEAN types, in DER FALSE is always encoded as zero
+    and TRUE is always encoded as ff.
+
+    :param bytes string: the boolean value to be encoded
+    :return: a boolean value and the rest of the string
+    :rtype: tuple(boolean, bytes)
+    """
+    if not string:
+        raise UnexpectedDER("Empty string is an invalid encoding of a boolean")
+    if string[:1] != b"\x01":
+        n = str_idx_as_int(string, 0)
+        raise UnexpectedDER("wanted type 'boolean' (0x01), got 0x%02x" % n)
+    length, lengthlength = read_length(string[1:])
+    if not length:
+        raise UnexpectedDER("Invalid length of bit string, can't be 0")
+    body = string[1 + lengthlength : 1 + lengthlength + length]
+    rest = string[1 + lengthlength + length :]
+    if not body:
+        raise UnexpectedDER("Empty BOOLEAN value")
+    if length != 1:
+        raise UnexpectedDER(
+            "The contents octets of boolean shall consist of a single octet."
+        )
+    if body == b"\x00":
+        return False, rest
+    # the workaround due to instrumental, that
+    # saves the binary data as UTF-8 string
+    # (0xff is an invalid start byte)
+    if isinstance(body, text_type):
+        body = body.encode("utf-8")
+    num = int(binascii.hexlify(body), 16)
+    if num == 0xFF:
+        return True, rest
+    raise UnexpectedDER("Invalid encoding of BOOLEAN.")
+
+
 def remove_object(string):
     if not string:
         raise UnexpectedDER(
@@ -298,8 +351,7 @@ def remove_integer(string):
         smsb = str_idx_as_int(numberbytes, 1)
         if smsb < 0x80:
             raise UnexpectedDER(
-                "Invalid encoding of integer, unnecessary "
-                "zero padding bytes"
+                "Invalid encoding of integer, unnecessary zero padding bytes"
             )
     return int(binascii.hexlify(numberbytes), 16), rest
 
@@ -399,8 +451,8 @@ def remove_bitstring(string, expect_unused=_sentry):
         raise UnexpectedDER("Empty string does not encode a bitstring")
     if expect_unused is _sentry:
         warnings.warn(
-            "Legacy call convention used, expect_unused= needs to be"
-            " specified",
+            "Legacy call convention used, "
+            "expect_unused= needs to be specified",
             DeprecationWarning,
         )
     num = str_idx_as_int(string, 0)
