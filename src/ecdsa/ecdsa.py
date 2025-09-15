@@ -249,22 +249,23 @@ class Private_key(object):
         G = self.public_key.generator
         n = G.order()
         k = random_k % n
-        # Fix the bit-length of the random nonce,
-        # so that it doesn't leak via timing.
-        # This does not change that ks = k mod n
+        n_bits = bit_length(n)
         ks = k + n
         kt = ks + n
-        if bit_length(ks) == bit_length(n):
-            p1 = kt * G
+        p1_ks = ks * G
+        p1_kt = kt * G
+        if bit_length(ks) == n_bits:
+            p1 = p1_kt
         else:
-            p1 = ks * G
+            p1 = p1_ks
         r = p1.x() % n
         if r == 0:
             raise RSZeroError("amazingly unlucky random number r")
-        s = (
-            numbertheory.inverse_mod(k, n)
-            * (hash + (self.secret_multiplier * r) % n)
-        ) % n
+        hash_mod = hash % n
+        secret_r = (self.secret_multiplier * r) % n
+        s_input = (hash_mod + secret_r) % n
+        k_inv = numbertheory.inverse_mod(k, n)
+        s = (k_inv * s_input) % n
         if s == 0:
             raise RSZeroError("amazingly unlucky random number s")
         return Signature(r, s)

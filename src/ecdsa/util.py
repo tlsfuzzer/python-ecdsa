@@ -89,14 +89,23 @@ def randrange(order, entropy=None):
     assert order > 1
     if entropy is None:
         entropy = os.urandom
-    upper_2 = bit_length(order - 2)
-    upper_256 = upper_2 // 8 + 1
-    while True:  # I don't think this needs a counter with bit-wise randrange
-        ent_256 = entropy(upper_256)
-        ent_2 = entropy_to_bits(ent_256)
-        rand_num = int(ent_2[:upper_2], base=2) + 1
+    order_bits = bit_length(order - 1)
+    bytes_needed = (order_bits + 7) // 8
+    extra_bytes = 4
+    total_bytes = bytes_needed + extra_bytes
+    max_iterations = 1000
+    iteration_count = 0
+    while iteration_count < max_iterations:
+        iteration_count += 1
+        ent_bytes = entropy(total_bytes)
+        ent_int = int.from_bytes(ent_bytes, byteorder="big")
+        mask = (1 << order_bits) - 1
+        rand_num = (ent_int & mask) + 1
         if 0 < rand_num < order:
             return rand_num
+    raise RuntimeError(
+        "Unable to generate random number after maximum iterations"
+    )
 
 
 class PRNG:
