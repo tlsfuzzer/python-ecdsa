@@ -23,6 +23,38 @@ from .ecdsa import Signature
 from .keys import SigningKey
 from .util import randrange
 
+# Threshold for randrange timing consistency across curves
+# Higher threshold accounts for more variable timing in random generation
+RANDRANGE_TIMING_VARIATION_THRESHOLD = 50.0
+
+# Threshold for sign timing consistency across curves
+# Lower threshold for signing operations which should be more consistent
+SIGN_TIMING_VARIATION_THRESHOLD = 8.0
+
+# Threshold for entropy pattern timing consistency
+# Medium threshold for different entropy sources
+ENTROPY_TIMING_VARIATION_THRESHOLD = 20.0
+
+# Threshold for edge case nonce timing
+# Medium threshold for edge cases that might reveal timing differences
+EDGE_CASE_TIMING_VARIATION_THRESHOLD = 10.0
+
+# Threshold for verification timing consistency
+# Lower threshold for verification which should be very consistent
+VERIFY_TIMING_VARIATION_THRESHOLD = 5.0
+
+# Threshold for stress test timing consistency
+# Higher threshold for stress testing under load
+STRESS_TIMING_VARIATION_THRESHOLD = 20.0
+
+# Threshold for regression test timing consistency
+# Higher threshold for regression testing across wide range of values
+REGRESSION_TIMING_VARIATION_THRESHOLD = 20.0
+
+# Coefficient of variation thresholds
+# Maximum acceptable coefficient of variation for timing measurements
+MAX_COEFFICIENT_OF_VARIATION = 1.5
+
 
 class TestTimingAttackResistance(unittest.TestCase):
     """Comprehensive tests for timing attack resistance in ECDSA operations."""
@@ -67,7 +99,7 @@ class TestTimingAttackResistance(unittest.TestCase):
 
                 self.assertLess(
                     timing_variation,
-                    50.0,
+                    RANDRANGE_TIMING_VARIATION_THRESHOLD,
                     f"Timing variation too high for {curve.name}: {timing_variation:.2%}",
                 )
 
@@ -101,7 +133,7 @@ class TestTimingAttackResistance(unittest.TestCase):
 
                 self.assertLess(
                     timing_variation,
-                    20.0,
+                    ENTROPY_TIMING_VARIATION_THRESHOLD,
                     f"Timing variation too high for entropy pattern {i}: {timing_variation:.2%}",
                 )
 
@@ -135,7 +167,7 @@ class TestTimingAttackResistance(unittest.TestCase):
 
                 self.assertLess(
                     timing_variation,
-                    8.0,
+                    SIGN_TIMING_VARIATION_THRESHOLD,
                     f"Sign timing variation too high for {curve.name}: {timing_variation:.2%}",
                 )
 
@@ -186,7 +218,7 @@ class TestTimingAttackResistance(unittest.TestCase):
 
             self.assertLess(
                 timing_variation,
-                10.0,
+                EDGE_CASE_TIMING_VARIATION_THRESHOLD,
                 f"Sign timing variation too high for edge cases: {timing_variation:.2%}",
             )
 
@@ -216,7 +248,7 @@ class TestTimingAttackResistance(unittest.TestCase):
 
         self.assertLess(
             timing_variation,
-            5.0,
+            VERIFY_TIMING_VARIATION_THRESHOLD,
             f"Verify timing variation too high: {timing_variation:.2%}",
         )
 
@@ -325,7 +357,7 @@ class TestTimingAttackResistance(unittest.TestCase):
         # Even under stress, timing should be relatively consistent
         self.assertLess(
             timing_variation,
-            20.0,
+            STRESS_TIMING_VARIATION_THRESHOLD,
             f"Stress test timing variation too high: {timing_variation:.2%}",
         )
 
@@ -391,13 +423,13 @@ class TestTimingAttackResistance(unittest.TestCase):
             # Regression test: timing should be reasonably consistent
             self.assertLess(
                 timing_variation,
-                20.0,
+                REGRESSION_TIMING_VARIATION_THRESHOLD,
                 f"Regression test timing variation too high: {timing_variation:.2%}",
             )
 
             # Coefficient of variation should be reasonable
             self.assertLess(
                 std_dev / mean_time,
-                1.5,
+                MAX_COEFFICIENT_OF_VARIATION,
                 "Regression test shows too much timing variation",
             )

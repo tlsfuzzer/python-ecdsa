@@ -47,6 +47,19 @@ oid_ecDH = (1, 3, 132, 1, 12)
 
 oid_ecMQV = (1, 3, 132, 1, 13)
 
+# Entropy generation safety margin for randrange function
+# Extra bytes added to entropy to ensure sufficient randomness
+# and reduce bias in random number generation
+
+ENTROPY_SAFETY_MARGIN_BYTES = 4
+
+# Maximum iterations for randrange function
+# Prevents infinite loops while allowing sufficient attempts
+# for random number generation with high probability of success
+
+MAX_RANDRANGE_ITERATIONS = 1000
+
+
 if sys.version_info >= (3,):  # pragma: no branch
 
     def entropy_to_bits(ent_256):
@@ -91,9 +104,9 @@ def randrange(order, entropy=None):
         entropy = os.urandom
     order_bits = bit_length(order - 1)
     bytes_needed = (order_bits + 7) // 8
-    extra_bytes = 4
+    extra_bytes = ENTROPY_SAFETY_MARGIN_BYTES
     total_bytes = bytes_needed + extra_bytes
-    max_iterations = 1000
+    max_iterations = MAX_RANDRANGE_ITERATIONS
     iteration_count = 0
     while iteration_count < max_iterations:
         iteration_count += 1
