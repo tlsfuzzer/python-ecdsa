@@ -79,7 +79,7 @@ class TestTimingAttackResistance(unittest.TestCase):
         entropy_patterns = [
             lambda n: os.urandom(n),
             lambda n: os.urandom(n + 1)[:n],
-            lambda n: (os.urandom(n) + b"\x00" * 4)[:n],
+            lambda n: os.urandom(n)[::-1],
         ]
 
         for i, entropy_func in enumerate(entropy_patterns):
