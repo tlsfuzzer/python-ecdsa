@@ -261,10 +261,11 @@ class Private_key(object):
         r = p1.x() % n
         if r == 0:
             raise RSZeroError("amazingly unlucky random number r")
-        s = (
-            numbertheory.inverse_mod(k, n)
-            * (hash + (self.secret_multiplier * r) % n)
-        ) % n
+        hash_mod = hash % n
+        secret_r = (self.secret_multiplier * r) % n
+        s_input = (hash_mod + secret_r) % n
+        k_inv = numbertheory.inverse_mod(k, n)
+        s = (k_inv * s_input) % n
         if s == 0:
             raise RSZeroError("amazingly unlucky random number s")
         return Signature(r, s)
