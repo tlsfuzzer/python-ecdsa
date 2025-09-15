@@ -252,12 +252,10 @@ class Private_key(object):
         n_bits = bit_length(n)
         ks = k + n
         kt = ks + n
-        p1_ks = ks * G
-        p1_kt = kt * G
         if bit_length(ks) == n_bits:
-            p1 = p1_kt
+            p1 = kt * G
         else:
-            p1 = p1_ks
+            p1 = ks * G
         r = p1.x() % n
         if r == 0:
             raise RSZeroError("amazingly unlucky random number r")
