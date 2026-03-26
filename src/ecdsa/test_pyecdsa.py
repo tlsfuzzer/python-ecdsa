@@ -1013,7 +1013,7 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.generate()
         pub1 = priv1.get_verifying_key()
         data = b"data"
-        sig = priv1.sign(data, sigencode=sigencode_der_full_r, accelerate=True)
+        sig = priv1.sign(data, sigencode=sigencode_der_full_r)
 
         self.assertEqual(type(sig), binary_type)
         self.assertTrue(pub1.verify(sig, data, sigdecode=sigdecode_der_full_r))
@@ -1022,7 +1022,7 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.generate()
         pub1 = priv1.get_verifying_key()
         data = b"data"
-        sig = priv1.sign(data, sigencode=sigencode_der_full_r, accelerate=True)
+        sig = priv1.sign(data, sigencode=sigencode_der_full_r)
         r, s = sigdecode_der_full_r(sig, None)
         point = ellipticcurve.Point.from_bytes(
             priv1.privkey.public_key.generator.curve(), r
@@ -1036,7 +1036,7 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.generate()
         pub1 = priv1.get_verifying_key()
         data = b"data"
-        sig = priv1.sign(data, sigencode=sigencode_der_full_r, accelerate=True)
+        sig = priv1.sign(data, sigencode=sigencode_der_full_r)
         r, s = sigdecode_der_full_r(sig, None)
         point = ellipticcurve.Point.from_bytes(
             priv1.privkey.public_key.generator.curve(), r
@@ -1050,9 +1050,7 @@ class ECDSA(unittest.TestCase):
         priv1 = SigningKey.generate()
         pub1 = priv1.get_verifying_key()
         data = b"data"
-        sig = priv1.sign(
-            data, sigencode=sigencode_der_sig_value_y_boolean, accelerate=True
-        )
+        sig = priv1.sign(data, sigencode=sigencode_der_sig_value_y_boolean)
         self.assertEqual(type(sig), binary_type)
         self.assertTrue(
             pub1.verify(sig, data, sigdecode=sigdecode_der_extended)
@@ -1065,7 +1063,6 @@ class ECDSA(unittest.TestCase):
         sig = priv1.sign(
             data,
             sigencode=sigencode_der_sig_value_y_field_elem,
-            accelerate=True,
         )
         self.assertEqual(type(sig), binary_type)
         self.assertTrue(

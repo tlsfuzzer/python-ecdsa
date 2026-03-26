@@ -330,7 +330,9 @@ def sigencode_der_sig_value_y_field_elem(r, s, order):
     It's expected that this function will be used as a ``sigencode=`` parameter
     in :func:`ecdsa.keys.SigningKey.sign` method.
 
-    :param ECPoint r: point of the signature
+    :param r: ``r`` value of the signature (an :class:`~ecdsa.ecdsa.RValue`
+        carrying the originating EC point)
+    :type r: :class:`~ecdsa.ecdsa.RValue`
     :param int s: second parameter of the signature
     :param int order: the order of the curve over which the signature was
         computed
@@ -338,8 +340,8 @@ def sigencode_der_sig_value_y_field_elem(r, s, order):
     :return: DER encoding of ECDSA signature
     :rtype: bytes
     """
-    y = r.y()
-    r = r.x() % order
+    point = r.point
+    y = point.y()
     f = number_to_string(y, order)
 
     return der.encode_sequence(
@@ -367,7 +369,9 @@ def sigencode_der_sig_value_y_boolean(r, s, order):
     It's expected that this function will be used as a ``sigencode=`` parameter
     in :func:`ecdsa.keys.SigningKey.sign` method.
 
-    :param ECPoint r: point of the signature
+    :param r: ``r`` value of the signature (an :class:`~ecdsa.ecdsa.RValue`
+        carrying the originating EC point)
+    :type r: :class:`~ecdsa.ecdsa.RValue`
     :param int s: second parameter of the signature
     :param int order: the order of the curve over which the signature was
         computed
@@ -375,8 +379,8 @@ def sigencode_der_sig_value_y_boolean(r, s, order):
     :return: DER encoding of ECDSA signature
     :rtype: bytes
     """
-    y = r.y()
-    r = r.x() % order
+    point = r.point
+    y = point.y()
     b = False
     if y & 1:
         b = True
@@ -433,7 +437,9 @@ def sigencode_der_full_r(r, s, order, encoding="raw"):
     It's expected that this function will be used as a ``sigencode=`` parameter
     in :func:`ecdsa.keys.SigningKey.sign` method.
 
-    :param ECPoint r: the point used to create the signature
+    :param r: ``r`` value of the signature (an :class:`~ecdsa.ecdsa.RValue`
+        carrying the originating EC point)
+    :type r: :class:`~ecdsa.ecdsa.RValue`
     :param int s: second parameter of the signature
     :param int order: the order of the curve over which the signature was
         computed
@@ -441,7 +447,8 @@ def sigencode_der_full_r(r, s, order, encoding="raw"):
     :return: DER encoding of ECDSA signature
     :rtype: bytes
     """
-    r = r.to_bytes(encoding=encoding)
+    point = getattr(r, "point", r)
+    r = point.to_bytes(encoding=encoding)
     sig = der.encode_sequence(
         der.encode_octet_string(r), der.encode_integer(s)
     )

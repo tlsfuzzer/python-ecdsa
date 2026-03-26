@@ -81,6 +81,21 @@ class InvalidPointError(RuntimeError):
     pass
 
 
+class RValue(int):
+    """An r signature value that also carries the originating EC point.
+
+    Behaves as a regular ``int`` (equal to ``point.x() % order``) so
+    existing :func:`sigencode_*` functions that expect an integer work
+    unchanged.  Functions that need the full EC point can access it via
+    the :attr:`point` attribute.
+    """
+
+    def __new__(cls, r, point):
+        obj = super(RValue, cls).__new__(cls, r)
+        obj.point = point
+        return obj
+
+
 class Signature(object):
     """
     ECDSA signature.
@@ -244,7 +259,7 @@ class Private_key(object):
         """Return False if the points are identical, True otherwise."""
         return not self == other
 
-    def sign(self, hash, random_k, accelerate=False):
+    def sign(self, hash, random_k):
         """Return a signature for the provided hash, using the provided
         random nonce.  It is absolutely vital that random_k be an unpredictable
         number in the range [1, self.public_key.point.order()-1].  If
@@ -280,9 +295,7 @@ class Private_key(object):
         ) % n
         if s == 0:
             raise RSZeroError("amazingly unlucky random number s")
-        if accelerate:
-            return Signature(p1, s)
-        return Signature(r, s)
+        return Signature(RValue(r, p1), s)
 
 
 def int_to_string(x):  # pragma: no cover
