@@ -432,7 +432,7 @@ def test_random_der_ecdsa_sig_value_y_boolean(params):  # pragma: no cover
     """
     verifying_key, sig = params
 
-    # The compressed point verification is more strict than 'raw',
+    # The 'compressed' point verification is more strict than 'raw',
     # sometimes the random numbers are producing valid point, so
     # the signature verification will fail (BadSignatureError),
     # but sometimes the test will fail with trying to create a point

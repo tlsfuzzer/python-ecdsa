@@ -81,7 +81,19 @@ class InvalidPointError(RuntimeError):
     pass
 
 
-class RValue(int):
+#  Plain integers in Python 2 are implemented using long in C,
+#  which gives them at least 32 bits of precision.
+#  Long integers have unlimited precision.
+#  In python 3 int and long were 'unified'
+
+if sys.version_info < (3, 0):  # pragma:no branch
+    # flake8 is complaining on python3
+    INT_TYPE = long  # noqa: F821
+else:
+    INT_TYPE = int
+
+
+class RValue(INT_TYPE):
     """An r signature value that also carries the originating EC point.
 
     Behaves as a regular ``int`` (equal to ``point.x() % order``) so
@@ -91,7 +103,7 @@ class RValue(int):
     """
 
     def __new__(cls, r, point):
-        obj = super(RValue, cls).__new__(cls, r)
+        obj = super(RValue, cls).__new__(cls, INT_TYPE(r))
         obj.point = point
         return obj
 

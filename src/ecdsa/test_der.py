@@ -573,7 +573,7 @@ class TestEncodeBoolean(unittest.TestCase):
         self.assertEqual(len(der), 3)
         self.assertEqual(der, b"\x01\x01\xff")
 
-    def test_simle_false(self):
+    def test_simple_false(self):
         der = encode_boolean(False)
         self.assertEqual(len(der), 3)
         self.assertEqual(der, b"\x01\x01\x00")

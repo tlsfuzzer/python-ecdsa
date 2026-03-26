@@ -282,10 +282,10 @@ def remove_boolean(string):
         )
     if body == b"\x00":
         return False, rest
-    # the workaround due to instrumental, that
-    # saves the binary data as UTF-8 string
-    # (0xff is an invalid start byte)
-    if isinstance(body, text_type):
+    #  the workaround due to instrumental, that
+    #  saves the binary data as UTF-8 string
+    #  (0xff is an invalid start byte)
+    if isinstance(body, text_type):  # pragma: no branch
         body = body.encode("utf-8")
     num = int(binascii.hexlify(body), 16)
     if num == 0xFF:
