@@ -30,6 +30,7 @@ import sys
 from hashlib import sha256
 from six import PY2, int2byte, next
 from . import der
+from . import ber
 from ._compat import normalise_bytes
 
 
@@ -310,6 +311,37 @@ def sigencode_der(r, s, order):
     :rtype: bytes
     """
     return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
+
+
+def sigencode_ber_indefinite(r, s, order):
+    """
+    Encode the signature into the ECDSA-Sig-Value structure using BER
+    indefinite-length encoding.
+
+    Encodes the signature to the following :term:`ASN.1` structure::
+
+        Ecdsa-Sig-Value ::= SEQUENCE {
+            r       INTEGER,
+            s       INTEGER
+        }
+
+    The SEQUENCE is encoded using BER constructed, indefinite-length method,
+    terminated by end-of-contents octets (0x00 0x00).
+
+    It's expected that this function will be used as a ``sigencode=`` parameter
+    in :func:`ecdsa.keys.SigningKey.sign` method.
+
+    :param int r: first parameter of the signature
+    :param int s: second parameter of the signature
+    :param int order: the order of the curve over which the signature was
+        computed
+
+    :return: BER indefinite-length encoding of ECDSA signature
+    :rtype: bytes
+    """
+    return ber.encode_sequence_indefinite(
+        ber.encode_integer(r), ber.encode_integer(s)
+    )
 
 
 def sigencode_der_sig_value_y_field_elem(r, s, order):
@@ -682,6 +714,47 @@ def sigdecode_der(sig_der, order):
     if empty != b"":
         raise der.UnexpectedDER(
             "trailing junk after DER numbers: %s" % binascii.hexlify(empty)
+        )
+    return r, s
+
+
+def sigdecode_ber_indefinite(sig_ber, order):
+    """
+    Decoder for BER indefinite-length format of ECDSA signatures.
+
+    BER indefinite-length format of signature uses the :term:`ASN.1` BER
+    constructed, indefinite-length method to encode a sequence of two
+    integers::
+
+        Ecdsa-Sig-Value ::= SEQUENCE {
+            r       INTEGER,
+            s       INTEGER
+        }
+
+    It's expected that this function will be used as the ``sigdecode=``
+    parameter to the :func:`ecdsa.keys.VerifyingKey.verify` method.
+
+    :param sig_ber: encoded signature
+    :type sig_ber: bytes like object
+    :param order: order of the curve over which the signature was computed
+    :type order: int
+
+    :raises UnexpectedBER: when the encoding of signature is invalid
+
+    :return: tuple with decoded ``r`` and ``s`` values of signature
+    :rtype: tuple of ints
+    """
+    sig_ber = normalise_bytes(sig_ber)
+    rs_strings, empty = ber.remove_sequence(sig_ber)
+    if empty != b"":
+        raise ber.UnexpectedBER(
+            "trailing junk after BER sig: %s" % binascii.hexlify(empty)
+        )
+    r, rest = ber.remove_integer(rs_strings)
+    s, empty = ber.remove_integer(rest)
+    if empty != b"":
+        raise ber.UnexpectedBER(
+            "trailing junk after BER numbers: %s" % binascii.hexlify(empty)
         )
     return r, s
 
