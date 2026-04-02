@@ -14,6 +14,7 @@ import pytest
 from ._compat import str_idx_as_int
 from .curves import NIST256p, NIST224p
 from .der import (
+    remove_boolean,
     remove_integer,
     UnexpectedDER,
     read_length,
@@ -26,6 +27,7 @@ from .der import (
     remove_octet_string,
     remove_sequence,
     encode_implicit,
+    encode_boolean,
 )
 
 
@@ -565,6 +567,82 @@ class TestRemoveSequence(unittest.TestCase):
         self.assertIn("Length longer", str(e.exception))
 
 
+class TestEncodeBoolean(unittest.TestCase):
+    def test_simple_true(self):
+        der = encode_boolean(True)
+        self.assertEqual(len(der), 3)
+        self.assertEqual(der, b"\x01\x01\xff")
+
+    def test_simple_false(self):
+        der = encode_boolean(False)
+        self.assertEqual(len(der), 3)
+        self.assertEqual(der, b"\x01\x01\x00")
+
+
+class TestRemoveBoolean(unittest.TestCase):
+    def test_simple_false(self):
+        data = b"\x01\x01\x00"
+        body, rest = remove_boolean(data)
+        self.assertEqual(body, False)
+        self.assertEqual(rest, b"")
+
+    def test_simple_true(self):
+        data = b"\x01\x01\xff"
+        body, rest = remove_boolean(data)
+        self.assertEqual(body, True)
+        self.assertEqual(rest, b"")
+
+    def test_empty_string(self):
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_boolean(b"")
+
+    def test_with_wrong_tag(self):
+        data = b"\x02\x01\x00"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_boolean(data)
+
+        self.assertIn("wanted type 'boolean' (0x01)", str(e.exception))
+
+    def test_with_wrong_encoded_value(self):
+        data = b"\x01\x01\x01"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_boolean(data)
+
+        self.assertIn("Invalid encoding of BOOLEAN", str(e.exception))
+
+    def test_empty_body(self):
+        data = b"\x01\x01"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_boolean(data)
+
+        self.assertIn("Empty BOOLEAN value", str(e.exception))
+
+    def test_several_boolean_octets(self):
+        data = b"\x01\x02\x01\x01"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_boolean(data)
+
+        self.assertIn(
+            "The contents octets of boolean "
+            "shall consist of a single octet",
+            str(e.exception),
+        )
+
+    def test_zero_boolean_length(self):
+        data = b"\x01\x00"
+
+        with self.assertRaises(UnexpectedDER) as e:
+            remove_boolean(data)
+
+        self.assertIn(
+            "Invalid length of bit string, can't be 0", str(e.exception)
+        )
+
+
 @st.composite
 def st_oid(draw, max_value=2**512, max_size=50):
     """
@@ -614,7 +692,7 @@ def test_remove_octet_string_rejects_truncated_length():
 def test_remove_constructed_rejects_truncated_length():
     # Constructed tag: 0xA0 (context-specific constructed, tag=0)
     # declared length 4096, but only 3 bytes present
-    bad = b"\xA0\x82\x10\x00" + b"ABC"
+    bad = b"\xa0\x82\x10\x00" + b"ABC"
     with pytest.raises(
         UnexpectedDER, match="Length longer than the provided buffer"
     ):

@@ -1,5 +1,7 @@
 from __future__ import with_statement, division, print_function
 
+from ecdsa import ellipticcurve
+
 try:
     import unittest2 as unittest
 except ImportError:
@@ -22,12 +24,23 @@ from .keys import BadSignatureError, MalformedPointError, BadDigestError
 from . import util
 from .util import (
     sigencode_der,
+    sigencode_der_sig_value_a,
     sigencode_strings,
     sigencode_strings_canonize,
     sigencode_string_canonize,
     sigencode_der_canonize,
+    sigencode_der_full_r,
+    sigencode_der_sig_value_y_boolean,
+    sigencode_der_sig_value_y_field_elem,
 )
-from .util import sigdecode_der, sigdecode_strings, sigdecode_string
+from .util import (
+    sigdecode_der,
+    sigdecode_strings,
+    sigdecode_string,
+    sigdecode_der_full_r,
+    sigdecode_der_extended,
+    sigdecode_der_ecdsa_sig_extended,
+)
 from .util import number_to_string, encoded_oid_ecPublicKey, MalformedSignature
 from .curves import Curve, UnknownCurveError
 from .curves import (
@@ -985,6 +998,141 @@ class ECDSA(unittest.TestCase):
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b"\x00" * 16, curve)
 
+    def test_sigencode_der_ecdsa_sig_extended(self):
+        priv1 = SigningKey.generate()
+        pub1 = priv1.get_verifying_key()
+        data = b"data"
+        sig = priv1.sign(data, sigencode=sigencode_der)
+
+        self.assertEqual(type(sig), binary_type)
+        self.assertTrue(
+            pub1.verify(sig, data, sigdecode=sigdecode_der_ecdsa_sig_extended)
+        )
+
+    def test_sigencode_der_full_r(self):
+        priv1 = SigningKey.generate()
+        pub1 = priv1.get_verifying_key()
+        data = b"data"
+        sig = priv1.sign(data, sigencode=sigencode_der_full_r)
+
+        self.assertEqual(type(sig), binary_type)
+        self.assertTrue(pub1.verify(sig, data, sigdecode=sigdecode_der_full_r))
+
+    def test_sigencode_der_full_r_uncompressed(self):
+        priv1 = SigningKey.generate()
+        pub1 = priv1.get_verifying_key()
+        data = b"data"
+        sig = priv1.sign(data, sigencode=sigencode_der_full_r)
+        r, s = sigdecode_der_full_r(sig, None)
+        point = ellipticcurve.Point.from_bytes(
+            priv1.privkey.public_key.generator.curve(), r
+        )
+        sig = sigencode_der_full_r(point, s, None, encoding="uncompressed")
+
+        self.assertEqual(type(sig), binary_type)
+        self.assertTrue(pub1.verify(sig, data, sigdecode=sigdecode_der_full_r))
+
+    def test_sigencode_der_full_r_compressed(self):
+        priv1 = SigningKey.generate()
+        pub1 = priv1.get_verifying_key()
+        data = b"data"
+        sig = priv1.sign(data, sigencode=sigencode_der_full_r)
+        r, s = sigdecode_der_full_r(sig, None)
+        point = ellipticcurve.Point.from_bytes(
+            priv1.privkey.public_key.generator.curve(), r
+        )
+        sig = sigencode_der_full_r(point, s, None, encoding="compressed")
+
+        self.assertEqual(type(sig), binary_type)
+        self.assertTrue(pub1.verify(sig, data, sigdecode=sigdecode_der_full_r))
+
+    def test_sigencode_der_sig_value_with_y_boolean(self):
+        priv1 = SigningKey.generate()
+        pub1 = priv1.get_verifying_key()
+        data = b"data"
+        sig = priv1.sign(data, sigencode=sigencode_der_sig_value_y_boolean)
+        self.assertEqual(type(sig), binary_type)
+        self.assertTrue(
+            pub1.verify(sig, data, sigdecode=sigdecode_der_extended)
+        )
+
+    def test_sigencode_der_sig_value_with_y_field_elem(self):
+        priv1 = SigningKey.generate()
+        pub1 = priv1.get_verifying_key()
+        data = b"data"
+        sig = priv1.sign(
+            data,
+            sigencode=sigencode_der_sig_value_y_field_elem,
+        )
+        self.assertEqual(type(sig), binary_type)
+        self.assertTrue(
+            pub1.verify(sig, data, sigdecode=sigdecode_der_extended)
+        )
+
+    def test_sigdecode_der_sig_value_a(self):
+        sig = sigencode_der_sig_value_a(1, 1, None, 1)
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_extended(sig, None)
+        self.assertIn(
+            "Only prime field curves are supported.", str(e.exception)
+        )
+
+    def test_sigdecode_full_r_wrong_tag(self):
+        r = der.encode_octet_string(b"1")
+        s = der.encode_integer(1)
+        value = der.encode_sequence(r, s)
+        value_w_tag = der.encode_implicit(1, value)
+
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_full_r(value_w_tag, None)
+        self.assertIn("ECDSA-Full-R must be taged with [0]", str(e.exception))
+
+    def test_sigdecode_der_full_r_junk_after_tag(self):
+        r = der.encode_octet_string(b"1")
+        s = der.encode_integer(1)
+        value = der.encode_sequence(r, s)
+        value_w_tag = der.encode_implicit(0, value)
+        value = value_w_tag + b"garbage"
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_full_r(value, None)
+        self.assertIn("trailing junk after DER sig", str(e.exception))
+
+    def test_sigdecode_der_full_r_junk_after_sequence(self):
+        r = der.encode_octet_string(b"1")
+        s = der.encode_integer(1)
+        value = der.encode_sequence(r, s)
+        value += b"garbage"
+        value_w_tag = der.encode_implicit(0, value)
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_full_r(value_w_tag, None)
+        self.assertIn("trailing junk after DER sig", str(e.exception))
+
+    def test_sigdecode_der_full_r_junk_after_numbers(self):
+        r = der.encode_octet_string(b"1")
+        s = der.encode_integer(1)
+        value = der.encode_sequence(r, s, b"garbage")
+        value_w_tag = der.encode_implicit(0, value)
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_full_r(value_w_tag, None)
+        self.assertIn("trailing junk after DER numbers", str(e.exception))
+
+    def test_sigdecode_der_ecdsa_sig_junk_after_sequence(self):
+        r = der.encode_integer(1)
+        s = der.encode_integer(1)
+        value = der.encode_sequence(r, s)
+        value += b"garbage"
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_ecdsa_sig_extended(value, None)
+        self.assertIn("trailing junk after DER sig", str(e.exception))
+
+    def test_sigdecode_der_ecdsa_sig_junk_after_numbers(self):
+        r = der.encode_integer(1)
+        s = der.encode_integer(1)
+        value = der.encode_sequence(r, s, b"garbage")
+        with self.assertRaises(der.UnexpectedDER) as e:
+            sigdecode_der_ecdsa_sig_extended(value, None)
+        self.assertIn("trailing junk after DER numbers", str(e.exception))
+
 
 @pytest.mark.parametrize(
     "val,even", [(i, j) for i in range(256) for j in [True, False]]
@@ -1874,6 +2022,10 @@ class DER(unittest.TestCase):
         x = der.encode_constructed(1, unhexlify(b"0102030a0b0c"))
         self.assertEqual(hexlify(x), b"a106" + b"0102030a0b0c")
 
+    def test_boolean(self):
+        self.assertEqual(der.encode_boolean(True), b"\x01\01\xff")
+        self.assertEqual(der.encode_boolean(False), b"\x01\01\x00")
+
 
 class Util(unittest.TestCase):
     @pytest.mark.slow
@@ -1940,6 +2092,30 @@ class Util(unittest.TestCase):
         for i in range(1, order):
             print("%3d: %s" % (i, "*" * (counts[i] // 100)))
 
+    def sigencode_der_boolean_true(self):  # pragma: no cover
+        point = Point(None, 3, 3, 2)
+        sig_der = sigencode_der_sig_value_y_boolean(point, 1, 2)
+        sig, empty = der.remove_sequence(sig_der)
+        r, rest = der.remove_integer(sig)
+        s, rest = der.remove_integer(rest)
+        b, empty = der.remove_boolean(rest)
+        self.assertEqual(b, True)
+        self.assertEqual(r, 1)
+        self.assertEqual(s, 1)
+        self.assertEqual(empty, b"")
+
+    def sigencode_der_boolean_false(self):  # pragma: no cover
+        point = Point(None, 3, 2, 2)
+        sig_der = sigencode_der_sig_value_y_boolean(point, 1, 2)
+        sig, empty = der.remove_sequence(sig_der)
+        r, rest = der.remove_integer(sig)
+        s, rest = der.remove_integer(rest)
+        b, empty = der.remove_boolean(rest)
+        self.assertEqual(b, False)
+        self.assertEqual(r, 1)
+        self.assertEqual(s, 1)
+        self.assertEqual(empty, b"")
+
 
 class RFC6979(unittest.TestCase):
     # https://tools.ietf.org/html/rfc6979#appendix-A.1
@@ -1949,7 +2125,8 @@ class RFC6979(unittest.TestCase):
 
     def test_SECP256k1(self):
         """RFC doesn't contain test vectors for SECP256k1 used in bitcoin.
-        This vector has been computed by Golang reference implementation instead."""
+        This vector has been computed by Golang reference implementation instead.
+        """
         self._do(
             generator=SECP256k1.generator,
             secexp=int("9d0219792467d7d37b4d43298a7d0c05", 16),

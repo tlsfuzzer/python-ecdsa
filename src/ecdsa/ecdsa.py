@@ -64,6 +64,7 @@ Originally written in 2005 by Peter Pearson and placed in the public domain,
 modified as part of the python-ecdsa package.
 """
 
+import sys
 import warnings
 from six import int2byte
 from . import ellipticcurve
@@ -78,6 +79,33 @@ class RSZeroError(RuntimeError):
 
 class InvalidPointError(RuntimeError):
     pass
+
+
+#  Plain integers in Python 2 are implemented using long in C,
+#  which gives them at least 32 bits of precision.
+#  Long integers have unlimited precision.
+#  In python 3 int and long were 'unified'
+
+if sys.version_info < (3, 0):  # pragma:no branch
+    # flake8 is complaining on python3
+    INT_TYPE = long  # noqa: F821
+else:
+    INT_TYPE = int
+
+
+class RValue(INT_TYPE):
+    """An r signature value that also carries the originating EC point.
+
+    Behaves as a regular ``int`` (equal to ``point.x() % order``) so
+    existing :func:`sigencode_*` functions that expect an integer work
+    unchanged.  Functions that need the full EC point can access it via
+    the :attr:`point` attribute.
+    """
+
+    def __new__(cls, r, point):
+        obj = super(RValue, cls).__new__(cls, INT_TYPE(r))
+        obj.point = point
+        return obj
 
 
 class Signature(object):
@@ -192,9 +220,21 @@ class Public_key(object):
         n = G.order()
         r = signature.r
         s = signature.s
-        if r < 1 or r > n - 1:
-            return False
         if s < 1 or s > n - 1:
+            return False
+
+        if sys.version_info < (3, 0):  # pragma: no branch
+            # memoryview was introduced in py 2.7
+            byte_objects = set((bytearray, bytes))
+        else:
+            byte_objects = set((bytearray, bytes, memoryview))
+        if type(r) in byte_objects:
+            point = ellipticcurve.AbstractPoint.from_bytes(
+                self.generator.curve(), r
+            )
+            r = point[0] % n
+
+        if r < 1 or r > n - 1:
             return False
         c = numbertheory.inverse_mod(s, n)
         u1 = (hash * c) % n
@@ -267,7 +307,7 @@ class Private_key(object):
         ) % n
         if s == 0:
             raise RSZeroError("amazingly unlucky random number s")
-        return Signature(r, s)
+        return Signature(RValue(r, p1), s)
 
 
 def int_to_string(x):  # pragma: no cover
