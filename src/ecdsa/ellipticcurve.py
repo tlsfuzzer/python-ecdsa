@@ -1289,6 +1289,9 @@ class Point(AbstractPoint):
     def order(self):
         return self.__order
 
+    def to_affine(self):
+        return self
+
 
 class PointEdwards(AbstractPoint):
     """Point on Twisted Edwards curve.
