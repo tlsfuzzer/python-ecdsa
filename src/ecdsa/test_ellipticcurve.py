@@ -146,6 +146,16 @@ class TestPoint(unittest.TestCase):
         cls.c192 = CurveFp(p, -3, b)
         cls.p192 = Point(cls.c192, Gx, Gy, r)
 
+    def test_points_with_different_curves(self):
+        with self.assertRaises(AssertionError):
+            self.g_23 + self.p192
+
+    def test_add_point_to_negative(self):
+        self.assertIs(self.g_23 + (-self.g_23), INFINITY)
+
+    def test_add_point_to_explicit_negative(self):
+        self.assertIs(self.g_23 + Point(self.c_23, 13, -7), INFINITY)
+
     def test_p192(self):
         # Checking against some sample computations presented
         # in X9.62:

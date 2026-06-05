@@ -1185,13 +1185,14 @@ class Point(AbstractPoint):
         if self == INFINITY:
             return other
         assert self.__curve == other.__curve
-        if self.__x == other.__x:
-            if (self.__y + other.__y) % self.__curve.p() == 0:
+
+        p = self.__curve.p()
+
+        if (self.__x - other.__x) % p == 0:
+            if (self.__y + other.__y) % p == 0:
                 return INFINITY
             else:
                 return self.double()
-
-        p = self.__curve.p()
 
         l = (
             (other.__y - self.__y)
