@@ -1207,13 +1207,6 @@ class Point(AbstractPoint):
     def __mul__(self, other):
         """Multiply a point by an integer."""
 
-        def leftmost_bit(x):
-            assert x > 0
-            result = 1
-            while result <= x:
-                result = 2 * result
-            return result // 2
-
         e = other
         if e == 0 or (self.__order and e % self.__order == 0):
             return INFINITY
@@ -1222,26 +1215,14 @@ class Point(AbstractPoint):
         if e < 0:
             return (-self) * (-e)
 
-        # From X9.62 D.3.2:
-
-        e3 = 3 * e
-        negative_self = Point(
-            self.__curve,
-            self.__x,
-            (-self.__y) % self.__curve.p(),
-            self.__order,
-        )
-        i = leftmost_bit(e3) // 2
-        result = self
-        # print("Multiplying %s by %d (e3 = %d):" % (self, other, e3))
-        while i > 1:
-            result = result.double()
-            if (e3 & i) != 0 and (e & i) == 0:
-                result = result + self
-            if (e3 & i) == 0 and (e & i) != 0:
-                result = result + negative_self
-            # print(". . . i = %d, result = %s" % ( i, result ))
-            i = i // 2
+        i = e
+        temp = self
+        result = INFINITY
+        while i:
+            if i % 2 == 1:
+                result = result + temp
+            temp = temp.double()
+            i = i >> 1
 
         return result
 

@@ -71,6 +71,20 @@ def test_add_and_mult_equivalence(p, m, check):
     assert p * m == check
 
 
+# from https://github.com/tlsfuzzer/python-ecdsa/issues/373
+curve = CurveFp(p=31, a=2, b=3)
+point = Point(curve, 6, 18)
+
+
+@pytest.mark.parametrize(
+    "p, m, check",
+    [(point, n, exp) for n, exp in enumerate(add_n_times(point, 16))],
+    ids=["p31 test with mult {0}".format(i) for i in range(17)],
+)
+def test_add_and_mult_equivalence_2(p, m, check):
+    assert p * m == check
+
+
 class TestCurve(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
