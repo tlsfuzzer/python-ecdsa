@@ -26,6 +26,8 @@ from .der import (
     remove_octet_string,
     remove_sequence,
     encode_implicit,
+    unpem,
+    topem,
 )
 
 
@@ -629,3 +631,16 @@ def test_remove_implicit_rejects_truncated_length():
         UnexpectedDER, match="Length longer than the provided buffer"
     ):
         remove_implicit(bad)
+
+
+def test_unpem_with_str():
+    data = b"\xff\x00\x01"
+    encoded = topem(data, "KEY")
+    if sys.version_info < (3, 0):
+        # on python2 the string can be unicode
+        encoded = unicode(encoded)
+    else:
+        # on python3 topem() returns bytes
+        encoded = str(encoded, "ASCII")
+    out = unpem(encoded)
+    assert data == out
