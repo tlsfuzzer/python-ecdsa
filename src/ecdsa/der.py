@@ -464,13 +464,8 @@ def unpem(pem):
     if isinstance(pem, text_type):  # pragma: no branch
         pem = pem.encode()
 
-    d = b"".join(
-        [
-            l.strip()
-            for l in pem.split(b"\n")
-            if l and not l.startswith(b"-----")
-        ]
-    )
+    lines = (l.strip() for l in pem.split(b"\n"))
+    d = b"".join(l for l in lines if l and not l.startswith(b"-----"))
     return base64.b64decode(d)
 
 
