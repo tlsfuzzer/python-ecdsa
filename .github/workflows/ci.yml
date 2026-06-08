@@ -407,7 +407,7 @@ jobs:
           instrumental -f .instrumental.cov -s | python diff-instrumental.py
           echo "COND_COV=$(instrumental -f .instrumental.cov -s | python diff-instrumental.py --raw)" >> $GITHUB_ENV
       - name: Create condition coverage badge
-        uses: schneegans/dynamic-badges-action@v1.4.0
+        uses: schneegans/dynamic-badges-action@v1.8.0
         if: ${{ contains(matrix.opt-deps, 'instrumental') && !github.event.pull_request }}
         with:
           auth: ${{ secrets.GIST_SECRET }}
@@ -723,7 +723,7 @@ jobs:
           echo "MUT_SCORE=$(python print-score.py)" >> $GITHUB_ENV
       - name: Create mutation score badge
         if: ${{ !github.event.pull_request }}
-        uses: schneegans/dynamic-badges-action@v1.4.0
+        uses: schneegans/dynamic-badges-action@v1.8.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: 9b6ca1f3410207fbeca785a178781651
