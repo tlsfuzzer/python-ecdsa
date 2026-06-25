@@ -148,6 +148,8 @@ class Public_key(object):
         self.point = point
         n = generator.order()
         p = self.curve.p()
+        if point == ellipticcurve.INFINITY:
+            raise InvalidPointError("The public point is the point at infinity.")
         if not (0 <= point.x() < p) or not (0 <= point.y() < p):
             raise InvalidPointError(
                 "The public point has x or y out of range."
