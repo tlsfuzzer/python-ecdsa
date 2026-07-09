@@ -718,10 +718,15 @@ class VerifyingKey(object):
         :raises BadSignatureError: if the signature is invalid or malformed
         :raises BadDigestError: if the provided digest is too big for the curve
             associated with this VerifyingKey and allow_truncate was not set
+        :raises ValueError: if this is an Edwards curve key; use
+            :func:`~VerifyingKey.verify` instead, as EdDSA signs the message
+            directly and does not operate on pre-hashed digests
 
         :return: True if the verification was successful
         :rtype: bool
         """
+        if isinstance(self.curve.curve, CurveEdTw):
+            raise ValueError("Method unsupported for Edwards curves")
         # signature doesn't have to be a bytes-like-object so don't normalise
         # it, the decoders will do that
         digest = normalise_bytes(digest)
