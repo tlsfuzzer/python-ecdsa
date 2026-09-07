@@ -647,6 +647,27 @@ class TestSigningKey(unittest.TestCase):
 
         self.assertTrue(vk.verify(sig, b"other message"))
 
+    def test_precompute_after_from_string(self):
+        sig = self.sk1.sign(b"message")
+        vk = self.sk1.verifying_key
+
+        for name, encoded in [
+            ("raw", vk.to_string("raw")),
+            ("compressed", vk.to_string("compressed")),
+            ("pem", vk.to_pem()),
+            ("der", vk.to_der()),
+        ]:
+            if name == "pem":
+                vk2 = VerifyingKey.from_pem(encoded)
+            elif name == "der":
+                vk2 = VerifyingKey.from_der(encoded)
+            else:
+                vk2 = VerifyingKey.from_string(encoded, curve=vk.curve)
+
+            vk2.precompute()
+
+            self.assertTrue(vk2.verify(sig, b"message"), name)
+
     def test_inequality_on_signing_keys(self):
         self.assertNotEqual(self.sk1, self.sk2)
 

@@ -277,6 +277,7 @@ class VerifyingKey(object):
             string,
             validate_encoding=validate_point,
             valid_encodings=valid_encodings,
+            order=curve.order,
         )
         return cls.from_public_point(point, curve, hashfunc, validate_point)
 
