@@ -23,9 +23,6 @@ if sys.version_info < (3, 0):  # pragma: no branch
         # flake8 runs on py3 where `buffer` indeed doesn't exist...
         return buffer(buffer_object)  # noqa: F821
 
-    def hmac_compat(ret):
-        return ret
-
     if (
         sys.version_info < (2, 7)
         or sys.version_info < (2, 7, 4)
@@ -91,9 +88,6 @@ if sys.version_info < (3, 0):  # pragma: no branch
         raise ValueError("Only 'big' or 'little' endian supported")
 
 else:
-
-    def hmac_compat(data):
-        return data
 
     def normalise_bytes(buffer_object):
         """Cast the input into array of bytes."""
