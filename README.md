@@ -1,3 +1,5 @@
+just test
+
 # Pure-Python ECDSA and ECDH
 
 [![GitHub CI](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/ci.yml/badge.svg)](https://github.com/tlsfuzzer/python-ecdsa/actions/workflows/ci.yml)
