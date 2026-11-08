@@ -88,6 +88,14 @@ jobs:
             os: ubuntu-latest
             python-version: '3.13'
             tox-env: py313
+          - name: py3.14
+            os: ubuntu-latest
+            python-version: '3.14'
+            tox-env: py314
+          - name: py3.15
+            os: ubuntu-latest
+            python-version: '3.15'
+            tox-env: py315
           - name: pypy
             os: ubuntu-latest
             python-version: pypy-2.7
