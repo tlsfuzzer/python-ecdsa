@@ -438,6 +438,20 @@ class TestVerifyingKeyFromDer(unittest.TestCase):
         with self.assertRaises(BadSignatureError):
             vk.verify(sig, data)
 
+    def test_ed25519_verify_digest(self):
+        vk_pem = (
+            "-----BEGIN PUBLIC KEY-----\n"
+            "MCowBQYDK2VwAyEAIwBQ0NZkIiiO41WJfm5BV42u3kQm7lYnvIXmCy8qy2U=\n"
+            "-----END PUBLIC KEY-----\n"
+        )
+
+        vk = VerifyingKey.from_pem(vk_pem)
+
+        with self.assertRaises(ValueError) as e:
+            vk.verify_digest(b"a" * 64, b"b" * 32)
+
+        self.assertIn("Method unsupported for Edwards", str(e.exception))
+
     def test_ed448_from_pem(self):
         pem_str = (
             "-----BEGIN PUBLIC KEY-----\n"
