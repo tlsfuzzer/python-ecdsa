@@ -65,7 +65,7 @@ from .ecdsa import (
     curve_brainpoolp384r1,
     curve_brainpoolp512r1,
 )
-from .ellipticcurve import Point
+from .ellipticcurve import Point, INFINITY
 from . import der
 from . import rfc6979
 from . import ecdsa
@@ -956,6 +956,12 @@ class ECDSA(unittest.TestCase):
         # decoding it is unsupported, as it's not necessary to encode it
         with self.assertRaises(MalformedPointError):
             VerifyingKey.from_string(b"\x00")
+
+    def test_from_public_point_with_infinity_raises_malformed(self):
+        # passing INFINITY to from_public_point must raise MalformedPointError,
+        # not TypeError (GitHub issue #341)
+        with self.assertRaises(MalformedPointError):
+            VerifyingKey.from_public_point(INFINITY)
 
     def test_not_lying_on_curve(self):
         enc = number_to_string(NIST192p.curve.p(), NIST192p.curve.p() + 1)

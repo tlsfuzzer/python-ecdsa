@@ -162,6 +162,8 @@ class VerifyingKey(object):
         self = cls(_error__please_use_generate=True)
         if isinstance(curve.curve, CurveEdTw):
             raise ValueError("Method incompatible with Edwards curves")
+        if point == ellipticcurve.INFINITY:
+            raise MalformedPointError("Cannot use the point at infinity as a public key")
         if not isinstance(point, ellipticcurve.PointJacobi):
             point = ellipticcurve.PointJacobi.from_affine(point)
         self.curve = curve
