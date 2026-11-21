@@ -812,11 +812,11 @@ class PointJacobi(AbstractPoint):
         """add points when both Z1 and Z2 equal 1"""
         # after:
         # http://hyperelliptic.org/EFD/g1p/auto-shortw-jacobian.html#addition-mmadd-2007-bl
-        H = X2 - X1
+        H = (X2 - X1) % p
         HH = H * H
         I = 4 * HH % p
         J = H * I
-        r = 2 * (Y2 - Y1)
+        r = 2 * (Y2 - Y1) % p
         if not H and not r:
             return self._double_with_z_1(X1, Y1, p, self.__curve.a())
         V = X1 * I
@@ -948,8 +948,13 @@ class PointJacobi(AbstractPoint):
 
     def __mul__(self, other):
         """Multiply point by an integer."""
-        if not self.__coords[1] or not other:
+        if not self.__coords[2] or not other:
             return INFINITY
+        if self.__coords[1] % self.__curve.p() == 0:
+            if not self.__curve.contains_point(self.x(), self.y()):
+                return INFINITY
+            # Finite points with zero Y have order two.
+            return self if other % 2 else INFINITY
         if other == 1:
             return self
         if self.__order:
@@ -1171,7 +1176,11 @@ class Point(AbstractPoint):
         return not self == other
 
     def __neg__(self):
-        return Point(self.__curve, self.__x, self.__curve.p() - self.__y)
+        return Point(
+            self.__curve,
+            self.__x % self.__curve.p(),
+            (-self.__y) % self.__curve.p(),
+        )
 
     def __add__(self, other):
         """Add one point to another point."""
@@ -1246,13 +1255,13 @@ class Point(AbstractPoint):
         p = self.__curve.p()
         a = self.__curve.a()
 
+        if self.__y % p == 0:
+            return INFINITY
+
         l = (
             (3 * self.__x * self.__x + a)
             * numbertheory.inverse_mod(2 * self.__y, p)
         ) % p
-
-        if not l:
-            return INFINITY
 
         x3 = (l * l - 2 * self.__x) % p
         y3 = (l * (self.__x - x3) - self.__y) % p
