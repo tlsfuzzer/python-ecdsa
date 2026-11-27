@@ -12,7 +12,6 @@ Many thanks to Coda Hale for his implementation in Go language:
 import hmac
 from binascii import hexlify
 from .util import number_to_string, number_to_string_crop, bit_length
-from ._compat import hmac_compat
 
 
 # bit_length was defined in this module previously so keep it for backwards
@@ -59,9 +58,9 @@ def generate_k(order, secexp, hash_func, data, retry_gen=0, extra_entropy=b""):
     holen = hash_func().digest_size
     rolen = (qlen + 7) // 8
     bx = (
-        hmac_compat(number_to_string(secexp, order)),
-        hmac_compat(bits2octets(data, order)),
-        hmac_compat(extra_entropy),
+        number_to_string(secexp, order),
+        bits2octets(data, order),
+        extra_entropy,
     )
 
     # Step B
