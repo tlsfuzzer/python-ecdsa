@@ -570,7 +570,7 @@ def curve_by_name(name):
     """Select a curve based on its name.
 
     Returns a :py:class:`~ecdsa.curves.Curve` object with a ``name`` name.
-    Note that ``name`` is case-sensitve.
+    Note that ``name`` is case-sensitive.
 
     :param str name: Name of the curve to return, like ``NIST256p`` or
         ``prime256v1``

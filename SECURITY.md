@@ -32,7 +32,7 @@ key pair generation. Other operations or attack vectors may also be vulnerable t
 For a sophisticated attacker observing just one operation with a private key will be sufficient
 to completely reconstruct the private key.
 
-Fixes for side-channel vulerabilities will not be developed.
+Fixes for side-channel vulnerabilities will not be developed.
 
 Please also note that any Pure-python cryptographic library will be vulnerable to the same
 side-channel attacks. This is because Python does not provide side-channel secure primitives

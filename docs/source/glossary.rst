@@ -79,7 +79,7 @@ Glossary
        ``str`` (only on python2), ``bytes``, ``bytearray``, ``array.array``
        and ``memoryview`` of those objects.
        Please note that ``array.array`` serialisation (converting it to byte
-       string) is endianess dependant! Signature computed over ``array.array``
+       string) is endianness dependent! Signature computed over ``array.array``
        of integers on a big-endian system will not be verified on a
        little-endian system and vice-versa.
 
