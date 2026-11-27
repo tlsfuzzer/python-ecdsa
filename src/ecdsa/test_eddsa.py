@@ -505,6 +505,37 @@ class TestEdwardsMalformed(unittest.TestCase):
         with self.assertRaises(MalformedPointError):
             PointEdwards.from_bytes(curve_ed448, exp_bytes)
 
+    def test_ed25519_non_canonical_y(self):
+        # y = p + 1 = 2^255 - 18 (valid mod p since y ≡ 1, x = 0, but y >= p)
+        exp_bytes = (
+            b"\xee\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"
+            b"\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x7f"
+        )
+        with self.assertRaises(MalformedPointError):
+            PointEdwards.from_bytes(curve_ed25519, exp_bytes)
+
+    def test_ed448_non_canonical_y(self):
+        # y = p + 1 on Ed448 (non-zero low bits in 57th byte)
+        exp_bytes = (
+            b"\x00" * 28
+            + b"\xff" * 27
+            + b"\xfe\x01"
+        )
+        with self.assertRaises(MalformedPointError):
+            PointEdwards.from_bytes(curve_ed448, exp_bytes)
+
+    def test_ed25519_negative_zero_x(self):
+        # (x=0, y=1) encoded with sign bit x_0 = 1 (RFC 8032 Section 5.1.3)
+        exp_bytes = b"\x01" + b"\x00" * 30 + b"\x80"
+        with self.assertRaises(MalformedPointError):
+            PointEdwards.from_bytes(curve_ed25519, exp_bytes)
+
+    def test_ed448_negative_zero_x(self):
+        # (x=0, y=1) encoded with sign bit x_0 = 1 (RFC 8032 Section 5.2.3)
+        exp_bytes = b"\x01" + b"\x00" * 55 + b"\x80"
+        with self.assertRaises(MalformedPointError):
+            PointEdwards.from_bytes(curve_ed448, exp_bytes)
+
 
 def test_ed448_encode():
     g = generator_ed448
@@ -682,6 +713,13 @@ class TestInvalidEdDSAInputs(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             key.verify(b"", sig_invalid)
+
+    def test_non_canonical_r_in_signature(self):
+        # Identity public key A = (0, 1); R = (0, 1) with sign bit x_0 = 1
+        key = PublicKey(generator_ed25519, b"\x01" + b"\x00" * 31)
+        sig_neg_zero_r = (b"\x01" + b"\x00" * 30 + b"\x80") + (b"\x00" * 32)
+        with self.assertRaises(MalformedPointError):
+            key.verify(b"hello", sig_neg_zero_r)
 
 
 HYP_SETTINGS = dict()

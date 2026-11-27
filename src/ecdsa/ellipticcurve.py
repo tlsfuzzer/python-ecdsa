@@ -319,6 +319,8 @@ class AbstractPoint(object):
         data[-1] &= 0x80 - 1
 
         y = bytes_to_int(data, "little")
+        if y >= p:
+            raise MalformedPointError("Point y coordinate is larger than p.")
         if GMPY:
             y = mpz(y)
 
@@ -333,6 +335,11 @@ class AbstractPoint(object):
         except numbertheory.Error as e:
             raise MalformedPointError(
                 "Encoding does not correspond to a point on curve", e
+            )
+
+        if x == 0 and x_0:
+            raise MalformedPointError(
+                "Invalid encoding of x=0 with sign bit 1"
             )
 
         if x % 2 != x_0:
